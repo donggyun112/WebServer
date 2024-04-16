@@ -1,7 +1,8 @@
 *.d
 *.o
 DS_Store
-.out
+*.out
+a
 .dYSM
 test.cpp
 .vscode
