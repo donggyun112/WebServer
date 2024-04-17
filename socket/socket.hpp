@@ -65,7 +65,9 @@ public:
 	void nonblocking();
 	static void nonblocking(const FD &socket);
 
-	FD autoActivate(Config *config=nullPtr, std::string host="", Port port=80, int domain=AF_INET, int type=SOCK_STREAM, int protocol=0);
+	FD autoActivate(Config *config, std::string host, Port port, int domain, int type, int protocol);
+
+	Socket *clone() const;
 
 };
 
@@ -125,7 +127,6 @@ Socket::Socket(Config *config) : _ListenSocket(-1), _Conf(config) {
 Socket::Socket(const Socket& other) : _ListenSocket(dup(other._ListenSocket)), _Conf(other._Conf), _Server_Addr(other._Server_Addr) {
     std::cout << "Socket copied" << std::endl;
 }
-
 
 
 /* Socket 생성 */
@@ -244,6 +245,12 @@ void Socket::setSocketOption(int level, int option_name, int opt=1) {
 	}
 }
 
+void Socket::__init__SocketoptAuto(int opt=1) {
+	setSocketOption(SOL_SOCKET, SO_REUSEADDR, opt); // 소켓 재사용 옵션 설정
+	setSocketOption(SOL_SOCKET, SO_REUSEPORT, opt); // 포트 재사용 옵션 설정
+	setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt); // keep-alive 옵션 설정 --> 연결이 끊어진 경우 자원을 반환하고 연결을 끊음 --> 리소스 절약
+}
+
 /* Socket 자동 활성화 */
 
 FD Socket::autoActivate(Config *config=nullPtr, std::string host="", Port port=80, int domain=AF_INET, int type=SOCK_STREAM, int protocol=0) {
@@ -252,6 +259,12 @@ FD Socket::autoActivate(Config *config=nullPtr, std::string host="", Port port=8
 	bind(host, port);
 	listen();
 	return _ListenSocket;
+}
+
+/* Socket 복제 */
+
+Socket *Socket::clone() const {
+	return new Socket(*this);
 }
 
 /* Socket 소멸자 */
@@ -286,9 +299,5 @@ Socket& Socket::operator=(const Socket& other) {
     return *this;
 }
 
-void Socket::__init__SocketoptAuto(int opt=1) {
-	setSocketOption(SOL_SOCKET, SO_REUSEADDR, opt); // 소켓 재사용 옵션 설정
-	setSocketOption(SOL_SOCKET, SO_REUSEPORT, opt); // 포트 재사용 옵션 설정
-	setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt); // keep-alive 옵션 설정 --> 연결이 끊어진 경우 자원을 반환하고 연결을 끊음 --> 리소스 절약
-}
+
 
