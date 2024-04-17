@@ -22,6 +22,8 @@ struct LocationConfig {
     std::string upload_max_file_size;
     std::string upload_limit_rate;
     std::vector<int> upload_cleanup;
+
+	std::vector<std::string> try_files;
     // 추가적인 필요한 변수들
 };
 
