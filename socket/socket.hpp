@@ -20,14 +20,14 @@ public:
 	std::unordered_map<FD, std::string> config;
 	Config() {}
 	~Config() {}
-	Port getPort() { return 8888; }
+	Port getPort() const { return 8888; }
 	void dispose(const FD &Socket) {
 		config.erase(Socket);
 	}
 	void registerSocket(const FD &socket) {
 		config.insert(std::make_pair(socket, "socket"));
 	}
-	std::string getHost() { return ""; }
+	std::string getHost() const { return ""; }
 };
 
 class Socket {
@@ -62,8 +62,8 @@ public:
 	void setSocketOption(int level, int option_name, int opt);
 	void __init__SocketoptAuto(int opt);
 
-	void nonblocking();
-	static void nonblocking(const FD &socket);
+	Status nonblocking();
+	static Status nonblocking(const FD &socket);
 
 	FD autoActivate(Config *config=nullPtr, std::string host="", Port port=80, int domain=AF_INET, int type=SOCK_STREAM, int protocol=0);
 
@@ -75,7 +75,7 @@ public:
 
 	FD getSocket() const { return _listenSocket; }
 	struct sockaddr_in getServerAddr() const { return _server_Addr; }
-	Config *getConfig() const { return new Config(*_conf); }
+	const Config *getConfig() const { return _conf; }
 
 };
 
@@ -133,6 +133,9 @@ Socket::Socket(Config *config) : _listenSocket(-1), _conf(config) {
 
 
 Socket::Socket(const Socket& other) : _listenSocket(dup(other._listenSocket)), _conf(other._conf), _server_Addr(other._server_Addr) {
+    if (_listenSocket == -1) {
+        throw std::runtime_error("Error: Failed to duplicate socket");
+    }
     std::cout << "Socket copied" << std::endl;
 }
 
@@ -142,7 +145,7 @@ Socket& Socket::socket(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0)
 	std::cout << "Socket created" << std::endl;
     _listenSocket = ::socket(domain, type, protocol);
     if (_listenSocket == -1) {
-        std::cerr << "Error: Socket creation failed" << std::endl;
+        std::cerr << "Error: Socket creation failed. Error code: " << errno << std::endl;
         throw std::runtime_error("Error: Socket creation failed");
     }
     return *this;
@@ -161,7 +164,7 @@ Status Socket::bind(const std::string &host="", const Port &port=80) {
 	_server_Addr.sin_port = htons(port);
 
 	if (::bind(_listenSocket, (struct sockaddr*)&_server_Addr, sizeof(_server_Addr)) == FAILURE) {
-		std::cerr << "Error: Failed to bind socket" << std::endl;
+		std::cerr << "Error: Failed to bind socket. Error code: " << errno << std::endl;
 		throw std::runtime_error("Error: Failed to bind socket");
 	}
 	return SUCCESS;
@@ -171,7 +174,7 @@ Status Socket::bind(const std::string &host="", const Port &port=80) {
 
 Status Socket::listen(size_t backlog=5) {
 	if (::listen(_listenSocket, backlog) == FAILURE) {
-		std::cerr << "Error: Failed to listen socket" << std::endl;
+		std::cerr << "Error: Failed to listen socket. Error code: " << errno << std::endl;
 		throw std::runtime_error("Error: Failed to listen socket");
 	}
 	return SUCCESS;
@@ -203,8 +206,13 @@ FD Socket::accept() const {
 /* Socket 닫기 */
 
 Status Socket::close() {
+	if (_listenSocket == -1) {
+		std::cout << "Socket already closed" << std::endl;
+		return SUCCESS;
+	}
+	
 	if (::close(_listenSocket) == FAILURE) {
-		std::cerr << "Error: Failed to close socket" << std::endl;
+		std::cerr << "Error: Failed to close socket. Error code: " << errno << std::endl;
 		throw std::runtime_error("Error: Failed to close socket");
 	}
 	memset(&_server_Addr, 0, sizeof(_server_Addr));
@@ -214,32 +222,34 @@ Status Socket::close() {
 
 /* Socket 비동기 활성화 */
 
-void Socket::nonblocking() {
+Status Socket::nonblocking() {
 	int flags = fcntl(_listenSocket, F_GETFL, 0);
 	if (flags == -1) {
-		std::cerr << "Error: Failed to get socket flags" << std::endl;
-		return ;
+		std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
+		return FAILURE;
 	}
 
 	flags |= O_NONBLOCK;
 	if (fcntl(_listenSocket, F_SETFL, flags) == -1) {
-		std::cerr << "Error: Failed to set socket flags" << std::endl;
-		return ;
+		std::cerr << "Error: Failed to set socket flags. Error code: " << errno << std::endl;
+		return FAILURE;
 	}
+	return SUCCESS;
 }
 
-void Socket::nonblocking(const FD &socket) {
+Status Socket::nonblocking(const FD &socket) {
 	int flags = fcntl(socket, F_GETFL, 0);
 	if (flags == -1) {
-		std::cerr << "Error: Failed to get socket flags" << std::endl;
-		return ;
+		std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
+		return FAILURE;
 	}
 
 	flags |= O_NONBLOCK;
 	if (fcntl(socket, F_SETFL, flags) == -1) {
-		std::cerr << "Error: Failed to set socket flags" << std::endl;
-		return ;
+		std::cerr << "Error: Failed to set socket flags. Error code: " << errno << std::endl;
+		return FAILURE;
 	}
+	return SUCCESS;
 }
 
 /* Socket 옵션 설정 */
@@ -248,7 +258,7 @@ void Socket::setSocketOption(int level, int option_name, int opt=1) {
 	socklen_t optlen = sizeof(opt);
 
 	if (setsockopt(this->_listenSocket, level, option_name, &opt, optlen) == FAILURE) {
-		std::cerr << "Error: Failed to set socket option" << std::endl;
+		std::cerr << "Error: Failed to set socket option. Error code: " << errno << std::endl;
 		throw std::runtime_error("Error: Failed to set socket option");
 	}
 }
@@ -281,14 +291,11 @@ Socket *Socket::clone() const {
 Socket::~Socket() {
 	
 	if (_listenSocket == -1) {
-		std::cerr << "Error: Socket not initialized" << std::endl;
-	} else if (_listenSocket == 0) {
-		std::cerr << "Error: Socket not opened" << std::endl;
-	}
-	else {
+		std::cout << "Socket already closed" << std::endl;
+	} else {
 		int status = ::close(_listenSocket);
 		if (status == -1) {
-			std::cerr << "Error: Socket close failed" << std::endl;
+			std::cerr << "Error: Socket close failed. Error code: " << errno << std::endl;
 		} else {
 			std::cout << "Socket closed" << std::endl;
 		}
@@ -299,14 +306,17 @@ Socket::~Socket() {
 
 Socket& Socket::operator=(const Socket& other) {
     if (this != &other) {
-        ::close(_listenSocket);
-		_conf->dispose(*this); // 기존 소켓 제거
+        if (::close(_listenSocket) == -1) {
+            std::cerr << "Error: Failed to close socket before assignment. Error code: " << errno << std::endl;
+        }
+        _conf->dispose(*this); // 기존 소켓 제거
         this->_listenSocket = dup(other._listenSocket);
-		this->_server_Addr = other._server_Addr;
-		_conf->registerSocket(*this); // 새로운 소켓 등록
+        if (this->_listenSocket == -1) {
+            std::cerr << "Error: Failed to duplicate socket during assignment. Error code: " << errno << std::endl;
+            throw std::runtime_error("Error: Failed to duplicate socket during assignment");
+        }
+        this->_server_Addr = other._server_Addr;
+        _conf->registerSocket(*this); // 새로운 소켓 등록
     }
     return *this;
 }
-
-
-
