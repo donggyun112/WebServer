@@ -65,9 +65,17 @@ public:
 	void nonblocking();
 	static void nonblocking(const FD &socket);
 
-	FD autoActivate(Config *config, std::string host, Port port, int domain, int type, int protocol);
+	FD autoActivate(Config *config=nullPtr, std::string host="", Port port=80, int domain=AF_INET, int type=SOCK_STREAM, int protocol=0);
 
 	Socket *clone() const;
+
+	void setConfig(Config *config) { _conf = config; }
+	void setServerAddr(struct sockaddr_in serverAddr) { _server_Addr = serverAddr; }
+	void setSocket(FD socket) { _listenSocket = socket; }
+
+	FD getSocket() const { return _listenSocket; }
+	struct sockaddr_in getServerAddr() const { return _server_Addr; }
+	Config *getConfig() const { return new Config(*_conf); }
 
 };
 
@@ -253,9 +261,10 @@ void Socket::__init__SocketoptAuto(int opt=1) {
 
 /* Socket 자동 활성화 */
 
-FD Socket::autoActivate(Config *config=nullPtr, std::string host="", Port port=80, int domain=AF_INET, int type=SOCK_STREAM, int protocol=0) {
+FD Socket::autoActivate(Config *config, std::string host, Port port, int domain, int type, int protocol) {
 	socket(domain, type, protocol);
 	__init__SocketoptAuto();
+	nonblocking();
 	bind(host, port);
 	listen();
 	return _listenSocket;
