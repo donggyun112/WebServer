@@ -8,46 +8,17 @@
 #include <unordered_map>
 #include <string>
 #include <fcntl.h>
+#include "../utils/utils.hpp"
 
-
-typedef int FD;
-typedef int Port;
-
-enum Status { SUCCESS=0, FAILURE=-1 };
-
-class NullPtr {
-public:
-    NullPtr() {} // public 생성자
-
-    // 임의의 타입으로 변환하는 operator
-    template<typename T>
-    operator T*() const
-    {
-        return NULL;
-    }
-
-    // 임의의 클래스 멤버 포인터로 변환하는 operator
-    template<typename C, typename T>
-    operator T C::*() const
-    {
-        return NULL;
-    }
-
-private:
-    // NullPtr의 주소를 가져올 수 없도록 하는 private 멤버 함수
-    void operator&() const;
-};
-
-NullPtr nullPtr; // 전역 객체 정의
 
 class Socket;
 
-
+/* test config 클래스 구조 */
 
 class Config {
 public:
 	std::unordered_map<FD, std::string> config;
-	Config(Socket &) {}
+	Config() {}
 	~Config() {}
 	Port getPort() { return 8888; }
 	void dispose(const FD &Socket) {
@@ -61,47 +32,78 @@ public:
 
 class Socket {
 private:
-    FD server_socket;
-	Config* config;
-	struct sockaddr_in server_addr;
+    FD _ListenSocket;
+	Config* _Conf;
+	struct sockaddr_in _Server_Addr;
 	
 	void __init__();
-	void __init__(Config *config);
+	void __init__(Config *_Conf);
+	void __init__(std::string host, Port port);
 
 
 public:
     Socket();
     Socket(const Socket& other);
 	Socket(Config *config);
+	Socket(std::string host, Port port);
     ~Socket();
 
 	Socket& operator=(const Socket& other);
-	operator FD() const { return server_socket; } // 타입 캐스팅 연산자 오버로딩
-	operator FD&() { return server_socket; } // 타입 캐스팅 연산자 오버로딩
+	operator FD() const { return _ListenSocket; } // 타입 캐스팅 연산자 오버로딩
+	operator FD&() { return _ListenSocket; } // 타입 캐스팅 연산자 오버로딩
 
 
     Socket& socket(int domain, int type, int protocol);
 	Status bind(const std::string &host, const Port &port);
 	Status listen(size_t backlog);
 	Status close();
-	std::pair<FD, struct sockaddr_in> accept();
+	FD accept() const;
 
 	void setSocketOption(int level, int option_name, int opt);
-	void __init__socketopt_auto(int opt);
+	void __init__SocketoptAuto(int opt);
 
 	void nonblocking();
 	static void nonblocking(const FD &socket);
 
 };
 
+
+/* Socket 기본설정 */
+
+void Socket::__init__() {
+    memset(&_Server_Addr, 0, sizeof(_Server_Addr)); // _Server_Addr 초기화
+    _Server_Addr.sin_family = AF_INET; // IPv4
+    _Server_Addr.sin_addr.s_addr = INADDR_ANY; // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
+    _Server_Addr.sin_port = htons(80); // 기본 포트 80 설정
+}
+
+void Socket::__init__(Config *config) {
+    memset(&_Server_Addr, 0, sizeof(_Server_Addr)); // _Server_Addr 초기화
+    _Server_Addr.sin_family = AF_INET; // IPv4
+    _Server_Addr.sin_addr.s_addr = inet_addr(config->getHost().c_str()); // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
+    _Server_Addr.sin_port = htons(config->getPort()); // 기본 포트 80 설정
+}
+
+void Socket::__init__(std::string host, Port port) {
+	memset(&_Server_Addr, 0, sizeof(_Server_Addr)); // _Server_Addr 초기화
+	_Server_Addr.sin_family = AF_INET; // IPv4
+	_Server_Addr.sin_addr.s_addr = inet_addr(host.c_str()); // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
+	_Server_Addr.sin_port = htons(port); // 기본 포트 80 설정
+}
+
 // Socket 클래스 생성자
 
-Socket::Socket() : server_socket(-1), config(nullPtr) {
+Socket::Socket() : _ListenSocket(-1), _Conf(nullPtr) {
 	__init__();
     std::cout << "Socket initialized" << std::endl;
 }
 
-Socket::Socket(Config *config) : server_socket(-1), config(config) {
+Socket::Socket(std::string host, Port port) : _ListenSocket(-1), _Conf(nullPtr) {
+	__init__(host, port);
+	std::cout << "Socket initialized with host and port" << std::endl;
+}
+
+Socket::Socket(Config *config) : _ListenSocket(-1), _Conf(config) {
 	if (config)
 	{
 		config->registerSocket(*this);
@@ -117,15 +119,18 @@ Socket::Socket(Config *config) : server_socket(-1), config(config) {
 }
 
 
-Socket::Socket(const Socket& other) : server_socket(dup(other.server_socket)), config(other.config), server_addr(other.server_addr) {
+
+Socket::Socket(const Socket& other) : _ListenSocket(dup(other._ListenSocket)), _Conf(other._Conf), _Server_Addr(other._Server_Addr) {
     std::cout << "Socket copied" << std::endl;
 }
+
+
 
 /* Socket 생성 */
 Socket& Socket::socket(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0) {
 	std::cout << "Socket created" << std::endl;
-    server_socket = ::socket(domain, type, protocol);
-    if (server_socket == -1) {
+    _ListenSocket = ::socket(domain, type, protocol);
+    if (_ListenSocket == -1) {
         std::cerr << "Error: Socket creation failed" << std::endl;
         throw std::runtime_error("Error: Socket creation failed");
     }
@@ -136,15 +141,15 @@ Socket& Socket::socket(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0)
 
 Status Socket::bind(const std::string &host="", const Port &port=80) {
 	if (!host.empty()) {
-		server_addr.sin_addr.s_addr = inet_addr(host.c_str());
+		_Server_Addr.sin_addr.s_addr = inet_addr(host.c_str());
 	}
 	else {
-		server_addr.sin_addr.s_addr = INADDR_ANY;
+		_Server_Addr.sin_addr.s_addr = INADDR_ANY;
 	}
 
-	server_addr.sin_port = htons(port);
+	_Server_Addr.sin_port = htons(port);
 
-	if (::bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == FAILURE) {
+	if (::bind(_ListenSocket, (struct sockaddr*)&_Server_Addr, sizeof(_Server_Addr)) == FAILURE) {
 		std::cerr << "Error: Failed to bind socket" << std::endl;
 		throw std::runtime_error("Error: Failed to bind socket");
 	}
@@ -154,25 +159,25 @@ Status Socket::bind(const std::string &host="", const Port &port=80) {
 /* Socket 리스닝 */
 
 Status Socket::listen(size_t backlog=5) {
-	if (::listen(server_socket, backlog) == FAILURE) {
+	if (::listen(_ListenSocket, backlog) == FAILURE) {
 		std::cerr << "Error: Failed to listen socket" << std::endl;
 		throw std::runtime_error("Error: Failed to listen socket");
 	}
 	return SUCCESS;
 }
 
-/* Socket 연결 수락 */
 
-std::pair<FD, struct sockaddr_in> Socket::accept() {
-    FD client_socket;
+FD Socket::accept() const {
+    FD Client_Socket = -1;
+
     struct sockaddr_in client_addr;
     socklen_t client_addr_size = sizeof(client_addr);
 
-    client_socket = ::accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_size);
-    if (client_socket == -1) {
+    Client_Socket = ::accept(_ListenSocket, (struct sockaddr*)&client_addr, &client_addr_size);
+    if (Client_Socket == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // 클라이언트 연결 요청이 없는 경우, 다른 작업을 수행하거나 잠시 대기할 수 있습니다.
-            return std::make_pair(-1, client_addr);
+            return Client_Socket;
         } else {
             // 실제 에러 발생 시 예외 처리합니다.
             std::cerr << "Error: Failed to accept socket. Error code: " << errno << std::endl;
@@ -180,32 +185,33 @@ std::pair<FD, struct sockaddr_in> Socket::accept() {
         }
     }
 
-    return std::make_pair(client_socket, client_addr);
+    return Client_Socket;
 }
+
 
 /* Socket 닫기 */
 
 Status Socket::close() {
-	if (::close(server_socket) == FAILURE) {
+	if (::close(_ListenSocket) == FAILURE) {
 		std::cerr << "Error: Failed to close socket" << std::endl;
 		throw std::runtime_error("Error: Failed to close socket");
 	}
-	memset(&server_addr, 0, sizeof(server_addr));
-	server_socket = -1;
+	memset(&_Server_Addr, 0, sizeof(_Server_Addr));
+	_ListenSocket = -1;
 	return SUCCESS;
 }
 
 /* Socket 비동기 활성화 */
 
 void Socket::nonblocking() {
-	int flags = fcntl(server_socket, F_GETFL, 0);
+	int flags = fcntl(_ListenSocket, F_GETFL, 0);
 	if (flags == -1) {
 		std::cerr << "Error: Failed to get socket flags" << std::endl;
 		return ;
 	}
 
 	flags |= O_NONBLOCK;
-	if (fcntl(server_socket, F_SETFL, flags) == -1) {
+	if (fcntl(_ListenSocket, F_SETFL, flags) == -1) {
 		std::cerr << "Error: Failed to set socket flags" << std::endl;
 		return ;
 	}
@@ -230,40 +236,23 @@ void Socket::nonblocking(const FD &socket) {
 void Socket::setSocketOption(int level, int option_name, int opt=1) {
 	socklen_t optlen = sizeof(opt);
 
-	if (setsockopt(this->server_socket, level, option_name, &opt, optlen) == FAILURE) {
+	if (setsockopt(this->_ListenSocket, level, option_name, &opt, optlen) == FAILURE) {
 		std::cerr << "Error: Failed to set socket option" << std::endl;
 		throw std::runtime_error("Error: Failed to set socket option");
 	}
-}
-
-
-/* Socket 기본설정 */
-
-void Socket::__init__() {
-    memset(&server_addr, 0, sizeof(server_addr)); // server_addr 초기화
-    server_addr.sin_family = AF_INET; // IPv4
-    server_addr.sin_addr.s_addr = INADDR_ANY; // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
-    server_addr.sin_port = htons(80); // 기본 포트 80 설정
-}
-
-void Socket::__init__(Config *config) {
-    memset(&server_addr, 0, sizeof(server_addr)); // server_addr 초기화
-    server_addr.sin_family = AF_INET; // IPv4
-    server_addr.sin_addr.s_addr = inet_addr(config->getHost().c_str()); // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
-    server_addr.sin_port = htons(config->getPort()); // 기본 포트 80 설정
 }
 
 /* Socket 소멸자 */
 
 Socket::~Socket() {
 	
-	if (server_socket == -1) {
+	if (_ListenSocket == -1) {
 		std::cerr << "Error: Socket not initialized" << std::endl;
-	} else if (server_socket == 0) {
+	} else if (_ListenSocket == 0) {
 		std::cerr << "Error: Socket not opened" << std::endl;
 	}
 	else {
-		int status = ::close(server_socket);
+		int status = ::close(_ListenSocket);
 		if (status == -1) {
 			std::cerr << "Error: Socket close failed" << std::endl;
 		} else {
@@ -276,17 +265,18 @@ Socket::~Socket() {
 
 Socket& Socket::operator=(const Socket& other) {
     if (this != &other) {
-        ::close(server_socket);
-		config->dispose(*this); // 기존 소켓 제거
-        this->server_socket = dup(other.server_socket);
-		this->server_addr = other.server_addr;
-		config->registerSocket(*this); // 새로운 소켓 등록
+        ::close(_ListenSocket);
+		_Conf->dispose(*this); // 기존 소켓 제거
+        this->_ListenSocket = dup(other._ListenSocket);
+		this->_Server_Addr = other._Server_Addr;
+		_Conf->registerSocket(*this); // 새로운 소켓 등록
     }
     return *this;
 }
 
-void Socket::__init__socketopt_auto(int opt=1) {
+void Socket::__init__SocketoptAuto(int opt=1) {
 	setSocketOption(SOL_SOCKET, SO_REUSEADDR, opt); // 소켓 재사용 옵션 설정
 	setSocketOption(SOL_SOCKET, SO_REUSEPORT, opt); // 포트 재사용 옵션 설정
 	setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt); // keep-alive 옵션 설정 --> 연결이 끊어진 경우 자원을 반환하고 연결을 끊음 --> 리소스 절약
 }
+
