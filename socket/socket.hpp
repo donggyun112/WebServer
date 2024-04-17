@@ -65,6 +65,8 @@ public:
 	void nonblocking();
 	static void nonblocking(const FD &socket);
 
+	FD autoActivate(Config *config=nullPtr, std::string host="", Port port=80, int domain=AF_INET, int type=SOCK_STREAM, int protocol=0);
+
 };
 
 
@@ -240,6 +242,16 @@ void Socket::setSocketOption(int level, int option_name, int opt=1) {
 		std::cerr << "Error: Failed to set socket option" << std::endl;
 		throw std::runtime_error("Error: Failed to set socket option");
 	}
+}
+
+/* Socket 자동 활성화 */
+
+FD Socket::autoActivate(Config *config=nullPtr, std::string host="", Port port=80, int domain=AF_INET, int type=SOCK_STREAM, int protocol=0) {
+	socket(domain, type, protocol);
+	__init__SocketoptAuto();
+	bind(host, port);
+	listen();
+	return _ListenSocket;
 }
 
 /* Socket 소멸자 */
