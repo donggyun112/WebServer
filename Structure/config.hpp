@@ -32,16 +32,13 @@ struct ServerConfig {
     std::string server_name;
     std::unordered_map<int, std::string> error_pages;
     std::string client_max_body_size;
-    std::vector<LocationConfig> locations;
+    std::map<std::string, LocationConfig> locations; // urls, LocationConfig
     // ...
 };
 
-
-class IConfigParser {
-public:
-	virtual ~IConfigParser() {}
-	virtual ServerConfig getServerConfig(const FD &) = 0;
-	virtual std::vector<LocationConfig> getLocationConfig(FD) = 0;
-	virtual void registerSocket(const FD &) = 0;
-	virtual void dispose(const FD &) = 0;
+class IConfig {
+	public:
+		virtual ~IConfig() {}
+		virtual void registerSocket(const FD &socket) = 0;
+		virtual void dispose(const FD &socket) = 0;
 };
