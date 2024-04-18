@@ -34,6 +34,7 @@ class Socket {
 private:
     FD _listenSocket;
 	Config* _conf;
+	Port _port;
 	struct sockaddr_in _server_Addr;
 	
 	void __init__();
@@ -76,6 +77,7 @@ public:
 	FD getSocket() const { return _listenSocket; }
 	struct sockaddr_in getServerAddr() const { return _server_Addr; }
 	const Config *getConfig() const { return _conf; }
+	Port getPort() const { return _port; }
 
 };
 
@@ -105,17 +107,17 @@ void Socket::__init__(std::string host, Port port) {
 
 // Socket 클래스 생성자
 
-Socket::Socket() : _listenSocket(-1), _conf(nullPtr) {
+Socket::Socket() : _listenSocket(-1), _conf(nullPtr), _port(80) {
 	__init__();
     std::cout << "Socket initialized" << std::endl;
 }
 
-Socket::Socket(std::string host, Port port) : _listenSocket(-1), _conf(nullPtr) {
+Socket::Socket(std::string host, Port port) : _listenSocket(-1), _conf(nullPtr), _port(port) {
 	__init__(host, port);
 	std::cout << "Socket initialized with host and port" << std::endl;
 }
 
-Socket::Socket(Config *config) : _listenSocket(-1), _conf(config) {
+Socket::Socket(Config *config) : _listenSocket(-1), _conf(config), _port(config->getPort()) {
 	if (config)
 	{
 		config->registerSocket(*this);
@@ -162,6 +164,7 @@ Status Socket::bind(const std::string &host="", const Port &port=80) {
 	}
 
 	_server_Addr.sin_port = htons(port);
+	_port = port;
 
 	if (::bind(_listenSocket, (struct sockaddr*)&_server_Addr, sizeof(_server_Addr)) == FAILURE) {
 		std::cerr << "Error: Failed to bind socket. Error code: " << errno << std::endl;
