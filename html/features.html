@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹서버 기능</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+			background-image: url("../images/ground2.png");
+            background-color: #f2f2f2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #333;
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        .feature {
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #333;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>웹서버 기능</h1>
+        <div class="feature">
+            <h2>업로드 기능</h2>
+            <p>파일을 업로드할 수 있습니다.</p>
+            <a href="upload.html" class="btn">업로드 하기</a>
+        </div>
+        <div class="feature">
+            <h2>계산기 기능</h2>
+            <p>간단한 계산을 할 수 있습니다.</p>
+            <a href="calculator.html" class="btn">계산기 열기</a>
+        </div>
+        <a href="index.html" class="btn">홈으로</a>
+    </div>
+</body>
+</html>
