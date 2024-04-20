@@ -9,7 +9,7 @@ typedef std::map<std::string, std::string> Headers;
 
 
 // TODO //
- // request clear 만들기 
+ // request clear 만들기  +
  // body parse 만들기
  // 파싱된 데이터 유효성 검사 및 bad request exceoption처리 할 것 
 
@@ -37,6 +37,7 @@ class Client {
         std::string getBody() const;
 
         void setRequest(const Request& request);
+        void clearRequest();
 
         void printAllHeaders() const;
 };
@@ -70,6 +71,15 @@ std::string Client::getBody() const {
 
 void Client::setRequest(const Request& request) {
     _request = request;
+}
+
+void Client::clearRequest()
+{
+    _request._method.clear();
+    _request._uri.clear();
+    _request._version.clear();
+    _request._headers.clear();
+    _request._body.clear();
 }
 
 void Client::printAllHeaders() const{

@@ -8,14 +8,13 @@
 #include <sstream>
 #include <cctype>
 #include <stdexcept>
-
 #include "client.hpp"
-
 
 class HttpRequest {
 	private:
 		static void parseRequestLine(Request& req, const std::string& line);
 		static void parseHeader(Request& req, const std::string& line);
+		static void isVaildRequest(const Request& req);
 	public:
 		static Request parse(const std::string& requestStr);
 };
@@ -40,7 +39,26 @@ Request HttpRequest::parse(const std::string& requestStr)
 	// 	iss.read(&_body[0], contentLength);
 	// 	req._body = _body;
 	// }
+
+	try {
+		isVaildRequest(req);
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << e.what() << std::endl;
+	}
 	return req;
+}
+
+void HttpRequest::isVaildRequest(const Request& req)
+{
+	if (req._method == "OTHER")
+		throw std::invalid_argument("Invalid Method");
+	if (req._uri.empty())
+		throw std::invalid_argument("Invalid URI");
+	if (req._version != "HTTP/1.1")
+		throw std::invalid_argument("Invalid Version");
+	if (req._headers.find("Host") == req._headers.end())
+		throw std::invalid_argument("Invalid Host");
 }
 
 std::string parseMethod(const std::string& methodStr)
@@ -69,7 +87,6 @@ void HttpRequest::parseRequestLine(Request &req, const std::string& line)
 	// bad request 같은 parse에서 처리 할 에러 생각.
 	//version이 "HTTP/1.1"이 아닌경우 bad request라고 할 듯.
 }
-
 
 void HttpRequest::parseHeader(Request &req, const std::string& line)
 {

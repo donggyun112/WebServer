@@ -27,7 +27,12 @@ int main() {
 
     client.printAllHeaders();
 
-    std::cout << "Body: " << client.getBody() << std::endl;
+    client.clearRequest();
+
+    std::cout  << "======================" << std::endl;
+
+
+    // std::cout << "Body: " << client.getBody() << std::endl;
 
     return 0;
 }
