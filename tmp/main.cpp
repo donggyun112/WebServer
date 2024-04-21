@@ -1,4 +1,7 @@
 #include "request.hpp"
+#include "client.hpp"
+#include <fstream>
+
 
 int main() {
     std::string request = "GET /index.html HTTP/1.1\n"
@@ -9,19 +12,25 @@ int main() {
                          "\r\n"
                          "name=John&email=john@example.com";
 
-    HttpRequest req;
-    req.parse(request);
+    // std::ifstream ifs("test");
 
-    std::cout << "Method: " << req.getMethod() << std::endl;
-    std::cout << "URI: " << req.getUri() << std::endl;
-    std::cout << "Version: " << req.getVersion() << std::endl;
+    // std::string request((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    
 
-    const std::map<std::string, std::string>& headers = req.getHeaders();
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-        std::cout << it->first << ": " << it->second << std::endl;
-    }
+    // HttpRequest req;
+    Client client;
+    client.setRequest(HttpRequest::parse(request));
 
-    std::cout << "Body: " << req.getBody() << std::endl;
+    std::cout << "Method: " << client.getMethod() << std::endl;
+    std::cout << "URI: " << client.getUri() << std::endl;
+    std::cout << "Version: " << client.getVersion() << std::endl;
 
+    client.printAllHeaders();
+
+    client.clearRequest();
+
+    std::cout  << "======================" << std::endl;
+
+    // std::cout << "Body: " << client.getBody() << std::endl;
     return 0;
 }
