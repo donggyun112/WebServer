@@ -70,7 +70,7 @@ void HttpRequest::isVaildRequest(const Request& req)
 		throw std::invalid_argument("Invalid Host");
 }
 
-std::string parseMethod(const std::string& methodStr)
+std::string HttpRequest::parseMethod(const std::string& methodStr)
 {
 	if (methodStr == "GET")
 		return "GET";
