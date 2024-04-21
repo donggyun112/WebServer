@@ -79,6 +79,7 @@ Request HttpRequest::parse(const std::string& requestStr)
 		std::cerr << "Exception caught: " << e.what() << std::endl;
 		req._readStatus = READ_ERROR;
 	}
+	req.status = 200;
 	return req;
 }
 
