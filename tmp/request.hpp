@@ -26,25 +26,34 @@ Request HttpRequest::parse(const std::string& requestStr)
 	std::istringstream iss(requestStr);
 	std::string line;
 
-	std::getline(iss, line);
-	parseRequestLine(req, line);
-
-	while (std::getline(iss, line) && !line.empty()) {
-		parseHeader(req, line);
-	}
-
-	// if (req.headers.find("Content-Length") != req.headers.end()) {
-	// 	int contentLength = atoi(req.headers["Content-Length"].c_str());
-	// 	std::string _body(contentLength, '\0');
-	// 	iss.read(&_body[0], contentLength);
-	// 	req._body = _body;
-	// }
-
 	try {
+
+		std::getline(iss, line);
+		parseRequestLine(req, line);
+
+		while (std::getline(iss, line) && !line.empty()) {
+			parseHeader(req, line);
+		}
+
+		// if (req.headers.find("Content-Length") != req.headers.end()) {
+		// 	int contentLength = atoi(req.headers["Content-Length"].c_str());
+		// 	std::string _body(contentLength, '\0');
+		// 	iss.read(&_body[0], contentLength);
+		// 	req._body = _body;
+		// }
+		std::cout << req._method << std::endl;
+		std::cout << req._uri << std::endl;
+		std::cout << req._version << std::endl;
+		std::cout << "-------------" << std::endl;
+		// std::cout << req._headers["Host"] << std::endl;
+
 		isVaildRequest(req);
 	}
 	catch (std::invalid_argument& e) {
-		std::cerr << e.what() << std::endl;
+		std::cerr << "Exception caught: " << e.what() << std::endl;
+		std::cout << "test "	;\
+		return req;
+		// response status code 400
 	}
 	return req;
 }
@@ -79,13 +88,16 @@ void HttpRequest::parseRequestLine(Request &req, const std::string& line)
 	std::string token;
 
 	iss >> token;
+	if (iss.fail())
+		throw std::invalid_argument("Invalid Request Method");
 	req._method = parseMethod(token);
 
 	iss >> req._uri;
-
+	if (iss.fail())
+		throw std::invalid_argument("Invalid Request URI");
 	iss >> req._version;
-	// bad request 같은 parse에서 처리 할 에러 생각.
-	//version이 "HTTP/1.1"이 아닌경우 bad request라고 할 듯.
+	if (iss.fail()) //req._version != "HTTP/1.1"
+		throw std::invalid_argument("Invalid Request Version");
 }
 
 void HttpRequest::parseHeader(Request &req, const std::string& line)
@@ -111,13 +123,3 @@ void HttpRequest::parseHeader(Request &req, const std::string& line)
 // mothod가 없는것일 경우 413 err.
 // F_OK 가 아닐경우 404 존재 x.
 // F_OK이지만 open,execute 등등 권한이 없을경우 403
-
-// 
-
-/*
-
-했던 것 
-
-함수나 변수들 이름 형식 통일.
-
-*/

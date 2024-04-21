@@ -4,7 +4,7 @@
 
 
 int main() {
-    std::string request = "GET /index.html HTTP/1.1\n"
+    std::string request = "GET /index.html HTTP/1.0\n"
                          "Host: www.example.com\n"
                          "User-Agent: Mozilla/5.0\n"
                          "Content-Type: application/x-www-form-urlencoded\n"
