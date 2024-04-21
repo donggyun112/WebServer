@@ -14,12 +14,13 @@ class HttpRequest {
 	private:
 		static void parseRequestLine(Request& req, const std::string& line);
 		static void parseHeader(Request& req, const std::string& line);
+		static void parseBody(const std::string &body);
 		static void isVaildRequest(const Request& req);
 	public:
 		static Request parse(const std::string& requestStr);
 };
 
-Request HttpRequest::parse(const std::string& requestStr)
+Request HttpRequest::parse(const std::string& requestStr) //body length, 및 status, /r/n/r/n이걸로 구분해서 body 파싱 진행
 {
 	Request req;
 
@@ -41,6 +42,7 @@ Request HttpRequest::parse(const std::string& requestStr)
 		// 	iss.read(&_body[0], contentLength);
 		// 	req._body = _body;
 		// }
+
 		std::cout << req._method << std::endl;
 		std::cout << req._uri << std::endl;
 		std::cout << req._version << std::endl;
@@ -51,10 +53,10 @@ Request HttpRequest::parse(const std::string& requestStr)
 	}
 	catch (std::invalid_argument& e) {
 		std::cerr << "Exception caught: " << e.what() << std::endl;
-		std::cout << "test "	;\
+		req.status = 400;
 		return req;
-		// response status code 400
 	}
+	req.status = 200;
 	return req;
 }
 
@@ -68,6 +70,11 @@ void HttpRequest::isVaildRequest(const Request& req)
 		throw std::invalid_argument("Invalid Version");
 	if (req._headers.find("Host") == req._headers.end())
 		throw std::invalid_argument("Invalid Host");
+}
+
+void HttpRequest::parseBody()
+{
+
 }
 
 std::string HttpRequest::parseMethod(const std::string& methodStr)
@@ -123,3 +130,10 @@ void HttpRequest::parseHeader(Request &req, const std::string& line)
 // mothod가 없는것일 경우 413 err.
 // F_OK 가 아닐경우 404 존재 x.
 // F_OK이지만 open,execute 등등 권한이 없을경우 403
+
+
+//todo
+/*
+1. body parse (quarry로 들어옴 &로 구문하고 =로 key,value로 됨). (header다 읽고나서 line상황이 어떤지 확인 후 parseing 할 것)
+1. body length 랑 header에 들어온 content-length랑 비교해서 덜 읽었다는 flag를 올려줌 (getter로 해줄지는 정할것,)
+*/

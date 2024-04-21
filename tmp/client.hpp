@@ -7,7 +7,6 @@
 
 typedef std::map<std::string, std::string> Headers;
 
-
 // TODO //
  // request clear 만들기  +
  // body parse 만들기
@@ -20,14 +19,18 @@ struct Request {
     std::string _method;
     std::string _uri;
     std::string _version;
-    Headers _headers;
+    Headers      _headers;
     std::string _body;
+    int         flag[];
+    int         status;
 };
 
 class Client {
     private:
         std::string _buffer;
-        Request _request;
+        Request     _request;
+        int         status;
+        int         flagDone;
     public:
         std::string getBuffer() const;
         std::string getMethod() const;
