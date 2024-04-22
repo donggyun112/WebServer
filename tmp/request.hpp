@@ -14,7 +14,9 @@ class HttpRequest {
 	private:
 		static void parseRequestLine(Request& req, const std::string& line);
 		static void parseHeader(Request& req, const std::string& line);
-		static void parseBody(const std::string &body);
+		// static void parseBody(const std::string &body);
+		static void setBodyEnv();
+		static void initRequest(Request& req);
 		static void isVaildRequest(const Request& req);
 	public:
 		static Request parse(const std::string& requestStr);
@@ -36,6 +38,9 @@ Request HttpRequest::parse(const std::string& requestStr) //body length, 및 sta
 			parseHeader(req, line);
 		}
 
+		// if (method == "post")
+		// 	body parse.
+
 		// if (req.headers.find("Content-Length") != req.headers.end()) {
 		// 	int contentLength = atoi(req.headers["Content-Length"].c_str());
 		// 	std::string _body(contentLength, '\0');
@@ -53,11 +58,20 @@ Request HttpRequest::parse(const std::string& requestStr) //body length, 및 sta
 	}
 	catch (std::invalid_argument& e) {
 		std::cerr << "Exception caught: " << e.what() << std::endl;
-		req.status = 400;
+		req._readStatus = READ_ERROR;
 		return req;
 	}
-	req.status = 200;
 	return req;
+}
+
+void HttpRequest::initRequest(Request& req)
+{
+	req._method = "";
+	req._uri = "";
+	req._version = "";
+	req._headers.clear();
+	req._readStatus = READ_NOT_DONE;
+	req._status = 0;
 }
 
 void HttpRequest::isVaildRequest(const Request& req)
@@ -70,11 +84,6 @@ void HttpRequest::isVaildRequest(const Request& req)
 		throw std::invalid_argument("Invalid Version");
 	if (req._headers.find("Host") == req._headers.end())
 		throw std::invalid_argument("Invalid Host");
-}
-
-void HttpRequest::parseBody()
-{
-
 }
 
 std::string HttpRequest::parseMethod(const std::string& methodStr)

@@ -15,14 +15,23 @@ typedef std::map<std::string, std::string> Headers;
 // reponse
  //content length 생각할것
 
+
+
+enum {
+    READ_NOT_DONE = 0,
+    READ_DONE = 1,
+    READ_ERROR = 2
+};
+
 struct Request {
     std::string _method;
     std::string _uri;
     std::string _version;
     Headers      _headers;
-    std::string _body;
-    int         flag[];
-    int         status;
+    // std::map<std::string, std::string> cookie;
+    std::string _body; //set env 할거라 보관할 필요 x
+    int         _readStatus;
+    int         _status; //아직 쓸진 모르겠지만 response를 위해 일단 넣어둠.
 };
 
 class Client {
@@ -30,7 +39,6 @@ class Client {
         std::string _buffer;
         Request     _request;
         int         status;
-        int         flagDone;
     public:
         std::string getBuffer() const;
         std::string getMethod() const;
