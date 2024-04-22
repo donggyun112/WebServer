@@ -13,17 +13,23 @@
 # include "../socket/socket.hpp"
 # include "../Structure/config.hpp"
 
+# include "../utils/utils.hpp"
+
 # define READ 0
 # define WRITE 1
+class Client {
+	public:
+	Client() {}
+}; //수현이 코드 받기 전 임시.
 
-class Server 
+class Server
 {
 	private:
-		std::vector<FD> _serverList;
-		std::map<FD, class Client> _clientList;
+		//std::vector<FD> _serverList;
 		std::vector<struct kevent> _changeList;
-		std::vector<Socket *> _socketList;
-		std::map<FD, class Client> _clients;
+		std::vector<class Socket *> _socketList;
+		std::map<FD, class Client *> _clients;
+		FD _kq;
 	public:
 		Server();
 		~Server();
@@ -32,12 +38,16 @@ class Server
 		void activateSocket(const Config &Conf);
 		void queueInit();
 		void changeEvents(std::vector<struct kevent> &changeList, uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
-		int getSocketIndex(FD fd);
+		int socketFDIndex(FD fd);
 		
 		void run(const Config &Conf);
-		void readEventList(int eventNumber, struct kevent *eventList);
-		void eventHandling(struct kevent &currEvent);
-		void execute(Client &param);
+		void readEventList(int eventNumber, struct kevent *eventList, const Config &Conf);
+		void eventHandling(struct kevent &currEvent, const Config &Conf);
+		void execute(Client *paramPtr, const Config &Conf);
 		void executeCGI(Client &param);
+		void disconnectClient(int fd);
+
+		void Server::addNewClient(FD fd);
+
 };
 #endif
