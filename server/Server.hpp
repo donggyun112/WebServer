@@ -12,22 +12,21 @@
 
 # include "../socket/socket.hpp"
 # include "../Structure/config.hpp"
-
+# include "../tmp/client.hpp"
 # include "../utils/utils.hpp"
 
 # define READ 0
 # define WRITE 1
-class Client {
-	public:
-	Client() {}
-}; //수현이 코드 받기 전 임시.
+
+/*수현 코드 완성 시 뺄것!!!!!!!!!!!!!!!!!!!!!!!*/
+# define COMPLETE 0
 
 class Server
 {
 	private:
 		//std::vector<FD> _serverList;
 		std::vector<struct kevent> _changeList;
-		std::vector<class Socket *> _socketList;
+		std::vector<class Socket> _socketList;
 		std::map<FD, class Client *> _clients;
 		FD _kq;
 	public:
@@ -43,7 +42,7 @@ class Server
 		void run(const Config &Conf);
 		void readEventList(int eventNumber, struct kevent *eventList, const Config &Conf);
 		void eventHandling(struct kevent &currEvent, const Config &Conf);
-		void execute(Client *paramPtr, const Config &Conf);
+		void execute(Client *ClientPtr, const Config &Conf);
 		void executeCGI(Client &param);
 		void disconnectClient(int fd);
 
