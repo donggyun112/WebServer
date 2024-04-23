@@ -1,4 +1,6 @@
 
+#include <iostream>
+
 // --> NullPtr
 class NullPtr {
 public:
@@ -26,7 +28,7 @@ private:
 NullPtr nullPtr; // 전역 객체 정의
 
 typedef int FD;
-typedef int Port;
+typedef unsigned int Port;
 
 enum Status { SUCCESS=0, FAILURE=-1 };
 

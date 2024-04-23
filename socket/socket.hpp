@@ -33,25 +33,23 @@ public:
 class Socket {
 private:
     FD _listenSocket;
-	Config* _conf;
 	Port _port;
+	std::string _host;
 	struct sockaddr_in _server_Addr;
 	
 	void __init__();
-	void __init__(Config *_conf);
 	void __init__(std::string host, Port port);
 
 
 public:
     Socket();
     Socket(const Socket& other);
-	Socket(Config *config);
 	Socket(std::string host, Port port);
     ~Socket();
 
 	Socket& operator=(const Socket& other);
-	operator FD() const { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
-	operator FD&() { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
+	explicit operator FD() const { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
+	explicit operator FD&() { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
 
 
     Socket& socket(int domain, int type, int protocol);
@@ -66,18 +64,17 @@ public:
 	Status nonblocking();
 	static Status nonblocking(const FD &socket);
 
-	FD autoActivate(Config *config=nullPtr, std::string host="", Port port=80, int domain=AF_INET, int type=SOCK_STREAM, int protocol=0);
+	void autoActivate(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0);
 
 	Socket *clone() const;
 
-	void setConfig(Config *config) { _conf = config; }
 	void setServerAddr(struct sockaddr_in serverAddr) { _server_Addr = serverAddr; }
 	void setSocket(FD socket) { _listenSocket = socket; }
 
 	FD getSocket() const { return _listenSocket; }
 	struct sockaddr_in getServerAddr() const { return _server_Addr; }
-	const Config *getConfig() const { return _conf; }
 	Port getPort() const { return _port; }
+	std::string getHost() const { return _host; }
 
 };
 
@@ -91,13 +88,6 @@ void Socket::__init__() {
     _server_Addr.sin_port = htons(80); // 기본 포트 80 설정
 }
 
-void Socket::__init__(Config *config) {
-    memset(&_server_Addr, 0, sizeof(_server_Addr)); // _server_Addr 초기화
-    _server_Addr.sin_family = AF_INET; // IPv4
-    _server_Addr.sin_addr.s_addr = inet_addr(config->getHost().c_str()); // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
-    _server_Addr.sin_port = htons(config->getPort()); // 기본 포트 80 설정
-}
-
 void Socket::__init__(std::string host, Port port) {
 	memset(&_server_Addr, 0, sizeof(_server_Addr)); // _server_Addr 초기화
 	_server_Addr.sin_family = AF_INET; // IPv4
@@ -107,34 +97,18 @@ void Socket::__init__(std::string host, Port port) {
 
 // Socket 클래스 생성자
 
-Socket::Socket() : _listenSocket(-1), _conf(nullPtr), _port(80) {
+Socket::Socket() : _listenSocket(-1), _port(80), _host("") {
 	__init__();
     std::cout << "Socket initialized" << std::endl;
 }
 
-Socket::Socket(std::string host, Port port) : _listenSocket(-1), _conf(nullPtr), _port(port) {
+Socket::Socket(std::string host, Port port) : _listenSocket(-1), _port(port), _host(host) {
 	__init__(host, port);
 	std::cout << "Socket initialized with host and port" << std::endl;
 }
 
-Socket::Socket(Config *config) : _listenSocket(-1), _conf(config), _port(config->getPort()) {
-	if (config)
-	{
-		config->registerSocket(*this);
-		__init__(config);
-		std::cout << "Socket initialized with config" << std::endl;
-	}
-	else
-	{
-		__init__();
-		std::cout << "Socket initialized but config is Null" << std::endl;
-		std::cout << "Please set config" << std::endl;
-	}
-}
 
-
-
-Socket::Socket(const Socket& other) : _listenSocket(dup(other._listenSocket)), _conf(other._conf), _server_Addr(other._server_Addr) {
+Socket::Socket(const Socket& other) : _listenSocket(dup(other._listenSocket)), _server_Addr(other._server_Addr) {
     if (_listenSocket == -1) {
         throw std::runtime_error("Error: Failed to duplicate socket");
     }
@@ -156,18 +130,28 @@ Socket& Socket::socket(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0)
 /* Socket 바인딩 */
 
 Status Socket::bind(const std::string &host="", const Port &port=80) {
-	if (!host.empty()) {
-		_server_Addr.sin_addr.s_addr = inet_addr(host.c_str());
-	}
-	else {
-		_server_Addr.sin_addr.s_addr = INADDR_ANY;
+	if (_server_Addr.sin_addr.s_addr == inet_addr(host.c_str()) && _server_Addr.sin_port == htons(port)) {
+		std::cout << "Socket already bound" << std::endl;
+		return SUCCESS;
 	}
 
+	_server_Addr.sin_addr.s_addr = inet_addr(host.c_str());
 	_server_Addr.sin_port = htons(port);
 	_port = port;
+	_host = host;
+
 
 	if (::bind(_listenSocket, (struct sockaddr*)&_server_Addr, sizeof(_server_Addr)) == FAILURE) {
 		std::cerr << "Error: Failed to bind socket. Error code: " << errno << std::endl;
+		
+		{
+			_port = 0;
+			_host = "";
+			_server_Addr.sin_port = htons(80);
+			_server_Addr.sin_addr.s_addr = INADDR_ANY;
+
+		}
+
 		throw std::runtime_error("Error: Failed to bind socket");
 	}
 	return SUCCESS;
@@ -204,7 +188,6 @@ FD Socket::accept() const {
 
     return Client_Socket;
 }
-
 
 /* Socket 닫기 */
 
@@ -274,13 +257,12 @@ void Socket::__init__SocketoptAuto(int opt=1) {
 
 /* Socket 자동 활성화 */
 
-FD Socket::autoActivate(Config *config, std::string host, Port port, int domain, int type, int protocol) {
+void Socket::autoActivate(int domain, int type, int protocol) {
 	socket(domain, type, protocol);
 	__init__SocketoptAuto();
 	nonblocking();
-	bind(host, port);
+	bind(_host, _port);
 	listen();
-	return _listenSocket;
 }
 
 /* Socket 복제 */
@@ -312,14 +294,12 @@ Socket& Socket::operator=(const Socket& other) {
         if (::close(_listenSocket) == -1) {
             std::cerr << "Error: Failed to close socket before assignment. Error code: " << errno << std::endl;
         }
-        _conf->dispose(*this); // 기존 소켓 제거
         this->_listenSocket = dup(other._listenSocket);
         if (this->_listenSocket == -1) {
             std::cerr << "Error: Failed to duplicate socket during assignment. Error code: " << errno << std::endl;
             throw std::runtime_error("Error: Failed to duplicate socket during assignment");
         }
         this->_server_Addr = other._server_Addr;
-        _conf->registerSocket(*this); // 새로운 소켓 등록
     }
     return *this;
 }
