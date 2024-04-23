@@ -9,7 +9,8 @@ int main() {
                          "User-Agent: Mozilla/5.0\n"
                          "Content-Type: application/x-www-form-urlencoded\n"
                          "a: a\n"
-                         "\r\n"
+                         "Content-Length: 31\n"
+                         "\r\n\r\n"
                          "name=John&email=john@example.com";
 
     // std::ifstream ifs("test");
@@ -21,15 +22,18 @@ int main() {
     Client client;
     client.setRequest(HttpRequest::parse(request));
 
-    std::cout << "Method: " << client.getMethod() << std::endl;
-    std::cout << "URI: " << client.getUri() << std::endl;
-    std::cout << "Version: " << client.getVersion() << std::endl;
+    // std::cout << "Method: " << client.getMethod() << std::endl;
+    // std::cout << "URI: " << client.getUri() << std::endl;
+    // std::cout << "Version: " << client.getVersion() << std::endl;
 
-    client.printAllHeaders();
+    // client.printAllHeaders();
 
-    client.clearRequest();
+    // client.clearRequest();
 
-    std::cout  << "======================" << std::endl;
+    std::cout << getenv("name") << std::endl;
+    std::cout << getenv("email") << std::endl;
+
+    // std::cout  << "======================" << std::endl;
 
     // std::cout << "Body: " << client.getBody() << std::endl;
     return 0;
