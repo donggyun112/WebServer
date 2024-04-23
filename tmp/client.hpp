@@ -7,16 +7,6 @@
 
 typedef std::map<std::string, std::string> Headers;
 
-// TODO //
- // request clear 만들기  +
- // body parse 만들기
- // 파싱된 데이터 유효성 검사 및 bad request exceoption처리 할 것 
-
-// reponse
- //content length 생각할것
-
-
-
 enum {
     READ_NOT_DONE = 0,
     READ_DONE = 1,
@@ -29,23 +19,29 @@ struct Request {
     std::string _version;
     Headers      _headers;
     // std::map<std::string, std::string> cookie;
-    std::string _body; //set env 할거라 보관할 필요 x
+    // std::string _body; //set env 할거라 보관할 필요 x, 혹시 몰라 그냥 라인째로 넣어만 둠.
     int         _readStatus;
-    int         _status; //아직 쓸진 모르겠지만 response를 위해 일단 넣어둠.
+    // int         _status; //아직 쓸진 모르겠지만 response를 위해 일단 넣어둠.
 };
+
+//todo
+/*
+	1. 쿠키 파싱 (쿠키의 어떤 데이터를 어디서 어떻게 사용할지에 따라서
+					(map으로 해서 들고다닐지 고민해야함
+*/
 
 class Client {
     private:
         std::string _buffer;
         Request     _request;
-        int         status;
+        int         _status;
     public:
         std::string getBuffer() const;
         std::string getMethod() const;
         std::string getUri() const;
         std::string getVersion() const;
         std::string getHeader(const std::string& key) const;
-        std::string getBody() const;
+        // std::string getBody() const;
 
         void setRequest(const Request& request);
         void clearRequest();
@@ -76,9 +72,9 @@ std::string Client::getHeader(const std::string& key) const {
     return it->second;
 }
 
-std::string Client::getBody() const {
-    return _request._body;
-}
+// std::string Client::getBody() const {
+//     return _request._body;
+// }
 
 void Client::setRequest(const Request& request) {
     _request = request;
@@ -90,7 +86,7 @@ void Client::clearRequest()
     _request._uri.clear();
     _request._version.clear();
     _request._headers.clear();
-    _request._body.clear();
+    // _request._body.clear();
 }
 
 void Client::printAllHeaders() const{
