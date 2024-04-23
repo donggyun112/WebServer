@@ -28,9 +28,10 @@ private:
 NullPtr nullPtr; // 전역 객체 정의
 
 typedef int FD;
-typedef unsigned int Port;
+typedef int Port;
+typedef int Status;
 
-enum Status { SUCCESS=0, FAILURE=-1 };
+enum  { SUCCESS=0, FAILURE=-1 };
 
 #include <map>
 
@@ -42,47 +43,25 @@ enum Status { SUCCESS=0, FAILURE=-1 };
 //  FD fd = tt->socket();
 
 template <typename T>
-class GarbageCollector {
+class SmartPointer {
 private:
-    std::map<T*, int> referenceCount;
+    T* object;
+    static std::map<T*, int> referenceCount;
 
 public:
-    void addReference(T* object) {
+    SmartPointer(T* obj) : object(obj) {
         referenceCount[object]++;
     }
 
-    void removeReference(T* object) {
+    SmartPointer(const SmartPointer& other) : object(other.object) {
+        referenceCount[object]++;
+    }
+
+    ~SmartPointer() {
         if (--referenceCount[object] == 0) {
             delete object;
             referenceCount.erase(object);
         }
-    }
-
-    void clear() {
-        for (typename std::map<T*, int>::iterator it = referenceCount.begin(); it != referenceCount.end(); ++it) {
-            delete it->first;
-        }
-        referenceCount.clear();
-    }
-};
-
-template <typename T>
-class SmartPointer {
-private:
-    T* object;
-    GarbageCollector<T>& gc;
-
-public:
-    SmartPointer(T* obj, GarbageCollector<T>& collector) : object(obj), gc(collector) {
-        gc.addReference(object);
-    }
-
-    SmartPointer(const SmartPointer& other) : object(other.object), gc(other.gc) {
-        gc.addReference(object);
-    }
-
-    ~SmartPointer() {
-        gc.removeReference(object);
     }
 
     T* operator->() {
@@ -93,7 +72,10 @@ public:
         return *object;
     }
 
-	T* get() {
+    T* get() {
         return object;
     }
 };
+
+template <typename T>
+std::map<T*, int> SmartPointer<T>::referenceCount;
