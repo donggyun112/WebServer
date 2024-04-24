@@ -1,22 +1,8 @@
 #include "../socket/socket.hpp"
 
-class SmartPointerBase {
-public:
-	std::vector<SmartPointer<Socket> > smartPointers;
-	SmartPointerBase() {}
-	~SmartPointerBase() {}
-	void makeSocket() {
-		for (int i = 0; i < 10; i++) {
-			SmartPointer<Socket> tt(new Socket());
-			tt.get()->autoActivate();
-			smartPointers.push_back(tt);
-		}
-	}
-};
-
-int main() {
-	SmartPointerBase spb;
-	spb.makeSocket();
+int main()
+{
+	Socket s("127.0.0.1", 80);
+	s.autoActivate();
 	
-	return 0;
 }
