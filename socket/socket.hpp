@@ -39,6 +39,7 @@ private:
 	
 	void __init__();
 	void __init__(std::string host, Port port);
+	void __init__(Port port);
 
 
 public:
@@ -52,7 +53,7 @@ public:
 	operator FD&() { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
 
 
-    Socket& socket(int domain, int type, int protocol);
+    FD socket(int domain, int type, int protocol);
 	Status bind(const std::string host, const Port port);
 	Status listen(size_t backlog);
 	Status close();
@@ -93,6 +94,15 @@ void Socket::__init__(std::string host, Port port) {
 	_server_Addr.sin_family = AF_INET; // IPv4
 	_server_Addr.sin_addr.s_addr = inet_addr(host.c_str()); // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
 	_server_Addr.sin_port = htons(port); // 기본 포트 8888 설정
+	std::cout << _server_Addr.sin_port << std::endl;
+}
+
+void Socket::__init__(Port port) {
+	memset(&_server_Addr, 0, sizeof(_server_Addr)); // _server_Addr 초기화
+	_server_Addr.sin_family = AF_INET; // IPv4
+	_server_Addr.sin_addr.s_addr = INADDR_ANY;
+	_server_Addr.sin_port = htons(port); // 기본 포트 8888 설정
+	std::cout << _server_Addr.sin_port << std::endl;
 }
 
 // Socket 클래스 생성자
@@ -103,40 +113,57 @@ Socket::Socket() : _listenSocket(-1), _port(8888), _host("127.0.0.1") {
 }
 
 Socket::Socket(std::string host, Port port) : _listenSocket(-1), _port(port), _host(host) {
-	__init__(host, port);
+	if (host == "") {
+		__init__(port);
+	}
+	else {
+		__init__(host, port);
+	}
 	std::cout << "Socket initialized with host and port" << std::endl;
 }
 
 
-Socket::Socket(const Socket& other) : _listenSocket(dup(other._listenSocket)), _server_Addr(other._server_Addr) {
-    if (_listenSocket == -1) {
-        throw std::runtime_error("Error: Failed to duplicate socket");
-    }
+Socket::Socket(const Socket& other) : _server_Addr(other._server_Addr), _port(other._port), _host(other._host) {
+	if (other._listenSocket != -1) {
+		_listenSocket = dup(other._listenSocket);
+	}
+    // if (_listenSocket == -1) {
+    //     throw std::runtime_error("Error: Failed to duplicate socket");
+    // }
     std::cout << "Socket copied" << std::endl;
 }
 
 
 /* Socket 생성 */
-Socket& Socket::socket(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0) {
+FD Socket::socket(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0) {
 	std::cout << "Socket created" << std::endl;
     _listenSocket = ::socket(domain, type, protocol);
     if (_listenSocket == -1) {
         std::cerr << "Error: Socket creation failed. Error code: " << errno << std::endl;
         throw std::runtime_error("Error: Socket creation failed");
     }
-    return *this;
+    return _listenSocket;
 }
 
 /* Socket 바인딩 */
 
 Status Socket::bind(const std::string host="127.0.0.1", const Port port=8888) {
-	if (_server_Addr.sin_addr.s_addr != inet_addr(host.c_str())) {
-		_server_Addr.sin_addr.s_addr = inet_addr(host.c_str());
-		_host = host;
+	if (_server_Addr.sin_addr.s_addr != INADDR_ANY)
+	{
+		std::cout << "host: " << host << " port: " << port << std::endl;
+		if (_server_Addr.sin_addr.s_addr != inet_addr(host.c_str())) {
+			_server_Addr.sin_addr.s_addr = inet_addr(host.c_str());
+			_host = host;
+		}
+		if (_server_Addr.sin_port != htons(port)) {
+			_server_Addr.sin_port = htons(port);
+			_port = port;
+		}
 	}
-	if (_server_Addr.sin_port != htons(port)) {
-		_server_Addr.sin_port = htons(port);
-		_port = port;
+	else
+	{
+		std::cout << "host: " << "INADDR_ANY" << " port: " << port << std::endl;
+		std::cout << "Server cannot be bound to a specific host" << std::endl;
 	}
 	
 
@@ -174,6 +201,7 @@ FD Socket::accept() const {
     socklen_t client_addr_size = sizeof(client_addr);
 
     Client_Socket = ::accept(_listenSocket, (struct sockaddr*)&client_addr, &client_addr_size);
+	// std::cout << "Client_Socket : " << Client_Socket << std::endl;
     if (Client_Socket == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // 클라이언트 연결 요청이 없는 경우, 다른 작업을 수행하거나 잠시 대기할 수 있습니다.
@@ -258,10 +286,15 @@ void Socket::__init__SocketoptAuto(int opt=1) {
 
 void Socket::autoActivate(int domain, int type, int protocol) {
 	socket(domain, type, protocol);
+	std::cout << "Socket activated" << std::endl;
 	__init__SocketoptAuto();
+	std::cout << "Socket options set" << std::endl;
 	nonblocking();
+	std::cout << "Socket non-blocking set" << std::endl;
 	bind(_host, _port);
+	std::cout << "Socket bound" << std::endl;
 	listen();
+	std::cout << "Socket listening" << std::endl;
 }
 
 /* Socket 복제 */
