@@ -1,16 +1,12 @@
-// #include "Config.hpp"
-#include "ServerConfig.hpp"
-#include <vector>
-#include <string>
-#include <map>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <algorithm>
+#ifndef LOCATIONCONFIG_HPP
+# define LOCATIONCONFIG_HPP
+
+#include "Config.hpp"
 
 class LocationConfig {
     private:
-
+    friend class Config;
+    friend class ServerConfig;
     // std::unordered_map<std::string, std::string> fastcgi_params;
     std::string                 _path;
     std::string                 _alias;
@@ -31,19 +27,31 @@ class LocationConfig {
     std::vector<int>            _upload_cleanup;
 	std::vector<std::string>    _try_files;
     
-    
     public:
-    LocationConfig();
-    ~LocationConfig();
-    LocationConfig(const LocationConfig &other);
-    // LocationConfig &operator=(const LocationConfig &other);
-    std::map<std::string, LocationConfig> parseLocation(const std::string &filename);
-
+    ~LocationConfig() {}
+    std::unordered_map<int, std::string> parseErrorPages(std::istringstream &iss);
+    static LocationConfig    parseLocation(std::ifstream &file);
     // setter
-    void    setPath(const std::string &path);
-    void    setAlias(const std::string &alias);
-    void    setRoot(const std::string &root);
-    void    setIndex(const std::string &index);
+    void    setPath(const std::string &path)
+{
+    this->_path = path;
+}
+
+void    setAlias(const std::string &alias)
+{
+    this->_alias = alias;
+}
+
+void    setRoot(const std::string &root)
+{
+    this->_root = root;
+}
+
+void    setIndex(const std::string &index)
+{
+    this->_index = index;
+}
+
     // void    setAutoindex(const std::string &autoindex);
     // void    setAllowMethods(const std::string &allow_methods);
     // void    setReturnCode(const std::string &return_code);
@@ -60,10 +68,21 @@ class LocationConfig {
     // void    setTryFiles(const std::vector<std::string> &try_files);
 
     // getter
-    std::string                 getPath() const;
-    std::string                 getAlias() const;
-    std::string                 getRoot() const;
-    std::string                 getIndex() const;
+std::string                 getPath() { return _path; }
+
+std::string                 getAlias() { return _alias; }
+
+std::string                 getRoot() {
+    if (_root.empty())
+        return ".";
+    return _root;
+}
+
+std::string                 getIndex() {
+    if (_index.empty())
+        return "index.html";
+    return _index;
+}
     // bool                        getAutoindex() const;
     // std::vector<std::string>    getAllowMethods() const;
     // std::string                 getReturnCode() const;
@@ -79,3 +98,7 @@ class LocationConfig {
     // std::vector<std::string>    getTryFiles() const;
     // // 추가적인 필요한 변수들
 };
+void replaceTabsWithSpaces(std::string& str);
+
+
+#endif
