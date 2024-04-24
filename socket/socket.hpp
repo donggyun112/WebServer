@@ -48,12 +48,12 @@ public:
     ~Socket();
 
 	Socket& operator=(const Socket& other);
-	explicit operator FD() const { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
-	explicit operator FD&() { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
+	operator FD() const { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
+	operator FD&() { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
 
 
     Socket& socket(int domain, int type, int protocol);
-	Status bind(const std::string &host, const Port &port);
+	Status bind(const std::string host, const Port port);
 	Status listen(size_t backlog);
 	Status close();
 	FD accept() const;
@@ -84,20 +84,20 @@ public:
 void Socket::__init__() {
     memset(&_server_Addr, 0, sizeof(_server_Addr)); // _server_Addr 초기화
     _server_Addr.sin_family = AF_INET; // IPv4
-    _server_Addr.sin_addr.s_addr = INADDR_ANY; // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
-    _server_Addr.sin_port = htons(80); // 기본 포트 80 설정
+    _server_Addr.sin_addr.s_addr = INADDR_ANY; // 모든 IP 주소로부터의 연결 허용
+    _server_Addr.sin_port = htons(8888); // 기본 포트 8888 설정
 }
 
 void Socket::__init__(std::string host, Port port) {
 	memset(&_server_Addr, 0, sizeof(_server_Addr)); // _server_Addr 초기화
 	_server_Addr.sin_family = AF_INET; // IPv4
 	_server_Addr.sin_addr.s_addr = inet_addr(host.c_str()); // 모든 IP 주소로부터의 연결 허용 자동으로 호스트의 IP 주소를 찾아서 대입
-	_server_Addr.sin_port = htons(port); // 기본 포트 80 설정
+	_server_Addr.sin_port = htons(port); // 기본 포트 8888 설정
 }
 
 // Socket 클래스 생성자
 
-Socket::Socket() : _listenSocket(-1), _port(80), _host("") {
+Socket::Socket() : _listenSocket(-1), _port(8888), _host("127.0.0.1") {
 	__init__();
     std::cout << "Socket initialized" << std::endl;
 }
@@ -129,25 +129,24 @@ Socket& Socket::socket(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0)
 
 /* Socket 바인딩 */
 
-Status Socket::bind(const std::string &host="", const Port &port=80) {
-	if (_server_Addr.sin_addr.s_addr == inet_addr(host.c_str()) && _server_Addr.sin_port == htons(port)) {
-		std::cout << "Socket already bound" << std::endl;
-		return SUCCESS;
+Status Socket::bind(const std::string host="127.0.0.1", const Port port=8888) {
+	if (_server_Addr.sin_addr.s_addr != inet_addr(host.c_str())) {
+		_server_Addr.sin_addr.s_addr = inet_addr(host.c_str());
+		_host = host;
 	}
-
-	_server_Addr.sin_addr.s_addr = inet_addr(host.c_str());
-	_server_Addr.sin_port = htons(port);
-	_port = port;
-	_host = host;
-
+	if (_server_Addr.sin_port != htons(port)) {
+		_server_Addr.sin_port = htons(port);
+		_port = port;
+	}
+	
 
 	if (::bind(_listenSocket, (struct sockaddr*)&_server_Addr, sizeof(_server_Addr)) == FAILURE) {
 		std::cerr << "Error: Failed to bind socket. Error code: " << errno << std::endl;
 		
 		{
 			_port = 0;
-			_host = "";
-			_server_Addr.sin_port = htons(80);
+			_host = "127.0.0.1";
+			_server_Addr.sin_port = htons(8888);
 			_server_Addr.sin_addr.s_addr = INADDR_ANY;
 
 		}
