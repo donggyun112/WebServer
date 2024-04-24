@@ -6,29 +6,28 @@
 #include <map>
 
 typedef std::map<std::string, std::string> Headers;
+typedef std::map<std::string, std::string> Cookies;
 
 enum {
     READ_NOT_DONE = 0,
-    READ_DONE = 1,
-    READ_ERROR = 2
+    READ_LINE_DONE = 1,
+    READ_HEADER_DONE = 2,
+    READ_BODY_DOING = 3,
+    READ_DONE = 4
 };
 
 struct Request {
     std::string _method;
     std::string _uri;
     std::string _version;
-    Headers      _headers;
-    // std::map<std::string, std::string> cookie;
-    // std::string _body; //set env 할거라 보관할 필요 x, 혹시 몰라 그냥 라인째로 넣어만 둠.
+    Headers     _headers;
+    Cookies     _cookie;
+    std::string _body;
+    ini         _contentLength;
     int         _readStatus;
+    int         _port;
     // int         _status; //아직 쓸진 모르겠지만 response를 위해 일단 넣어둠.
 };
-
-//todo
-/*
-	1. 쿠키 파싱 (쿠키의 어떤 데이터를 어디서 어떻게 사용할지에 따라서
-					(map으로 해서 들고다닐지 고민해야함
-*/
 
 class Client {
     private:
@@ -40,9 +39,13 @@ class Client {
         std::string getMethod() const;
         std::string getUri() const;
         std::string getVersion() const;
+        int         getPort() const;
         std::string getHeader(const std::string& key) const;
-        // std::string getBody() const;
+        std::string getBody() const;
+        std::string getCookie(const std::string& key) const;
 
+
+        void setPort(int port);
         void setRequest(const Request& request);
         void clearRequest();
 
@@ -65,6 +68,10 @@ std::string Client::getVersion() const {
     return _request._version;
 }
 
+int Client::getPort() const {
+    return _request._port;
+}
+
 std::string Client::getHeader(const std::string& key) const {
     const Headers::const_iterator it = _request._headers.find(key);
     if (it == _request._headers.end())
@@ -72,12 +79,70 @@ std::string Client::getHeader(const std::string& key) const {
     return it->second;
 }
 
-// std::string Client::getBody() const {
-//     return _request._body;
-// }
+std::string Client::getBody() const {
+    return _request._body;
+}
 
-void Client::setRequest(const Request& request) {
-    _request = request;
+void Client::setPort(int port) {
+    _request._port = port;
+}
+
+//recv 체크해서 _status 관리
+
+void Client::setRequest() {
+    std::istringstream iss(_buffer);
+	std::string line;
+	std::string header;
+	std::string body;
+
+	try {
+
+        if (iss.str().find("\r\n") == std::string::npos \
+                && _request._readStatus == READ_NOT_DONE) {
+    		std::getline(iss, line, "\r\n");
+	    	HttpRequest::parseRequestLine(_request, line);
+            _request._readStatus = READ_LINE_DONE;
+        }
+
+		std::string::size_type pos = iss.str().find("\r\n\r\n");
+		if (pos != std::string::npos && _request._readStatus == READ_LINE_DONE)
+		{
+			header = iss.str().substr(0, pos);
+            std::istringstream headerStream(header);
+            while (std::getline(headerStream, line)) {
+                HttpRequest::parseHeader(_request, line);
+            }
+            _request._readStatus = READ_HEADER_DONE;
+		}
+
+        // if () //헤더와 바디 수정중
+
+		if (req._headers.find("Content-Length") != req._headers.end()) {
+			int contentLength = atoi(req._headers["Content-Length"].c_str());
+			if (body.empty() || contentLength > body.length()) {
+				req._readStatus = READ_NOT_DONE;
+			}
+			std::istringstream bodyStream(body);
+			while (getline(bodyStream, line) && !line.empty()) {
+				if (contentLength == 0) {
+					req._readStatus = READ_DONE;
+					break;
+				}
+				parseBody(line, contentLength);
+			}
+			if (contentLength > 0) {
+				initRequest(req);
+				req._readStatus = READ_NOT_DONE;
+				return req;
+			}
+		}
+		isVaildRequest(req);
+		req._readStatus = READ_DONE;
+	}
+	catch (std::invalid_argument& e) {
+		std::cerr << "Exception caught: " << e.what() << std::endl;
+		req._readStatus = READ_ERROR;
+	}
 }
 
 void Client::clearRequest()
@@ -95,5 +160,8 @@ void Client::printAllHeaders() const{
         std::cout << it->first << ": " << it->second << std::endl;
     }
 }
+
+// mothod, url, quary string, header
+// body는 string으로 그냥 줘버려
 
 #endif

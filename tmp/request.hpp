@@ -10,16 +10,22 @@
 #include <stdexcept>
 #include <stdlib.h>
 #include "client.hpp"
-
+// enum {
+//     READ_NOT_DONE = 0,
+//     READ_LINE_DONE = 1,
+//     READ_HEADER_DONE = 2,
+//     READ_BODY_DOING = 3,
+//     READ_DONE = 4
+// };
 class HttpRequest {
-	private:
+	public:
 		static void parseRequestLine(Request& req, const std::string& line);
 		static void parseHeader(Request& req, const std::string& line);
 		static void parseBody(const std::string &line, int& contentLength);
 		static void initRequest(Request& req);
 		static void isVaildRequest(const Request& req);
-	public:
-		static Request parse(const std::string& requestStr);
+	// public:
+		// static Request parse(const std::string& requestStr);
 };
 
 Request HttpRequest::parse(const std::string& requestStr)
