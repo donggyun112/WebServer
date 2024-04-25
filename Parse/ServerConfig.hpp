@@ -1,25 +1,23 @@
-#include "Config.hpp"
+#ifndef SERVERCONFIG_HPP
+# define SERVERCONFIG_HPP
 
-class LocationConfig;
+#include "Config.hpp"
+#include "LocationConfig.hpp"
 
 class ServerConfig
 {
-private:
+private :
+    friend class Config;
     int _port;
     std::string _server_name;
+    int _client_max_body_size;
+    std::unordered_map<int, std::string> _error_pages;
     std::map<std::string, LocationConfig> _locations;
 public:
-    ServerConfig(/* args */);
     ~ServerConfig();
-    void    setPort(int port);
-    void    setServerName(std::string server_name);
-    void    setLocations(std::map<std::string, LocationConfig> locations);
+    std::unordered_map<int, std::string> parseErrorPages(std::istringstream &iss);
+    std::string getServerName();
+    ServerConfig(std::ifstream &file);
 };
 
-ServerConfig::ServerConfig(/* args */)
-{
-}
-
-ServerConfig::~ServerConfig()
-{
-}
+#endif
