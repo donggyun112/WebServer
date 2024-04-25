@@ -8,10 +8,14 @@ void replaceTabsWithSpaces(std::string& str) {
     std::replace(str.begin(), str.end(), '\t', ' ');  // replace all tabs with spaces
 }
 
-ServerConfig    ServerConfig::parseServer(std::ifstream &file)
+std::string ServerConfig::getServerName()
+{
+    return this->_server_name;
+}
+
+ServerConfig::ServerConfig(std::ifstream &file)
 {
     std::string     line;
-    ServerConfig    currentServer;
     bool inServerBlock = false;
 
     while (getline(file, line)) {
@@ -29,25 +33,24 @@ ServerConfig    ServerConfig::parseServer(std::ifstream &file)
         } else if (key == "listen") {
             std::string listen;
             iss >> listen;
-            currentServer._port = std::stoi(listen);
+            this->_port = std::stoi(listen);
         } else if (key == "server_name") {
             std::string server_name;
             iss >> server_name;
-            currentServer._server_name = server_name;
+            this->_server_name = server_name;
         } else if (key == "error_pages") {
-            currentServer._error_pages = parseErrorPages(iss); // 발생 가능할 에러 생각
+            this->_error_pages = parseErrorPages(iss); // 발생 가능할 에러 생각
         } else if (key == "client_max_body_size") {
             std::string client_max_body_size;
             iss >> client_max_body_size;
-            currentServer._client_max_body_size = std::stoi(client_max_body_size);
+            this->_client_max_body_size = std::stoi(client_max_body_size);
         } 
         else if (key == "location") {
             file.seekg(-(line.length() + 1), std::ios::cur);
-            LocationConfig location = LocationConfig::parseLocation(file);
-            currentServer._locations.insert(std::make_pair(location.getPath(), location));
+            LocationConfig location(file);
+            this->_locations.insert(std::make_pair(location.getPath(), location));
         }
     }
-    return currentServer;
 }
 
 std::unordered_map<int, std::string> ServerConfig::parseErrorPages(std::istringstream &iss) {

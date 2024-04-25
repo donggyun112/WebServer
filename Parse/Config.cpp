@@ -365,7 +365,7 @@ void    Config::parseConfig(const std::string filename)
         if (line.find("server") != std::string::npos)
         {
             file.seekg(-(line.length() + 1), std::ios::cur);
-            ServerConfig server = ServerConfig::parseServer(file);
+            ServerConfig server(file);
             // std::cout << server.getServerName() << std::endl;
             _servers.push_back(server);
         }
@@ -392,7 +392,6 @@ int main(int argc, char **argv)
 
     cout << "0000" << config._servers[0].getServerName() << endl;
     cout << "1111" << config._servers[1].getServerName() << endl;
-
     // cout << config._servers[0]._error_pages[404] << endl;
     return 0;
 }

@@ -16,8 +16,8 @@ private :
 public:
     ~ServerConfig();
     std::unordered_map<int, std::string> parseErrorPages(std::istringstream &iss);
-    static ServerConfig parseServer(std::ifstream &file);
     std::string getServerName();
+    ServerConfig(std::ifstream &file);
 };
 
 #endif
