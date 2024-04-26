@@ -2,13 +2,11 @@
 
 Client::Client() {
     _port = 0;
-    _readStatus = READ_NOT_DONE;
-    _responseStatus = 0;
-    clearRequest();
+    clearAll();
 }
 
 Client::~Client() {
-    clearRequest();
+    clearAll();
 }
 
 std::string Client::getBuffer() const {
@@ -59,6 +57,11 @@ int Client::getResponseStatus() const {
 
 void Client::setPort(int port) {
     _port = port;
+}
+
+void Client::setBuffer(const std::string& buffer) {
+    _buffer += buffer;
+    setRequest();
 }
 
 void Client::setRequest() {
@@ -132,6 +135,14 @@ void Client::clearRequest()
     _request._cookie.clear();
     _request._body.clear();
     _request._contentLength = 0;
+}
+
+void Client::clearAll()
+{
+    clearRequest();
+    _buffer.clear();
+    _readStatus = READ_NOT_DONE;
+    _responseStatus = 0;
 }
 
 void Client::printAllHeaders() const{

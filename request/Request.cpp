@@ -91,7 +91,6 @@ std::string HttpRequest::parseBody(const std::string& body)
 	std::istringstream iss(body);
 	std::string line;
 
-	std::cout << "ttttttt: " << body << std::endl;
 	std::getline(iss, line);
 	if (line.find('=') != std::string::npos && \
 			line.find('&') != std::string::npos)

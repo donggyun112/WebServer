@@ -41,15 +41,13 @@ class Client {
         int             getPort() const;
         int             getResponseStatus() const;
 
-        void        setPort(int port);
-        void        setRequest();
-        void        setBuffer(const std::string& buffer) {_buffer = buffer;}
-        void        clearRequest();
+        void            setPort(int port);
+        void            setRequest();
+        void            setBuffer(const std::string& buffer) {_buffer = buffer;}
+        void        c   clearRequest();
+        void            clearAll();
 
         void printAllHeaders() const;
 };
-
-// mothod, url, quary string, header
-// body는 string으로 그냥 줘버려
 
 #endif
