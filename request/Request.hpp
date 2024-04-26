@@ -15,7 +15,7 @@ class HttpRequest {
 		static void parseRequestLine(Request& req, const std::string& line);
 		static void parseHeader(Request& req, const std::string& line);
 		static std::string parseBody(const std::string &body);
-		static void isVaildRequest(const Request req);
+		static void isVaildRequest(const Request &req);
 		static void	setCookie(Request &req);
 		static void parseQuery(const std::string& line);
 };

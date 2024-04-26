@@ -1,6 +1,6 @@
 #include "Request.hpp"
 
-void HttpRequest::isVaildRequest(const Request req)
+void HttpRequest::isVaildRequest(const Request &req)
 {
 	if (req._method == "OTHER")
 		throw std::invalid_argument("Invalid Method");
@@ -91,10 +91,10 @@ std::string HttpRequest::parseBody(const std::string& body)
 	std::istringstream iss(body);
 	std::string line;
 
+	std::cout << "ttttttt: " << body << std::endl;
 	std::getline(iss, line);
 	if (line.find('=') != std::string::npos && \
 			line.find('&') != std::string::npos)
 		parseQuery(line);
     return line;
-	// req._body += line;
 }
