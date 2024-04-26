@@ -69,7 +69,6 @@ void Client::setRequest() {
 	try {
         if (iss.str().find("\r\n") != std::string::npos \
                 && _readStatus == READ_NOT_DONE) {
-            
     		std::getline(iss, line);
 	    	HttpRequest::parseRequestLine(_request, line);
             _readStatus = READ_LINE_DONE;
@@ -104,10 +103,8 @@ void Client::setRequest() {
                 _readStatus = READ_BODY_DOING;
                 return ;
             }
-            else if (contentLength == 0) {
-                _request._body += HttpRequest::parseBody(body);
+            else if (contentLength == 0)
                 _readStatus = READ_DONE;
-            }
             else if (contentLength < 0)
                 line.substr(0, line.length() + contentLength);
 		}
@@ -115,7 +112,8 @@ void Client::setRequest() {
                     _request._contentLength == 0) {
             _readStatus = READ_DONE;
         }
-		HttpRequest::isVaildRequest(getRequest());
+        _request._body += HttpRequest::parseBody(body);
+		HttpRequest::isVaildRequest(_request);
         _responseStatus = 200;
 	}
 	catch (std::invalid_argument& e) {
