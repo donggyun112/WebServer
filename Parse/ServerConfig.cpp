@@ -5,12 +5,12 @@ ServerConfig::~ServerConfig() {}
 
 std::string ServerConfig::getServerName() const{return this->_server_name;}
 
-int ServerConfig::getPortName() const {return _port;}
+Port ServerConfig::getPortName() const {return _port;}
 
 ServerConfig::ServerConfig(std::ifstream &file)
 {
     std::string     line;
-    bool inServerBlock = false;
+    // bool inServerBlock = false;
 
     while (getline(file, line)) {
         replaceTabsWithSpaces(line);
@@ -22,9 +22,9 @@ ServerConfig::ServerConfig(std::ifstream &file)
         {
             break ;
         }
-        if (key == "server") {
-            inServerBlock = true;
-        } else if (key == "listen") {
+        // if (key == "server") {
+        //     inServerBlock = true;}
+        else if (key == "listen") {
             std::string listen;
             iss >> listen;
             this->_port = std::stoi(listen);

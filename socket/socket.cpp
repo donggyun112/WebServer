@@ -43,7 +43,7 @@ Socket::Socket(std::string host, Port port) : _listenSocket(-1), _port(port), _h
 }
 
 
-Socket::Socket(const Socket& other) : _server_Addr(other._server_Addr), _port(other._port), _host(other._host) {
+Socket::Socket(const Socket& other) : _port(other._port), _host(other._host), _server_Addr(other._server_Addr) {
 	if (other._listenSocket != -1) {
 		_listenSocket = dup(other._listenSocket);
 	}

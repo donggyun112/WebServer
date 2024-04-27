@@ -40,7 +40,7 @@ Config::Config(int argc, char **argv) {
 
 Config::~Config() {}
 
-const ServerConfig& Config::operator[](int index) const {
+const ServerConfig& Config::operator[](size_t index) const {
 	if (index < 0 || index >= _servers.size()) {
 		throw std::runtime_error("Server Config | index out of range");
 	}

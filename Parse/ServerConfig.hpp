@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 #include "LocationConfig.hpp"
+#include "../utils/utils.hpp"
 
 class ServerConfig
 {
@@ -24,7 +25,7 @@ public:
     ~ServerConfig();
     std::unordered_map<int, std::string> parseErrorPages(std::istringstream &iss);
     std::string getServerName() const;
-    int getPortName() const;
+    Port getPortName() const;
 };
 
 #endif
