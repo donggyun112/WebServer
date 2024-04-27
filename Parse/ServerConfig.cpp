@@ -1,17 +1,11 @@
 #include "ServerConfig.hpp"
+#include "Config.hpp"
 
-ServerConfig::~ServerConfig()
-{
-}
+ServerConfig::~ServerConfig() {}
 
-void replaceTabsWithSpaces(std::string& str) {
-    std::replace(str.begin(), str.end(), '\t', ' ');  // replace all tabs with spaces
-}
+std::string ServerConfig::getServerName() const{return this->_server_name;}
 
-std::string ServerConfig::getServerName()
-{
-    return this->_server_name;
-}
+int ServerConfig::getPortName() const {return _port;}
 
 ServerConfig::ServerConfig(std::ifstream &file)
 {

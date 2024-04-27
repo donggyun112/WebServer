@@ -1,12 +1,15 @@
 #ifndef LOCATIONCONFIG_HPP
 # define LOCATIONCONFIG_HPP
-
-#include "Config.hpp"
+#include <vector>
+#include <string>
+#include <map>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <algorithm>
 
 class LocationConfig {
     private:
-    friend class Config;
-    friend class ServerConfig;
     // std::unordered_map<std::string, std::string> fastcgi_params;
     std::string                 _path;
     std::string                 _alias;
@@ -52,7 +55,4 @@ class LocationConfig {
     std::vector<std::string>    getTryFiles() const ;
     // // 추가적인 필요한 변수들
 };
-void replaceTabsWithSpaces(std::string& str);
-
-
 #endif
