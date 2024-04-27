@@ -7,24 +7,24 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <string>
 #include <algorithm>
-#include <iostream>
+#include "ServerConfig.hpp"
 
-class ServerConfig;
 
 class Config
 {
 private:
+    std::vector<class ServerConfig> _servers;
+
 public:
-    std::vector<ServerConfig> _servers;
     Config(int argc, char **argv);
 
     ~Config();
-    void setServers(const std::map<std::string, ServerConfig> servers);
-    std::map<std::string, ServerConfig> getServers();
-
+    // void setServers(const std::map<std::string, ServerConfig> servers);
+    const ServerConfig& operator[](int index) const;
     void    parseConfig(const std::string filename);
+    int getNumberOfServer() const;
 };
 
+void replaceTabsWithSpaces(std::string& str);
 #endif

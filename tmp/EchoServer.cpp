@@ -7,26 +7,28 @@ Server::Server() {}
 Server::~Server() {}
 
 //Config에 있는 server block 의 갯수를 반환해서 해당 갯수만큼 소켓을 생성.
-void Server::makeServerSocket(/*Config &Conf*/) {
-	for (int i = 0; i < 1; ++i) {
-		Socket *elem = new Socket("127.0.0.1", 8080);
+void Server::makeServerSocket(Config &Conf) {
+	std::cout << "hihihihi" << Conf.getNumberOfServer() << std::endl;
+	for (int i = 0; i < Conf.getNumberOfServer(); ++i) {
+		Socket *elem = new Socket(Conf[i].getServerName(), Conf[i].getPortName());
 		
 		std::cout << "socket : " << elem->getHost() << "port : " << elem->getPort() << std::endl;
 		//Socket elem(Conf.getHostName(i), Conf.getPortNumber(i));
 		_socketList.push_back(elem);
-		activateSocket();
+		activateSocket(Conf);
 	}
 }
 
 //서버 소켓을 bind -> listen 상태로 만들어야 한다.
-void Server::activateSocket(/*const Config &Conf*/) {
-	_socketList[0]->autoActivate();
+void Server::activateSocket(const Config &Conf) {
+	for (int i = 0; i < Conf.getNumberOfServer(); ++i) {
+		_socketList[i]->autoActivate();
+	}
 }
 
-void Server::queueInit() {
+void Server::queueInit(const Config &Conf) {
 	_kq = kqueue();
-	std::cout << "---------------kq" << _kq << std::endl << std::endl;
-	for(int i = 0; i < 1; ++i) {
+	for(int i = 0; i < Conf.getNumberOfServer(); ++i) {
 		changeEvents(_changeList, static_cast<FD>(*_socketList[i]), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, nullptr);
 	}
 }
@@ -45,7 +47,7 @@ void Server::disconnectClient(int fd) {
 	// _clients[fd] = nullptr;
 }
 
-void Server::run(/*const Config &Conf*/) {
+void Server::run(const Config &Conf) {
 	int eventNumber;
 	struct kevent eventList[10];
 	while (true) {
@@ -53,9 +55,8 @@ void Server::run(/*const Config &Conf*/) {
 		std::cout << "event-------------- " << eventNumber << std::endl;
 		if (eventNumber == -1)
 			throw std::runtime_error("asdf"); // 에러 처리 해야댐
-	std::cout << __FILE__ << " ; " << __LINE__ << std::endl;
 		_changeList.clear();
-		readEventList(eventNumber, eventList/*, Conf*/);
+		readEventList(eventNumber, eventList, Conf);
 	}
 }
 
@@ -68,9 +69,9 @@ int Server::socketFDIndex(FD fd) {
 	return -1 ;
 }
 
-void Server::readEventList(int eventNumber, struct kevent *eventList/*, const Config &Conf*/) {
+void Server::readEventList(int eventNumber, struct kevent *eventList, const Config &Conf) {
 	for (int i = 0; i < eventNumber; ++i) {
-		eventHandling(eventList[i]/*, Conf*/);
+		eventHandling(eventList[i], Conf);
 	}
 }
 
@@ -86,7 +87,7 @@ std::cout << "New Client : " << "fd = " << newFD << std::endl;
 	changeEvents(_changeList, newFD, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL);
 }
 
-void Server::eventHandling(struct kevent &currEvent/*, const Config &Conf*/) {
+void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 	char buffer[1024];
 	ssize_t length;
 
@@ -104,7 +105,6 @@ void Server::eventHandling(struct kevent &currEvent/*, const Config &Conf*/) {
 	else if (currEvent.filter == EVFILT_READ) {
 		if (socketFDIndex(currEvent.ident) >= 0) {
 			addNewClient(currEvent.ident);
-			//test
 			return ;
 		}
 		else {

@@ -43,8 +43,8 @@ class Client {
 
         void            setPort(int port);
         void            setRequest();
-        void            setBuffer(const std::string& buffer) {_buffer = buffer;}
-        void        c   clearRequest();
+        void            setBuffer(const std::string& buffer);
+        void            clearRequest();
         void            clearAll();
 
         void printAllHeaders() const;
