@@ -21,7 +21,7 @@ public:
 
     ~Config();
     // void setServers(const std::map<std::string, ServerConfig> servers);
-    const ServerConfig& operator[](int index) const;
+    const ServerConfig& operator[](size_t index) const;
     void    parseConfig(const std::string filename);
     int getNumberOfServer() const;
 };

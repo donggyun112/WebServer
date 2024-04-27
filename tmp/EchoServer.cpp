@@ -8,20 +8,21 @@ Server::~Server() {}
 
 //Config에 있는 server block 의 갯수를 반환해서 해당 갯수만큼 소켓을 생성.
 void Server::makeServerSocket(Config &Conf) {
-	std::cout << "hihihihi" << Conf.getNumberOfServer() << std::endl;
-	for (int i = 0; i < Conf.getNumberOfServer(); ++i) {
+	// std::cout << "hihihihi" << Conf.getNumberOfServer() << std::endl;
+	for (int i = 0; i < Conf.getNumberOfServer(); i++) {
 		Socket *elem = new Socket(Conf[i].getServerName(), Conf[i].getPortName());
-		
-		std::cout << "socket : " << elem->getHost() << "port : " << elem->getPort() << std::endl;
-		//Socket elem(Conf.getHostName(i), Conf.getPortNumber(i));
 		_socketList.push_back(elem);
-		activateSocket(Conf);
 	}
+	activateSocket(Conf);
 }
 
 //서버 소켓을 bind -> listen 상태로 만들어야 한다.
 void Server::activateSocket(const Config &Conf) {
+	std::cout << _socketList[0]->getHost() << std::endl;
+	std::cout << _socketList[1]->getHost() << std::endl;
+
 	for (int i = 0; i < Conf.getNumberOfServer(); ++i) {
+		// std::cout << "-=---------------" << Conf.getNumberOfServer() << std::endl;
 		_socketList[i]->autoActivate();
 	}
 }
@@ -62,7 +63,7 @@ void Server::run(const Config &Conf) {
 
 //Socket class 는 벡터로 관리되고 있기 때문에, fd 를 입력했을 때 해당 fd 를 가진 class 의 인덱스를 반환한다.
 int Server::socketFDIndex(FD fd) {
-	for (int i = 0; i < _socketList.size(); ++i) {
+	for (size_t i = 0; i < _socketList.size(); ++i) {
 		if (static_cast<FD>(*_socketList[i]) == fd)
 			return i ;
 	}
@@ -90,6 +91,7 @@ std::cout << "New Client : " << "fd = " << newFD << std::endl;
 void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 	char buffer[1024];
 	ssize_t length;
+	Conf.getNumberOfServer(); // 플래그때문에 그냥 넣어놨음
 
 	std::memset(buffer, 0, sizeof(buffer));
 	if (currEvent.flags & EV_ERROR) {

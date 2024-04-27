@@ -20,11 +20,11 @@ void    Config::parseConfig(const std::string filename)
         if (line.empty())
             continue;
         std::istringstream iss(line);
-        if (line.find("server") != std::string::npos)
+        if (line.find("server") != std::string::npos && line[0] != '#')
         {
             file.seekg(-(line.length() + 1), std::ios::cur);
             ServerConfig server(file);
-            // std::cout << server.getServerName() << std::endl;
+            // std::cout << "sec" << server.getServerName() << std::endl;
             _servers.push_back(server);
         }
     }
@@ -40,7 +40,7 @@ Config::Config(int argc, char **argv) {
 
 Config::~Config() {}
 
-const ServerConfig& Config::operator[](int index) const {
+const ServerConfig& Config::operator[](size_t index) const {
 	if (index < 0 || index >= _servers.size()) {
 		throw std::runtime_error("Server Config | index out of range");
 	}
