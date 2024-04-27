@@ -22,17 +22,17 @@
 class Server
 {
 	private:
-		// std::vector<FD> _fdList;
+		std::vector<FD> _closeList;
 		std::vector<struct kevent> _changeList;
 		std::vector<Socket *> _socketList;
 		std::map<FD, std::string> _clients;
 		FD _kq;
 	protected:
 		void activateSocket(const Config &Conf);
-		void readEventList(int eventNumber, struct kevent *eventList, const Config &Conf);
 		void eventHandling(struct kevent &currEvent, const Config &Conf);
 		void disconnectClient(int fd);
 		void addNewClient(FD fd);
+		void updateControl();
 		// void execute(Client *ClientPtr, const Config &Conf);
 		// void executeCGI(Client &param);
 		int socketFDIndex(FD fd);
