@@ -5,10 +5,11 @@
 # include <map>
 # include <cstdio>
 # include <unistd.h>
+# include <algorithm>
+
 # include <sys/time.h>
 # include <sys/event.h>
 # include <sys/types.h>
-# include <algorithm>
 
 # include "../socket/socket.hpp"
 # include "../Parse/Config.hpp"
