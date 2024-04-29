@@ -1,13 +1,17 @@
 #include "Client.hpp"
 
-Client::Client() {
-    _port = 0;
+Client::Client(Port port) : _port(port) {
     clearAll();
 }
 
-Client::~Client() {
-    clearAll();
-}
+Client::Client(const Client &Copy) : 
+    _buffer(Copy.getBuffer()),
+    _request(Copy.getRequest()),
+    _port(Copy.getPort()),
+    _readStatus(Copy._readStatus),
+    _responseStatus(Copy._responseStatus) {}
+
+Client::~Client() {}
 
 std::string Client::getBuffer() const {
     return _buffer;
@@ -55,12 +59,9 @@ int Client::getResponseStatus() const {
     return _responseStatus;
 }
 
-void Client::setPort(int port) {
-    _port = port;
-}
-
 void Client::setBuffer(const std::string& buffer) {
     _buffer += buffer;
+    _tempResult += buffer;
     setRequest();
 }
 
@@ -143,6 +144,9 @@ void Client::clearAll()
     _buffer.clear();
     _readStatus = READ_NOT_DONE;
     _responseStatus = 0;
+
+    //for test
+    _tempResult = "";
 }
 
 void Client::printAllHeaders() const{

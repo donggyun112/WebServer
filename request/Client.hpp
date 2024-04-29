@@ -7,6 +7,7 @@
 #include <sstream>
 #include "structRq.hpp"
 #include "Request.hpp"
+#include "../utils/utils.hpp"
 
 class HttpRequest;
 
@@ -23,11 +24,14 @@ class Client {
     private:
         std::string _buffer;
         Request     _request;
-        int         _port;
+        Port         _port;
         int         _readStatus;
         int         _responseStatus;
-    public:
+        std::string _tempResult;
         Client();
+    public:
+        Client(Port port);
+        Client(const Client &Copy);
         ~Client();
 
         std::string     getBuffer() const;
@@ -40,14 +44,17 @@ class Client {
         const Request   &getRequest() const;
         int             getPort() const;
         int             getResponseStatus() const;
-
-        void            setPort(int port);
         void            setRequest();
         void            setBuffer(const std::string& buffer);
         void            clearRequest();
         void            clearAll();
 
+        //getReadStatus;
+
         void printAllHeaders() const;
+        std::string getTempResult() const {
+            return this->_tempResult;
+        }
 };
 
 #endif
