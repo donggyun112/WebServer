@@ -3,6 +3,7 @@
 DS_Store
 *.out
 a
-.dYSM
+*.dYSM
 test.cpp
 .vscode
+webserv
