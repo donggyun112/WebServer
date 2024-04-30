@@ -155,3 +155,12 @@ void Client::printAllHeaders() const{
         std::cout << it->first << ": " << it->second << std::endl;
     }
 }
+
+void Client::execute(const Config &Conf) {
+    if (_responseStatus != 200) {
+        setError(_responseStatus);
+    }
+    if (_request._method == "GET") {
+        Conf[Port(this->_port)].
+    }
+}
