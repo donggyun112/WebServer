@@ -1,13 +1,14 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-#include <iostream>
-#include <string>
-#include <map>
-#include <sstream>
-#include "structRq.hpp"
-#include "Request.hpp"
-#include "../utils/utils.hpp"
+# include <iostream>
+# include <string>
+# include <map>
+# include <sstream>
+# include "structRq.hpp"
+# include "Request.hpp"
+# include "../utils/utils.hpp"
+# include "../Parse/Config.hpp"
 
 class HttpRequest;
 
@@ -48,6 +49,9 @@ class Client {
         void            setBuffer(const std::string& buffer);
         void            clearRequest();
         void            clearAll();
+        int             getReadStatus() const {return this->_readStatus;}
+
+        void            execute(const Config &Conf);
 
         //getReadStatus;
 

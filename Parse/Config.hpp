@@ -1,14 +1,15 @@
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
-#include <vector>
-#include <string>
-#include <map>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <algorithm>
-#include "ServerConfig.hpp"
+# include <vector>
+# include <string>
+# include <map>
+# include <fstream>
+# include <sstream>
+# include <iostream>
+# include <algorithm>
+# include "ServerConfig.hpp"
+# include "../utils/utils.hpp"
 
 
 class Config
@@ -21,7 +22,7 @@ public:
 
     ~Config();
     // void setServers(const std::map<std::string, ServerConfig> servers);
-    const ServerConfig& operator[](size_t index) const;
+    const ServerConfig operator[](Port port) const;
     void    parseConfig(const std::string filename);
     int getNumberOfServer() const;
 };

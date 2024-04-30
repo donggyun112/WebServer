@@ -55,7 +55,6 @@ void Server::addNewClient(FD fd) {
 	std::cout << "hi new client. | fd : " << newFD << std::endl << std::endl;
 	Socket::nonblocking(newFD);
 	Client *Ptr = new Client(_serverSocketList[FDIndexing(fd)]->getPort());
-	// _clients.insert(std::pair<FD, std::string>(newFD, ""));
 	_clientMap.insert(std::pair<FD, Client *>(newFD, Ptr));
 	changeEvents(_changeList, newFD, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	changeEvents(_changeList, newFD, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL);
@@ -77,7 +76,7 @@ void Server::run(const Config &Conf) {
 	struct kevent eventList[10];
 	while (true) {
 		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 10, NULL);
-		std::cout << "---------Current event----------- event_number | " << eventNumber << std::endl;
+		std::cout << "---------Current event--------- num | " << eventNumber << std::endl;
 		if (eventNumber == -1)
 			throw std::runtime_error("asdf"); // 에러 처리 해야댐
 		updateControl();
@@ -92,43 +91,39 @@ void Server::run(const Config &Conf) {
 void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 	char buffer[1024];
 	ssize_t length;
-	Conf.getNumberOfServer(); // 플래그때문에 그냥 넣어놨음---------------
-
 	std::memset(buffer, 0, sizeof(buffer));
+	
+	Conf.getNumberOfServer(); // -Wall -Extra -Error 플래그때문에 그냥 넣어놨음---------------
+
 	if (currEvent.flags & EV_ERROR) {
 		if (FDIndexing(currEvent.ident) >= 0) {
 			throw std::runtime_error("server_socket_error"); // 서버 소켓 에러.
 			//이 부분은 그냥 터트리는게 맞다 ㄹㅇ;;;
-		}
-		else {
+		} else {
 			std::cout << "Err | filter: " << currEvent.filter << " | flag: " << currEvent.flags << " fflags: " << currEvent.fflags << std::endl;
 			_closeList.push_back(currEvent.ident);
 			changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 			changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 		}
-	}
-	else if (currEvent.filter == EVFILT_READ) {
+	} else if (currEvent.filter == EVFILT_READ) {
 		if (FDIndexing(currEvent.ident) >= 0) {
 			addNewClient(currEvent.ident);
 			return ;
-		}
-		else {
+		} else {
 			length = recv(currEvent.ident, buffer, 1024, 0);
-			if (length == -1)
-				return ;
+			if (length == -1) return ;
 			else if (length == 0) {
 				std::cout << "Bye bye client. | fd : "<< currEvent.ident << std::endl;
 				changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 				changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 				_closeList.push_back(currEvent.ident);
-			}
-			else {
-				std::string temp(buffer, length);
-				std::cout << "READ | fd : " << currEvent.ident << "| buffer = " << buffer << std::endl;
-				_clientMap[currEvent.ident]->setBuffer(buffer);
-				//여기에 다양한 조건문과 함께 함수 하나 생성 해야한다.
-				std::cout << "---------------" << _clientMap[currEvent.ident]->getResponseStatus() << std::endl;
-				if (_clientMap[currEvent.ident]->getResponseStatus() == 200) {
+			} else {
+				std::cout << "READ | fd : " << currEvent.ident << " | buffer = " << buffer << std::endl;
+				Client *ptr = _clientMap[currEvent.ident];
+
+				ptr->setBuffer(buffer);
+				if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
+					ptr->execute(Conf);
 					changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}
@@ -136,11 +131,12 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 		}
 	}
 	else if (currEvent.filter == EVFILT_WRITE) {
-		std::cout << "WRITE| fd : " << currEvent.ident << "| buffer = " << _clientMap[currEvent.ident]->getTempResult() << std::endl;
-		send(currEvent.ident, _clientMap[currEvent.ident]->getTempResult().c_str(), _clientMap[currEvent.ident]->getBuffer().length(), 0);
-		
-		//만약 다 보냈다면? 조건문 필요. 때문에 client 구조체 안에 보낸길이 필요.
-		_clientMap[currEvent.ident]->clearAll();
+		Client *ptr = _clientMap[currEvent.ident];
+		std::cout << "WRITE| fd : " << currEvent.ident << " | buffer = " << _clientMap[currEvent.ident]->getTempResult() << std::endl;
+
+		//짤라서 보내는게 정석인데 일단 그냥 보낸다. 짤라서 보낸다면 -> response buffer도 짤라줘야 하고, 만약 다 보냈다면? get 함수 필요.
+		send(currEvent.ident, ptr->getTempResult().c_str(), ptr->getBuffer().length(), 0);
+		ptr->clearAll();
 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);	
 		changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
 	}

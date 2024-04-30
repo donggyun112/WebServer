@@ -6,6 +6,8 @@
 # include <cstdio>
 # include <unistd.h>
 # include <algorithm>
+# include <fstream>
+# include <sstream>
 
 # include <sys/time.h>
 # include <sys/event.h>
@@ -26,7 +28,6 @@ class Server
 		std::vector<FD> _closeList;
 		std::vector<struct kevent> _changeList;
 		std::vector<Socket *> _serverSocketList;
-		// std::map<FD, std::string> _clients;
 		std::map<FD, Client *> _clientMap;
 		FD _kq;
 	protected:
@@ -35,8 +36,6 @@ class Server
 		void disconnectClient(int fd);
 		void addNewClient(FD fd);
 		void updateControl();
-		// void execute(Client *ClientPtr, const Config &Conf);
-		// void executeCGI(Client &param);
 		int FDIndexing(FD fd);
 		void changeEvents(std::vector<struct kevent> &changeList, uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
 

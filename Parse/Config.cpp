@@ -33,18 +33,19 @@ void    Config::parseConfig(const std::string filename)
 Config::Config(int argc, char **argv) {
     if (argc != 2) {
         std::cerr << "Error: Invalid number of arguments" << std::endl;
-        parseConfig("../parse/nginx.conf");
+        parseConfig("nginx.conf");
     }
     parseConfig(argv[1]);
 }
 
 Config::~Config() {}
 
-const ServerConfig& Config::operator[](size_t index) const {
-	if (index < 0 || index >= _servers.size()) {
-		throw std::runtime_error("Server Config | index out of range");
-	}
-	return _servers[index];
+const ServerConfig Config::operator[](Port port) const {
+    for (size_t i = 0; i < _servers.size(); ++i) {
+        if (_servers[i].getPortName() == port)
+            return _servers[i];
+    }
+    throw std::runtime_error("This port doesn't match with any server");
 }
 
 int Config::getNumberOfServer() const {
