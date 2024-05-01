@@ -123,7 +123,10 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 
 				ptr->setBuffer(buffer);
 				if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
-					ptr->execute(Conf);
+					std::string Response = ptr->execute(Conf);
+					std::cout << "Response : " << Response << std::endl;
+					write(currEvent.ident, Response.c_str(), Response.length());
+					
 					changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}

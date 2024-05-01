@@ -11,7 +11,7 @@
 # include "../Parse/Config.hpp"
 
 class HttpRequest;
-
+class Response;
 enum {
     READ_NOT_DONE = 0,
     READ_LINE_DONE = 1,
@@ -43,7 +43,7 @@ class Client {
         std::string     getCookie(const std::string& key) const;
         std::string     getBody() const;
         const Request   &getRequest() const;
-        int             getPort() const;
+        Port             getPort() const;
         int             getResponseStatus() const;
         void            setRequest();
         void            setBuffer(const std::string& buffer);
@@ -51,7 +51,13 @@ class Client {
         void            clearAll();
         int             getReadStatus() const {return this->_readStatus;}
 
-        void            execute(const Config &Conf);
+        std::string            execute(const Config &Conf);
+
+		// void			setResponseStatus(int status);
+		// void			setTempResult(const std::string &result);
+		// void 			setHeader(const std::string &key, const std::string &value);
+		Response			sendResponse(const Config &Conf);
+		Response			handleGetRequest(const Config &Conf);
 
         //getReadStatus;
 

@@ -30,9 +30,17 @@ public:
     //getLocation 필요해서 만드는중인데스
     LocationConfig getLocation(std::string httpPath) {
         if (_locations.find(httpPath) != _locations.end()) {
-            return _locations[httpPath];
+            return _locations.at(httpPath);
         }
+		throw std::runtime_error("This path doesn't match with any location");
     }
+
+	LocationConfig operator[](std::string path) const {
+		if (_locations.find(path) != _locations.end()) {
+			return _locations.at(path);
+		}
+		throw std::runtime_error("This path doesn't match with any location");
+	}
 };
 
 #endif

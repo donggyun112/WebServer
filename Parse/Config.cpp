@@ -40,12 +40,13 @@ Config::Config(int argc, char **argv) {
 
 Config::~Config() {}
 
-const ServerConfig Config::operator[](Port port) const {
+ServerConfig Config::operator[](Port port) const {
     for (size_t i = 0; i < _servers.size(); ++i) {
         if (_servers[i].getPortName() == port)
             return _servers[i];
     }
-    throw std::runtime_error("This port doesn't match with any server");
+    // throw std::runtime_error("This port doesn't match with any server");
+	return _servers[0];
 }
 
 int Config::getNumberOfServer() const {
