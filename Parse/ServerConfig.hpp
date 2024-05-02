@@ -14,7 +14,7 @@
 class ServerConfig
 {
 private:
-    int _port;
+    Port _port;
     std::string _server_name;
     int _client_max_body_size;
     std::unordered_map<int, std::string> _error_pages;

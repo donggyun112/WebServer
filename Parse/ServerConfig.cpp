@@ -27,7 +27,7 @@ ServerConfig::ServerConfig(std::ifstream &file)
         else if (key == "listen") {
             std::string listen;
             iss >> listen;
-            this->_port = std::stoi(listen);
+            this->_port = static_cast<Port>(std::stoi(listen));
         } else if (key == "server_name") {
             std::string server_name;
             iss >> server_name;
