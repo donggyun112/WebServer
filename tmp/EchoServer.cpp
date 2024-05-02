@@ -137,7 +137,7 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 	}
 	else if (currEvent.filter == EVFILT_WRITE) {
 		Client *ptr = _clientMap[currEvent.ident];
-		std::cout << "WRITE| fd : " << currEvent.ident << " | buffer = " << _clientMap[currEvent.ident]->getTempResult() << std::endl;
+		// std::cout << "WRITE| fd : " << currEvent.ident << " | buffer = " << _clientMap[currEvent.ident]->getTempResult() << std::endl;
 
 		//짤라서 보내는게 정석인데 일단 그냥 보낸다. 짤라서 보낸다면 -> response buffer도 짤라줘야 하고, 만약 다 보냈다면? get 함수 필요.
 		send(currEvent.ident, ptr->getTempResult().c_str(), ptr->getTempResult().length(), 0);
