@@ -1,4 +1,10 @@
 #include "Client.hpp"
+#include "../tmp/test.hpp"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <unistd.h>
 
 Client::Client(Port port) : _port(port) {
     clearAll();
@@ -29,7 +35,7 @@ std::string Client::getVersion() const {
     return _request._version;
 }
 
-int Client::getPort() const {
+Port Client::getPort() const {
     return _port;
 }
 
@@ -156,11 +162,142 @@ void Client::printAllHeaders() const{
     }
 }
 
-void Client::execute(const Config &Conf) {
-    if (_responseStatus != 200) {
-        setError(_responseStatus);
+
+
+
+
+int getMethodNumber(const std::string &method) {
+	if (method == "GET")
+		return 1;
+	else if (method == "POST")
+		return 2;
+	else if (method == "PUT")
+		return 3;
+	else if (method == "DELETE")
+		return 4;
+	return 0;
+}
+
+#include <sys/time.h>
+
+std::string getCurTime() {
+	struct timeval tv;
+	struct tm *tm;
+	char buf[64];
+
+	gettimeofday(&tv, NULL);
+	tm = localtime(&tv.tv_sec);
+	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tm);
+	return std::string(buf);
+}
+
+std::string getContentType(const std::string &extension) {
+    if (extension == "html")
+        return "text/html";
+    else if (extension == "css")
+        return "text/css";
+    // 다른 확장자에 대한 Content-Type 매핑 추가
+    else
+        return "application/octet-stream";
+}
+
+Response Client::handleGetRequest(const Config &Conf) {
+    Response response;
+	(void)Conf;
+    // GET 요청 처리 로직
+    const std::string url = this->getUri();
+    std::string filePath = "/Users/seodong-gyun/42/webserver/WebServer/html";
+    filePath += url;
+
+    std::cout << "filePath: " << filePath << std::endl;
+
+    if (url == "/") {
+        filePath += "/index.html";
     }
-    if (_request._method == "GET") {
-        Conf[Port(this->_port)].
+
+    std::cout << "filePath: " << filePath << std::endl;
+
+    std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
+    std::ifstream file(filePath.c_str());
+
+    if (file.is_open()) {
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string body = buffer.str();
+
+        response.setStatusCode(OK_200);
+        response.setHeader("Date", getCurTime());
+        response.setHeader("Content-Type", getContentType(extension));
+        response.setBody(body);
+        response.setHeader("Content-Length", std::to_string(body.length()));
+        response.setHeader("Content-Language", "ko-KR");
+        response.setHeader("Content-Location", url);
+        response.setHeader("Last-Modified", getCurTime());
+        response.setHeader("Accept-Ranges", "bytes");
+        response.setHeader("Connection", "keep-alive");
+		response.setHeader("encoding", "gzip");
+
+        file.close();
+    } else {
+        response.setStatusCode(NotFound_404);
+        response.setHeader("Content-Type", "text/html");
+        response.setHeader("Date", getCurTime());
+
+        std::string errorBody = "<html><body><h1>404 Not Found</h1><p>The requested file was not found.</p></body></html>";
+        response.setBody(errorBody);
+        response.setHeader("Content-Length", std::to_string(errorBody.length()));
+        response.setHeader("Content-Language", "en-US");
+        response.setHeader("Connection", "close");
     }
+	response.setHeader("Server", "42Webserv");
+	response.setHeader("X-Powered-By", "42Webserv");
+
+    return response;
+}
+
+Response handleMethodNotAllowed() {
+    Response response;
+    response.setStatusCode(MethodNotAllowed_405);
+    response.setHeader("Content-Type", "text/html");
+    response.setHeader("Date", getCurTime());
+
+    std::string errorBody = "<html><body><h1>405 Method Not Allowed</h1><p>The requested method is not allowed.</p></body></html>";
+    response.setBody(errorBody);
+    response.setHeader("Content-Length", std::to_string(errorBody.length()));
+    response.setHeader("Connection", "close");
+
+    return response;
+}
+
+Response Client::sendResponse(const Config &Conf) {
+    enum Method {
+        GET = 1,
+        POST,
+        PUT,
+        DELETE
+    };
+
+    int method = getMethodNumber(_request._method);
+    switch (method) {
+        case GET:
+            return handleGetRequest(Conf);
+        case POST:
+            // return handlePostRequest(Conf);
+        case PUT:
+            // return handlePutRequest(Conf);
+        case DELETE:
+            // return handleDeleteRequest(Conf);
+        default:
+            return handleMethodNotAllowed();
+    }
+}
+
+
+
+
+
+std::string Client::execute(const Config &Conf) {
+	Response response = sendResponse(Conf);
+	std::string responseStr = response.get_responses();
+	return responseStr;
 }

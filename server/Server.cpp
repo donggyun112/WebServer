@@ -132,11 +132,12 @@ int Server::socketFDIndex(FD fd) {
 }
 //작성중, flag의 에러 여부를 살피고, method 를 판단해서 각 메소드마다 다르게 동작하는 if 문을 작성한다. 
 void Server::execute(Client *ClientPtr, const Config &Conf) {
-	if (ClientPtr->flag == ERROR)
-		responseError(flag);
-	if (ClientPtr->getMethod() == "GET") {
-		ClientPtr->get
-	}
+	// if (ClientPtr->flag == ERROR)
+	// 	responseError(flag);
+	// if (ClientPtr->getMethod() == "GET") {
+	// 	ClientPtr->get
+	// }
+	
 }
 
 void Server::executeCGI(Client &param) {}
