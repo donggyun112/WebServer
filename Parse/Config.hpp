@@ -23,6 +23,8 @@ public:
     ~Config();
     // void setServers(const std::map<std::string, ServerConfig> servers);
     ServerConfig operator[](Port port) const;
+    ServerConfig operator[](int i) const;
+
     void    parseConfig(const std::string filename);
     int getNumberOfServer() const;
 };

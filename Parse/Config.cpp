@@ -45,8 +45,13 @@ ServerConfig Config::operator[](Port port) const {
         if (_servers[i].getPortName() == port)
             return _servers[i];
     }
-    // throw std::runtime_error("This port doesn't match with any server");
-	return _servers[0];
+    throw std::runtime_error("This port doesn't match with any server");
+	// return _servers[0];
+}
+
+
+ServerConfig Config::operator[](int i) const {
+    return _servers[i];
 }
 
 int Config::getNumberOfServer() const {
