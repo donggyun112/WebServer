@@ -79,7 +79,8 @@ void Server::run(const Config &Conf) {
 		std::cout << "---------Current event--------- num | " << eventNumber << std::endl;
 		if (eventNumber == -1) {
 			std::cout << "Throw\n";
-			// throw std::runtime_error("asdf"); // 에러 처리 해야댐
+
+			// throw std::runtime_error("asdf");
 		}
 		updateControl();
 		for (int i = 0; i < eventNumber; ++i) {
@@ -120,7 +121,6 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 				changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 				_closeList.push_back(currEvent.ident);
 				_clientMap[currEvent.ident] = NULL;
-				disconnectClient(currEvent.ident);
 			} else {
 				std::cout << "READ | fd : " << currEvent.ident << " | buffer = " << buffer << std::endl;
 				Client *ptr = _clientMap[currEvent.ident];
@@ -128,9 +128,7 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 				ptr->setBuffer(buffer);
 				if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
 					std::string Response = ptr->execute(Conf);
-					// std::cout << "Response : " << Response << std::endl;
-					// send(currEvent.ident, Response.c_str(), Response.length(), 0);
-					// ptr->clearAll();
+
 					changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}

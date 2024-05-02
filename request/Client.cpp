@@ -227,7 +227,7 @@ Response Client::handleGetRequest(const Config &Conf) {
 	(void)Conf;
     // GET 요청 처리 로직
     const std::string url = this->getUri();
-    std::string filePath = "/Users/seodong-gyun/42/webserver/WebServer/html";
+    std::string filePath = "/Users/seongwol/Documents/github/webserv/html";
     filePath += url;
 
     // std::cout << "filePath: " << filePath << std::endl;
