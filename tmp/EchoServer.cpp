@@ -142,7 +142,7 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 		//짤라서 보내는게 정석인데 일단 그냥 보낸다. 짤라서 보낸다면 -> response buffer도 짤라줘야 하고, 만약 다 보냈다면? get 함수 필요.
 		send(currEvent.ident, ptr->getTempResult().c_str(), ptr->getTempResult().length(), 0);
 		ptr->clearAll();
-		std::cout << "Send done | fd : " << currEvent.ident << std::endl;
+		// std::cout << "Send done | fd : " << currEvent.ident << std::endl;
 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);	
 		changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
 	}
