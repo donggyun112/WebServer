@@ -5,6 +5,12 @@
 # include <string>
 # include <map>
 # include <sstream>
+# include <algorithm>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <cstring>
+# include <iomainp>
+# include <dirent.h> // DIR을 위함.
 # include "structRq.hpp"
 # include "Request.hpp"
 # include "../utils/utils.hpp"
@@ -61,6 +67,8 @@ class Client {
 
         //getReadStatus;
 
+        // autoindex 
+            //  std::string     handleAutoIndex(std::string servRoot);
         void printAllHeaders() const;
         std::string getTempResult() const {
             return this->_tempResult;
