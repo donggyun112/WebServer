@@ -55,7 +55,7 @@ void Server::addNewClient(FD fd) {
 	std::cout << "hi new client. | fd : " << newFD << std::endl << std::endl;
 	Socket::nonblocking(newFD);
 	Client *Ptr = new Client(_serverSocketList[FDIndexing(fd)]->getPort());
-	_clientMap.insert(std::pair<FD, Client *>(newFD, Ptr));
+	_clientMap[newFD] = Ptr;
 	changeEvents(_changeList, newFD, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	changeEvents(_changeList, newFD, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL);
 }
@@ -77,8 +77,10 @@ void Server::run(const Config &Conf) {
 	while (true) {
 		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 10, NULL);
 		std::cout << "---------Current event--------- num | " << eventNumber << std::endl;
-		if (eventNumber == -1)
+		if (eventNumber == -1) {
+			std::cout << "Throw\n";
 			throw std::runtime_error("asdf"); // 에러 처리 해야댐
+		}
 		updateControl();
 		for (int i = 0; i < eventNumber; ++i) {
 			eventHandling(eventList[i], Conf);
@@ -117,6 +119,7 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 				changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 				changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 				_closeList.push_back(currEvent.ident);
+				_clientMap[currEvent.ident] = NULL;
 			} else {
 				std::cout << "READ | fd : " << currEvent.ident << " | buffer = " << buffer << std::endl;
 				Client *ptr = _clientMap[currEvent.ident];
@@ -124,9 +127,9 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 				ptr->setBuffer(buffer);
 				if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
 					std::string Response = ptr->execute(Conf);
-					std::cout << "Response : " << Response << std::endl;
-					write(currEvent.ident, Response.c_str(), Response.length());
-					
+					// std::cout << "Response : " << Response << std::endl;
+					send(currEvent.ident, Response.c_str(), Response.length(), 0);
+					ptr->clearAll();
 					changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}
