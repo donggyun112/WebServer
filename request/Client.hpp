@@ -51,7 +51,7 @@ class Client {
         void            clearAll();
         int             getReadStatus() const {return this->_readStatus;}
 
-        std::string            execute(const Config &Conf);
+        std::string     execute(const Config &Conf);
 
 		// void			setResponseStatus(int status);
 		// void			setTempResult(const std::string &result);

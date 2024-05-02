@@ -67,7 +67,6 @@ int Client::getResponseStatus() const {
 
 void Client::setBuffer(const std::string& buffer) {
     _buffer += buffer;
-    _tempResult += buffer;
     setRequest();
 }
 
@@ -193,11 +192,33 @@ std::string getCurTime() {
 
 std::string getContentType(const std::string &extension) {
     if (extension == "html")
-        return "text/html";
+        return "text/html; charset=utf-8";
     else if (extension == "css")
         return "text/css";
     // 다른 확장자에 대한 Content-Type 매핑 추가
-    else
+    else if (extension == "png")
+		return "image/png";
+	else if (extension == "jpg")
+		return "image/jpeg";
+	else if (extension == "jpeg")
+		return "image/jpeg";
+	else if (extension == "gif")
+		return "image/gif";
+	else if (extension == "bmp")
+		return "image/bmp";
+	else if (extension == "ico")
+		return "image/x-icon";
+	else if (extension == "svg")
+		return "image/svg+xml";
+	else if (extension == "js")
+		return "application/javascript";
+	else if (extension == "json")
+		return "application/json";
+	else if (extension == "pdf")
+		return "application/pdf";
+	else if (extension == "zip")
+		return "application/zip";
+	else
         return "application/octet-stream";
 }
 
@@ -240,7 +261,7 @@ Response Client::handleGetRequest(const Config &Conf) {
         file.close();
     } else {
         response.setStatusCode(NotFound_404);
-        response.setHeader("Content-Type", "text/html");
+        response.setHeader("Content-Type", "text/html; charset=utf-8");
         response.setHeader("Date", getCurTime());
 
         std::string errorBody = "<html><body><h1>404 Not Found</h1><p>The requested file was not found.</p></body></html>";
@@ -299,5 +320,6 @@ Response Client::sendResponse(const Config &Conf) {
 std::string Client::execute(const Config &Conf) {
 	Response response = sendResponse(Conf);
 	std::string responseStr = response.get_responses();
+	_tempResult = responseStr;
 	return responseStr;
 }
