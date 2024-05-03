@@ -24,19 +24,43 @@ std::string parseMethod(const std::string& methodStr)
 		return "OTHER";
 }
 
+bool isQuary(const std::string &uri)
+{
+	if (uri.find('?') != std::string::npos)
+		return true;
+	return false;
+}
+
+std::string parseUri(const std::string& uri)
+{
+	std::string path, query;
+
+	if (isQuary(uri)) {
+			size_t pos = uri.find('?');
+			path = uri.substr(0, uri.find('?'));
+			query = uri.substr(uri.find('?') + 1);
+			HttpRequest::parseQuery(query);
+	}
+	else 
+		path = uri;
+	return path;
+}
+
 void HttpRequest::parseRequestLine(Request &req, const std::string& line)
 {
     std::istringstream iss(line);
-	std::string token;
+	std::string token, tmpUri;
 
 	iss >> token;
 	if (iss.fail())
 		throw std::invalid_argument("Invalid Request Method");
 	req._method = parseMethod(token);
 
-	iss >> req._uri;
+	iss >> tmpUri;
 	if (iss.fail())
 		throw std::invalid_argument("Invalid Request URI");
+	req._uri = parseUri(tmpUri);
+
 	iss >> req._version;
 	if (iss.fail())
 		throw std::invalid_argument("Invalid Request Version");
@@ -77,6 +101,14 @@ void HttpRequest::parseQuery(const std::string& line)
 {
 	std::istringstream iss(line);
 	std::string token;
+
+	if (line.find("&") == std::string::npos) {
+		std::string key = line.substr(0, line.find("="));
+		std::string value = line.substr(line.find("=") + 1);
+		setenv(key.c_str(), value.c_str(), 1);
+		return ;
+	}
+
 	while (std::getline(iss, token, '&')) {
 		std::istringstream iss_token(token);
 		std::string key, value;
