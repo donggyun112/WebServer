@@ -21,6 +21,7 @@ private:
     std::map<std::string, LocationConfig> _locations;
     ServerConfig();
     std::string _path;
+    std::string _index;
 public:
     ServerConfig(std::ifstream &file);
     ~ServerConfig();
@@ -31,8 +32,11 @@ public:
 
     //getLocation 필요해서 만드는중인데스
     LocationConfig getLocation(std::string httpPath) {
-        if (_locations.find(httpPath) != _locations.end()) {
-            return _locations.at(httpPath);
+        std::map<std::string, LocationConfig>::iterator it = _locations.begin();
+
+        for (; it != _locations.end(); it++) {
+            if (httpPath.substr(0, it->first.length()) == it->first)
+                return it->second;
         }
 		throw std::runtime_error("This path doesn't match with any location");
     }
