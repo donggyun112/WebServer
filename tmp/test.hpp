@@ -88,11 +88,11 @@ class Response {
 private:
 	std::string _version;
 	int _status;
-	std::vector<std::string> errors;
 	std::string _reason;
 	std::string _body;
 	std::string _location; // Redirect location
 public:
+	std::vector<std::string> errors;
     typedef std::multimap<std::string, std::string> Headers;
     Headers headers;
 

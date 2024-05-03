@@ -32,6 +32,7 @@ class LocationConfig {
      
     public:
     ~LocationConfig() {}
+	LocationConfig() {}
     // setter
     LocationConfig(std::ifstream &file);
     
