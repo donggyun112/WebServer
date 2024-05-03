@@ -21,6 +21,7 @@ private:
     std::map<std::string, LocationConfig> _locations;
     ServerConfig();
 public:
+    std::string _path;
     ServerConfig(std::ifstream &file);
     ~ServerConfig();
     std::unordered_map<int, std::string> parseErrorPages(std::istringstream &iss);

@@ -18,16 +18,17 @@ ServerConfig::ServerConfig(std::ifstream &file)
         std::string key;
         if (!(iss >> key)) continue; // Skip empty lines
 
-        if (line[0] ==  '}')
-        {
-            break ;
-        }
+        if (line[0] ==  '}') break ;
+        
         // if (key == "server") {
         //     inServerBlock = true;}
+        if (key == "path") {
+            iss >> this->_path;
+        }
         else if (key == "listen") {
             std::string listen;
             iss >> listen;
-            this->_port = static_cast<Port>(std::stoi(listen));
+            this->_port = static_cast<Port>(std::atoi(listen.c_str()));
         } else if (key == "server_name") {
             std::string server_name;
             iss >> server_name;
@@ -37,7 +38,7 @@ ServerConfig::ServerConfig(std::ifstream &file)
         } else if (key == "client_max_body_size") {
             std::string client_max_body_size;
             iss >> client_max_body_size;
-            this->_client_max_body_size = std::stoi(client_max_body_size);
+            this->_client_max_body_size = std::atoi(client_max_body_size.c_str());
         } 
         else if (key == "location") {
             file.seekg(-(line.length() + 1), std::ios::cur);
@@ -53,7 +54,7 @@ std::unordered_map<int, std::string> ServerConfig::parseErrorPages(std::istrings
     std::string error_page;
     while (true) {
         // if (!(iss >> error_code >> error_page)) return errno;
-        error_pages[std::stoi(error_code)] = error_page;
+        error_pages[std::atoi(error_code.c_str())] = error_page;
         if (iss.eof()) break;
     }
     return error_pages;

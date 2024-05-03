@@ -5,31 +5,23 @@ LocationConfig::LocationConfig(std::ifstream &file)
 {
     std::string     line;
     std::string     key, value;
-    bool            inServerBlock = false;
-    bool            inLocationBlock = false;
+
     while (std::getline(file, line)) {
         if (line[0] == '}') {
             file.seekg(-(line.length() + 1), std::ios::cur);
             break;
         }
         replaceTabsWithSpaces(line);
-
         std::istringstream iss(line);
         std::string key;
         
         if (!(iss >> key)) continue; // Skip empty lines
-
-        if (line == "server")   inServerBlock = true;
-        if (key == "location")  inLocationBlock = true;
         
-        if (line.find("}") != std::string::npos) {
-            if (inLocationBlock && inServerBlock) {
-                inLocationBlock = false;
-            } else if (inLocationBlock == false) {
-                inServerBlock = false;
-            }
+        if (key == "}") {
+            break ;
         }
-        if (key == "path") {
+    
+        if (key == "location") {
             std::string path;
             iss >> path;
             if (path.empty())
