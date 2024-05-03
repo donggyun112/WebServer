@@ -163,7 +163,76 @@ void Client::printAllHeaders() const{
 
 
 
+#include <sys/stat.h>
+#include <unistd.h>
+#include <climits>
+#include <cstring>
 
+bool isDirectory(const std::string &path) {
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0) {
+        return S_ISDIR(st.st_mode);
+    }
+    return false;
+}
+
+bool isValidPath(const std::string &path) {
+    // 경로가 비어있는 경우
+    if (path.empty()) {
+        return false;
+    }
+    
+    // 경로가 너무 긴 경우
+    if (path.length() > PATH_MAX) {
+        return false;
+    }
+    
+    // 경로에 불법적인 문자가 포함된 경우
+    if (path.find_first_of("\0\\") != std::string::npos) {
+        return false;
+    }
+    
+    // 경로가 상대경로인 경우
+    if (path[0] != '/') {
+        return false;
+    }
+    
+    return true;
+}
+
+std::string normalizePath(const std::string &path) {
+    std::string normalizedPath = path;
+    
+    // 연속된 슬래시를 하나의 슬래시로 치환
+    std::string::size_type pos = 0;
+    while ((pos = normalizedPath.find("//", pos)) != std::string::npos) {
+        normalizedPath.erase(pos, 1);
+    }
+    
+    // 경로의 마지막 문자가 '/'인 경우 제거
+    if (!normalizedPath.empty() && normalizedPath[normalizedPath.length() - 1] == '/') {
+        normalizedPath.erase(normalizedPath.length() - 1);
+    }
+    
+    // 상대경로 요소 제거
+    while ((pos = normalizedPath.find("/../")) != std::string::npos) {
+        if (pos == 0) {
+            return "";
+        }
+        std::string::size_type prevPos = normalizedPath.rfind('/', pos - 1);
+        if (prevPos == std::string::npos) {
+            return "";
+        }
+        normalizedPath.erase(prevPos, pos - prevPos + 3);
+    }
+    
+    // 현재 디렉토리 요소 제거
+    while ((pos = normalizedPath.find("/./")) != std::string::npos) {
+        normalizedPath.erase(pos, 2);
+    }
+    
+    return normalizedPath;
+}
 
 int getMethodNumber(const std::string &method) {
 	if (method == "GET")
@@ -188,6 +257,14 @@ std::string getCurTime() {
 	tm = localtime(&tv.tv_sec);
 	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tm);
 	return std::string(buf);
+}
+
+bool isExist(const std::string& path, const std::string& file)
+{
+	std::string full_path = path + file;
+	std::ifstream ifs(full_path.c_str());
+	
+	return ifs.is_open();
 }
 
 std::string getContentType(const std::string &extension) {
@@ -224,54 +301,88 @@ std::string getContentType(const std::string &extension) {
 
 Response Client::handleGetRequest(const Config &Conf) {
     Response response;
-	(void)Conf;
+    (void)Conf;
     // GET 요청 처리 로직
     const std::string url = this->getUri();
     std::string filePath = "/Users/parkjunseo/42/webserv/html/";
     filePath += url;
 
-    // std::cout << "filePath: " << filePath << std::endl;
-
-    if (url == "/") {
-        filePath += "index.html";
+    filePath = normalizePath(filePath);
+    if (!isValidPath(filePath)) {
+        std::cout << "Invalid request path: " << filePath << std::endl;
+        response.setStatusCode(BadRequest_400);
+        response.setHeader("Content-Type", "text/html; charset=utf-8");
+        response.setHeader("Date", getCurTime());
+        std::string errorBody = "<html><body><h1>400 Bad Request</h1><p>Invalid request path.</p></body></html>";
+        response.setBody(errorBody);
+        response.setHeader("Content-Length", std::to_string(errorBody.length()));
+        response.setHeader("Connection", "close");
+        return response;
     }
 
-    std::cout << "filePath: " << filePath << std::endl;
+    // 디렉토리 접근 제한
+    if (filePath.find("/../") != std::string::size_type(-1) || !isExist(filePath, "")) {
+        response.setStatusCode(Forbidden_403);
+        response.setHeader("Content-Type", "text/html; charset=utf-8");
+        response.setHeader("Date", getCurTime());
+        std::string errorBody = "<html><body><h1>403 Forbidden</h1><p>Access to the requested resource is forbidden.</p></body></html>";
+        response.setBody(errorBody);
+        response.setHeader("Content-Length", std::to_string(errorBody.length()));
+        response.setHeader("Connection", "close");
+        return response;
+    }
+
+    if (url == "/") {
+        filePath += "/index.html";
+    }
 
     std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
-    std::ifstream file(filePath.c_str());
+    std::ifstream file(filePath.c_str(), std::ios::binary);
 
     if (file.is_open()) {
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        std::string body = buffer.str();
+        // 파일 크기 확인
+        file.seekg(0, std::ios::end);
+        std::streamsize fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        // 파일 크기 제한 (예: 10MB)
+        const std::streamsize maxFileSize = 10 * 1024 * 1024;
+        if (fileSize > maxFileSize) {
+            response.setStatusCode(PayloadTooLarge_413);
+            response.setHeader("Content-Type", "text/html; charset=utf-8");
+            response.setHeader("Date", getCurTime());
+            std::string errorBody = "<html><body><h1>413 Request Entity Too Large</h1><p>The requested file is too large.</p></body></html>";
+            response.setBody(errorBody);
+            response.setHeader("Content-Length", std::to_string(errorBody.length()));
+            response.setHeader("Connection", "close");
+            return response;
+        }
+
+        std::string body(fileSize, '\0');
+        file.read(&body[0], fileSize);
 
         response.setStatusCode(OK_200);
         response.setHeader("Date", getCurTime());
         response.setHeader("Content-Type", getContentType(extension));
         response.setBody(body);
         response.setHeader("Content-Length", std::to_string(body.length()));
-        response.setHeader("Content-Language", "ko-KR");
-        response.setHeader("Content-Location", url);
-        response.setHeader("Last-Modified", getCurTime());
-        response.setHeader("Accept-Ranges", "bytes");
         response.setHeader("Connection", "keep-alive");
-		response.setHeader("encoding", "gzip");
 
         file.close();
     } else {
         response.setStatusCode(NotFound_404);
         response.setHeader("Content-Type", "text/html; charset=utf-8");
         response.setHeader("Date", getCurTime());
-
         std::string errorBody = "<html><body><h1>404 Not Found</h1><p>The requested file was not found.</p></body></html>";
         response.setBody(errorBody);
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
-        response.setHeader("Content-Language", "en-US");
         response.setHeader("Connection", "close");
     }
-	response.setHeader("Server", "42Webserv");
-	response.setHeader("X-Powered-By", "42Webserv");
+
+    response.setHeader("Server", "42Webserv");
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("X-Frame-Options", "SAMEORIGIN");
+    response.setHeader("X-XSS-Protection", "1; mode=block");
 
     return response;
 }
