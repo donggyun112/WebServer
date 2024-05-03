@@ -29,7 +29,7 @@ class LocationConfig {
     std::string                 _upload_limit_rate;
     std::vector<int>            _upload_cleanup;
 	std::vector<std::string>    _try_files;
-     
+    
     public:
     ~LocationConfig() {}
 	LocationConfig() {}
