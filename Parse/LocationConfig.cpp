@@ -178,14 +178,10 @@ std::vector<std::string>    LocationConfig::getAllowMethods() const {
 }
 
 std::string                 LocationConfig::getReturnCode() const {
-    if (_return_code.empty())
-        return "200";
     return _return_code;
 }
 
 std::string                 LocationConfig::getReturnUrl() const {
-    if (_return_url.empty())
-        return "/";
     return _return_url;
 }
 
