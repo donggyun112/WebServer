@@ -259,9 +259,9 @@ std::string getCurTime() {
 	return std::string(buf);
 }
 
-bool isExist(const std::string& path, const std::string& file)
+bool isExist(const std::string& path)
 {
-	std::string full_path = path + file;
+	std::string full_path = path;
 	std::ifstream ifs(full_path.c_str());
 	
 	return ifs.is_open();
@@ -299,17 +299,46 @@ std::string getContentType(const std::string &extension) {
         return "application/octet-stream";
 }
 
+std::string nomralizeUrl(const std::string &url) {
+	std::string normalizedUrl = url;
+	
+	// //제거
+
+	std::string::size_type pos = 0;
+	while ((pos = normalizedUrl.find("//", pos)) != std::string::npos) {
+		normalizedUrl.erase(pos, 1);
+	}
+	return normalizedUrl;	
+}
+Response handleMethodNotAllowed();
 Response Client::handleGetRequest(const Config &Conf) {
     Response response;
-    (void)Conf;
-    // GET 요청 처리 로직
-    const std::string url = this->getUri();
-    std::string filePath = "/Users/parkjunseo/42/webserv/html/";
-    filePath += url;
+    std::string url = this->getUri();
+    std::string filePath;
 
+    // URL 정규화
+    url = nomralizeUrl(url);
+
+    // 가상 서버 설정에 따른 루트 디렉토리 설정
+    // std::string root = Conf[_port].getRoot();
+	std::string root = "/Users/seodong-gyun/42/webserver/WebServer/html";
+    if (root.empty()) {
+        response.setStatusCode(InternalServerError_500);
+        response.setHeader("Content-Type", "text/html; charset=utf-8");
+        response.setHeader("Date", getCurTime());
+        std::string errorBody = "<html><body><h1>500 Internal Server Error</h1><p>Server configuration error: root directory not set.</p></body></html>";
+        response.setBody(errorBody);
+        response.setHeader("Content-Length", std::to_string(errorBody.length()));
+        response.setHeader("Connection", "close");
+        return response;
+    }
+
+    // 파일 경로 생성
+    filePath = root + url;
     filePath = normalizePath(filePath);
+
+    // 경로 유효성 검사
     if (!isValidPath(filePath)) {
-        std::cout << "Invalid request path: " << filePath << std::endl;
         response.setStatusCode(BadRequest_400);
         response.setHeader("Content-Type", "text/html; charset=utf-8");
         response.setHeader("Date", getCurTime());
@@ -320,23 +349,98 @@ Response Client::handleGetRequest(const Config &Conf) {
         return response;
     }
 
-    // 디렉토리 접근 제한
-    if (filePath.find("/../") != std::string::size_type(-1) || !isExist(filePath, "")) {
-        response.setStatusCode(Forbidden_403);
-        response.setHeader("Content-Type", "text/html; charset=utf-8");
-        response.setHeader("Date", getCurTime());
-        std::string errorBody = "<html><body><h1>403 Forbidden</h1><p>Access to the requested resource is forbidden.</p></body></html>";
-        response.setBody(errorBody);
-        response.setHeader("Content-Length", std::to_string(errorBody.length()));
+    // Location 블록 설정 확인
+    LocationConfig loc;
+    try {
+        loc = Conf[_port].getLocation(url);
+    } catch (const std::exception &e) {
+        loc = Conf[_port].getLocation("/");
+    }
+
+    // HTTP 메서드 허용 검사
+    std::vector<std::string> allowMethods = loc.getAllowMethods();
+    if (!allowMethods.empty() && std::find(allowMethods.begin(), allowMethods.end(), "GET") == allowMethods.end()) {
+        return handleMethodNotAllowed();
+    }
+
+    // 리다이렉션 처리
+    std::string returnCode = loc.getReturnCode();
+    std::string returnUrl = loc.getReturnUrl();
+    if (!returnCode.empty() && !returnUrl.empty()) {
+        int statusCode = std::stoi(returnCode);
+        response.setStatusCode(statusCode);
+        response.setHeader("Location", returnUrl);
         response.setHeader("Connection", "close");
         return response;
     }
 
-    if (url == "/") {
-        filePath += "/index.html";
+    // 루트 디렉토리 설정
+    std::string locationRoot = loc.getRoot();
+    if (!locationRoot.empty()) {
+        // filePath += locationRoot + url;
+		filePath = root + url;
     }
 
+    // 별칭 설정
+    std::string alias = loc.getAlias();
+    if (!alias.empty()) {
+        if (url.find(alias) == 0) {
+            filePath = alias + url.substr(alias.length());
+        }
+    }
+
+    // 인덱스 파일 설정
+    std::string index = loc.getIndex();
+    if (isDirectory(filePath)) {
+        if (!index.empty()) {
+            filePath += "/" + index;
+        } else {
+            bool autoindex = loc.getAutoindex();
+            if (autoindex) {
+                // 디렉토리 리스팅 구현
+                // std::string autoIndexBody = handleAutoIndex(filePath);
+                // response.setStatusCode(OK_200);
+                // response.setHeader("Date", getCurTime());
+                // response.setHeader("Content-Type", "text/html");
+                // response.setBody(autoIndexBody);
+                // response.setHeader("Content-Length", std::to_string(autoIndexBody.length()));
+                // response.setHeader("Connection", "close");
+                // return response;
+            } else {
+                response.setStatusCode(Forbidden_403);
+                response.setHeader("Content-Type", "text/html; charset=utf-8");
+                response.setHeader("Date", getCurTime());
+                std::string errorBody = "<html><body><h1>403 Forbidden</h1><p>Directory listing not allowed.</p></body></html>";
+                response.setBody(errorBody);
+                response.setHeader("Content-Length", std::to_string(errorBody.length()));
+                response.setHeader("Connection", "close");
+                return response;
+            }
+        }
+    }
+
+    // try_files 설정
+    std::vector<std::string> tryFiles = loc.getTryFiles();
+    if (!tryFiles.empty()) {
+        for (std::vector<std::string>::const_iterator it = tryFiles.begin(); it != tryFiles.end(); ++it) {
+            std::string tryFile = *it;
+            if (tryFile == "$uri") {
+                tryFile = filePath;
+            } else if (tryFile == "$uri/") {
+                tryFile = filePath + "/";
+            }
+
+            if (isExist(tryFile)) {
+                filePath = tryFile;
+                break;
+            }
+        }
+    }
+
+    // 파일 확장자 추출
     std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
+
+    // 파일 읽기
     std::ifstream file(filePath.c_str(), std::ios::binary);
 
     if (file.is_open()) {
@@ -345,19 +449,20 @@ Response Client::handleGetRequest(const Config &Conf) {
         std::streamsize fileSize = file.tellg();
         file.seekg(0, std::ios::beg);
 
-        // 파일 크기 제한 (예: 10MB)
-        const std::streamsize maxFileSize = 10 * 1024 * 1024;
+        // 파일 크기 제한 설정
+        const std::streamsize maxFileSize = 10 * 1024 * 1024; // 예시: 10MB
         if (fileSize > maxFileSize) {
             response.setStatusCode(PayloadTooLarge_413);
             response.setHeader("Content-Type", "text/html; charset=utf-8");
             response.setHeader("Date", getCurTime());
-            std::string errorBody = "<html><body><h1>413 Request Entity Too Large</h1><p>The requested file is too large.</p></body></html>";
+            std::string errorBody = "<html><body><h1>413 Payload Too Large</h1><p>The requested file is too large.</p></body></html>";
             response.setBody(errorBody);
             response.setHeader("Content-Length", std::to_string(errorBody.length()));
             response.setHeader("Connection", "close");
             return response;
         }
 
+        // 파일 내용 읽기
         std::string body(fileSize, '\0');
         file.read(&body[0], fileSize);
 
@@ -380,9 +485,6 @@ Response Client::handleGetRequest(const Config &Conf) {
     }
 
     response.setHeader("Server", "42Webserv");
-    response.setHeader("X-Content-Type-Options", "nosniff");
-    response.setHeader("X-Frame-Options", "SAMEORIGIN");
-    response.setHeader("X-XSS-Protection", "1; mode=block");
 
     return response;
 }
@@ -431,6 +533,7 @@ Response Client::sendResponse(const Config &Conf) {
 std::string Client::execute(const Config &Conf) {
 	Response response = sendResponse(Conf);
 	std::string responseStr = response.get_responses();
+	std::cout << responseStr << std::endl;
 	_tempResult = responseStr;
 	return responseStr;
 }
