@@ -20,12 +20,13 @@ private:
     std::unordered_map<int, std::string> _error_pages;
     std::map<std::string, LocationConfig> _locations;
     ServerConfig();
-public:
     std::string _path;
+public:
     ServerConfig(std::ifstream &file);
     ~ServerConfig();
     std::unordered_map<int, std::string> parseErrorPages(std::istringstream &iss);
     std::string getServerName() const;
+    std::string getPath() const { return _path; }
     Port getPortName() const;
 
     //getLocation 필요해서 만드는중인데스

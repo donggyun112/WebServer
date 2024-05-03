@@ -24,6 +24,7 @@ ServerConfig::ServerConfig(std::ifstream &file)
         //     inServerBlock = true;}
         if (key == "path") {
             iss >> this->_path;
+            // std::cout << this->_path << std::endl;
         }
         else if (key == "listen") {
             std::string listen;
