@@ -310,6 +310,15 @@ std::string nomralizeUrl(const std::string &HTTP_uri) {
 	return normalizedUrl;	
 }
 Response handleMethodNotAllowed();
+
+bool    isExtention(std::string httpPath) { 
+    if (httpPath.find_last_of('.') == std::string::npos)
+        return false;
+    return true;
+}
+
+
+
 Response Client::handleGetRequest(const Config &Conf) {
     Response response;
     std::string HTTP_uri = this->getUri();
@@ -332,6 +341,8 @@ Response Client::handleGetRequest(const Config &Conf) {
         return response;
     }
 
+
+
     // Location 블록 설정 확인
     LocationConfig loc;
     try {
@@ -339,7 +350,8 @@ Response Client::handleGetRequest(const Config &Conf) {
     } catch (const std::exception &e) {
         loc = Conf[_port].getLocation("/");
     }
- 
+
+
     //파일인지, 디렉토리인지, 특수파일인지 확인?
     if (isExtention(HTTP_uri) == true) {
         filePath = Server_root + loc.getRoot() + HTTP_uri;
@@ -348,6 +360,7 @@ Response Client::handleGetRequest(const Config &Conf) {
     } else
         filePath = Server_root + loc.getRoot() + HTTP_uri.substr(loc.getRoot().length(), HTTP_uri.length());
 
+    std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     filePath = normalizePath(filePath);
 
     // 경로 유효성 검사
@@ -361,13 +374,13 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setHeader("Connection", "close");
         return response;
     }
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     // HTTP 메서드 허용 검사
     std::vector<std::string> allowMethods = loc.getAllowMethods();
     if (!allowMethods.empty() && std::find(allowMethods.begin(), allowMethods.end(), "GET") == allowMethods.end()) {
         return handleMethodNotAllowed();
     }
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     // 리다이렉션 처리
     std::string returnCode = loc.getReturnCode();
     std::string returnUrl = loc.getReturnUrl();
@@ -378,15 +391,9 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setHeader("Connection", "close");
         return response;
     }
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     // 루트 디렉토리 설정
-    std::string locationRoot = loc.getRoot();
-    std::cout << "locationRoot: " << locationRoot << std::endl;
-    if (!locationRoot.empty()) {
-        // filePath += locationRoot + HTTP_uri;
-		filePath = Server_root + HTTP_uri;
-    }
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     // 별칭 설정
     std::string alias = loc.getAlias();
     if (!alias.empty()) {
@@ -394,7 +401,7 @@ Response Client::handleGetRequest(const Config &Conf) {
             filePath = alias + HTTP_uri.substr(alias.length());
         }
     }
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     // 인덱스 파일 설정
     std::string index = loc.getIndex();
 
@@ -413,6 +420,7 @@ Response Client::handleGetRequest(const Config &Conf) {
                 // response.setHeader("Content-Length", std::to_string(autoIndexBody.length()));
                 // response.setHeader("Connection", "close");
                 // return response;
+                std::cout << "filePath: " << __LINE__ << filePath << std::endl;
             } else {
                 response.setStatusCode(Forbidden_403);
                 response.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -421,11 +429,12 @@ Response Client::handleGetRequest(const Config &Conf) {
                 response.setBody(errorBody);
                 response.setHeader("Content-Length", std::to_string(errorBody.length()));
                 response.setHeader("Connection", "close");
+                std::cout << "filePath: " << __LINE__ << filePath << std::endl;
                 return response;
             }
         }
     }
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     // try_files 설정
     std::vector<std::string> tryFiles = loc.getTryFiles();
     if (!tryFiles.empty()) {
@@ -433,23 +442,26 @@ Response Client::handleGetRequest(const Config &Conf) {
             std::string tryFile = *it;
             if (tryFile == "$uri") {
                 tryFile = filePath;
+
             } else if (tryFile == "$uri/") {
                 tryFile = filePath + "/";
+
             }
 
             if (isExist(tryFile)) {
                 filePath = tryFile;
+
                 break;
             }
         }
     }
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     // 파일 확장자 추출
     std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
 
     // 파일 읽기
     std::ifstream file(filePath.c_str(), std::ios::binary);
-
+    std::cout << "Ssssssssssssssasdasadasfasfafafaf" << filePath << std::endl;
     if (file.is_open()) {
         // 파일 크기 확인
         file.seekg(0, std::ios::end);
@@ -468,7 +480,7 @@ Response Client::handleGetRequest(const Config &Conf) {
             response.setHeader("Connection", "close");
             return response;
         }
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
         // 파일 내용 읽기
         std::string body(fileSize, '\0');
         file.read(&body[0], fileSize);
@@ -479,9 +491,10 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setBody(body);
         response.setHeader("Content-Length", std::to_string(body.length()));
         response.setHeader("Connection", "keep-alive");
-
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
         file.close();
     } else {
+        std::cout << "File not found: " << filePath << std::endl;
         response.setStatusCode(NotFound_404);
         response.setHeader("Content-Type", "text/html; charset=utf-8");
         response.setHeader("Date", getCurTime());
@@ -489,6 +502,7 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setBody(errorBody);
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
         response.setHeader("Connection", "close");
+std::cout << "filePath: " << __LINE__ << filePath << std::endl;
     }
 
     response.setHeader("Server", "42Webserv");
