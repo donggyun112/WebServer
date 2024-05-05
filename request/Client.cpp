@@ -303,7 +303,6 @@ std::string nomralizeUrl(const std::string &url) {
 	std::string normalizedUrl = url;
 	
 	// //제거
-
 	std::string::size_type pos = 0;
 	while ((pos = normalizedUrl.find("//", pos)) != std::string::npos) {
 		normalizedUrl.erase(pos, 1);
@@ -321,7 +320,7 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 가상 서버 설정에 따른 루트 디렉토리 설정
     // std::string root = Conf[_port].getRoot();
-	std::string root = "/Users/seodong-gyun/42/webserver/WebServer/html";
+	std::string root = Conf[this->getPort()].getPath();
     if (root.empty()) {
         response.setStatusCode(InternalServerError_500);
         response.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -335,6 +334,10 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 파일 경로 생성
     filePath = root + url;
+    std::cout << "root: " << root << std::endl;
+    std::cout << "url: " << url << std::endl;
+    std::cout << "filePath: " << filePath << std::endl;
+
     filePath = normalizePath(filePath);
 
     // 경로 유효성 검사
@@ -376,6 +379,7 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 루트 디렉토리 설정
     std::string locationRoot = loc.getRoot();
+    std::cout << "locationRoot: " << locationRoot << std::endl;
     if (!locationRoot.empty()) {
         // filePath += locationRoot + url;
 		filePath = root + url;
@@ -391,6 +395,7 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 인덱스 파일 설정
     std::string index = loc.getIndex();
+
     if (isDirectory(filePath)) {
         if (!index.empty()) {
             filePath += "/" + index;

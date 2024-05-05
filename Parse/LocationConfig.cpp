@@ -24,8 +24,17 @@ LocationConfig::LocationConfig(std::ifstream &file)
         if (key == "location") {
             std::string path;
             iss >> path;
+            if (path[0] != '/') {
+                while (iss >> path) {
+                    if (path[0] == '\\') {
+                        break;
+                    }
+                }
+            }
             if (path.empty())
                 continue;
+            else if (path[0] == '\\')
+                this->_path = path.substr(1, path.size() - 2);
             else
                 this->_path = path;
         } else if (key == "alias") {
@@ -156,14 +165,14 @@ std::string                 LocationConfig::getPath() const { return this->_path
 std::string                 LocationConfig::getAlias() const { return _alias; }
 
 std::string                 LocationConfig::getRoot() const {
-    if (_root.empty())
-        return ".";
+    // if (_root.empty())
+    //     return ".";
     return _root;
 }
 
 std::string                 LocationConfig::getIndex() const {
-    if (_index.empty())
-        return "index.html";
+    // if (_index.empty())
+    //     return "index.html";
     return _index;
 }
 
@@ -184,26 +193,26 @@ std::string                 LocationConfig::getReturnUrl() const {
 }
 
 std::string                 LocationConfig::getFastcgiPass() const {
-    if (_fastcgi_pass.empty())
-        return "";
+    // if (_fastcgi_pass.empty())
+    //     return "";
     return _fastcgi_pass;
 }
 
 std::string                 LocationConfig::getUploadPass() const {
-    if (_upload_pass.empty())
-        return "";
+    // if (_upload_pass.empty())
+    //     return "";
     return _upload_pass;
 }
 
 std::string                 LocationConfig::getUploadStore() const {
-    if (_upload_store.empty())
-        return "";
+    // if (_upload_store.empty())
+    //     return "";
     return _upload_store;
 }
 
 std::string                 LocationConfig::getUploadStateStore() const {
-    if (_upload_state_store.empty())
-        return "";
+    // if (_upload_state_store.empty())
+    //     return "";
     return _upload_state_store;
 }
 
@@ -212,14 +221,14 @@ bool                        LocationConfig::getUploadResume() const {
 }
 
 std::string                 LocationConfig::getUploadMaxFileSize() const {
-    if (_upload_max_file_size.empty())
-        return "1m";
+    // if (_upload_max_file_size.empty())
+    //     return "1m";
     return _upload_max_file_size;
 }
 
 std::string                 LocationConfig::getUploadLimitRate() const {
-    if (_upload_limit_rate.empty())
-        return "0";
+    // if (_upload_limit_rate.empty())
+    //     return "0";
     return _upload_limit_rate;
 }
 
