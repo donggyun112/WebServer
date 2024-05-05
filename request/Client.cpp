@@ -299,8 +299,8 @@ std::string getContentType(const std::string &extension) {
         return "application/octet-stream";
 }
 
-std::string nomralizeUrl(const std::string &url) {
-	std::string normalizedUrl = url;
+std::string nomralizeUrl(const std::string &HTTP_uri) {
+	std::string normalizedUrl = HTTP_uri;
 	
 	// //제거
 	std::string::size_type pos = 0;
@@ -312,16 +312,16 @@ std::string nomralizeUrl(const std::string &url) {
 Response handleMethodNotAllowed();
 Response Client::handleGetRequest(const Config &Conf) {
     Response response;
-    std::string url = this->getUri();
+    std::string HTTP_uri = this->getUri();
     std::string filePath;
 
     // URL 정규화
-    url = nomralizeUrl(url);
+    HTTP_uri = nomralizeUrl(HTTP_uri);
 
     // 가상 서버 설정에 따른 루트 디렉토리 설정
-    // std::string root = Conf[_port].getRoot();
-	std::string root = Conf[this->getPort()].getPath();
-    if (root.empty()) {
+    // std::string Server_root = Conf[_port].getRoot();
+	std::string Server_root = Conf[this->getPort()].getPath();
+    if (Server_root.empty()) {
         response.setStatusCode(InternalServerError_500);
         response.setHeader("Content-Type", "text/html; charset=utf-8");
         response.setHeader("Date", getCurTime());
@@ -332,11 +332,21 @@ Response Client::handleGetRequest(const Config &Conf) {
         return response;
     }
 
-    // 파일 경로 생성
-    filePath = root + url;
-    std::cout << "root: " << root << std::endl;
-    std::cout << "url: " << url << std::endl;
-    std::cout << "filePath: " << filePath << std::endl;
+    // Location 블록 설정 확인
+    LocationConfig loc;
+    try {
+        loc = Conf[_port].getLocation(HTTP_uri);
+    } catch (const std::exception &e) {
+        loc = Conf[_port].getLocation("/");
+    }
+ 
+    //파일인지, 디렉토리인지, 특수파일인지 확인?
+    if (isExtention(HTTP_uri) == true) {
+        filePath = Server_root + loc.getRoot() + HTTP_uri;
+    } else if (isDirectory(HTTP_uri) == true) {
+        filePath = Server_root + HTTP_uri;
+    } else
+        filePath = Server_root + loc.getRoot() + HTTP_uri.substr(loc.getRoot().length(), HTTP_uri.length());
 
     filePath = normalizePath(filePath);
 
@@ -350,14 +360,6 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
         response.setHeader("Connection", "close");
         return response;
-    }
-
-    // Location 블록 설정 확인
-    LocationConfig loc;
-    try {
-        loc = Conf[_port].getLocation(url);
-    } catch (const std::exception &e) {
-        loc = Conf[_port].getLocation("/");
     }
 
     // HTTP 메서드 허용 검사
@@ -381,15 +383,15 @@ Response Client::handleGetRequest(const Config &Conf) {
     std::string locationRoot = loc.getRoot();
     std::cout << "locationRoot: " << locationRoot << std::endl;
     if (!locationRoot.empty()) {
-        // filePath += locationRoot + url;
-		filePath = root + url;
+        // filePath += locationRoot + HTTP_uri;
+		filePath = Server_root + HTTP_uri;
     }
 
     // 별칭 설정
     std::string alias = loc.getAlias();
     if (!alias.empty()) {
-        if (url.find(alias) == 0) {
-            filePath = alias + url.substr(alias.length());
+        if (HTTP_uri.find(alias) == 0) {
+            filePath = alias + HTTP_uri.substr(alias.length());
         }
     }
 
