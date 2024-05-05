@@ -303,7 +303,6 @@ std::string nomralizeUrl(const std::string &url) {
 	std::string normalizedUrl = url;
 	
 	// //제거
-
 	std::string::size_type pos = 0;
 	while ((pos = normalizedUrl.find("//", pos)) != std::string::npos) {
 		normalizedUrl.erase(pos, 1);
@@ -380,6 +379,7 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 루트 디렉토리 설정
     std::string locationRoot = loc.getRoot();
+    std::cout << "locationRoot: " << locationRoot << std::endl;
     if (!locationRoot.empty()) {
         // filePath += locationRoot + url;
 		filePath = root + url;
@@ -395,6 +395,7 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 인덱스 파일 설정
     std::string index = loc.getIndex();
+
     if (isDirectory(filePath)) {
         if (!index.empty()) {
             filePath += "/" + index;
