@@ -321,7 +321,7 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 가상 서버 설정에 따른 루트 디렉토리 설정
     // std::string root = Conf[_port].getRoot();
-	std::string root = "/Users/seodong-gyun/42/webserver/WebServer/html";
+	std::string root = Conf[this->getPort()].getPath();
     if (root.empty()) {
         response.setStatusCode(InternalServerError_500);
         response.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -335,6 +335,10 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 파일 경로 생성
     filePath = root + url;
+    std::cout << "root: " << root << std::endl;
+    std::cout << "url: " << url << std::endl;
+    std::cout << "filePath: " << filePath << std::endl;
+
     filePath = normalizePath(filePath);
 
     // 경로 유효성 검사

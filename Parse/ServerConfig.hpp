@@ -31,12 +31,28 @@ public:
     Port getPortName() const;
 
     //getLocation 필요해서 만드는중인데스
+
+    std::vector<LocationConfig> getLocation() {
+        return _locations;
+    }
+    bool    isExtention(std::string httpPath) { 
+        if (httpPath.find_last_of('.') == std::string::npos)
+            return false;
+        return true;
+    }
+
     LocationConfig getLocation(std::string httpPath) {
+                std::cout << "Http Path: " << httpPath << std::endl;
+        if (isExtention(httpPath)) {
+            httpPath = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
+        }
+        
         for (size_t i = 0; i < _locations.size(); i++) {
             if (httpPath.substr(0, _locations[i].getPath().size()) == _locations[i].getPath())
             {
                 if (httpPath.size() > _locations[i].getPath().size() && httpPath[_locations[i].getPath().size()] != '/')
                     continue;
+                std::cout << "Location Path: " << _locations[i].getPath() << std::endl;
                 return _locations[i];
             }
         }

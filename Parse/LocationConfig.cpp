@@ -24,8 +24,17 @@ LocationConfig::LocationConfig(std::ifstream &file)
         if (key == "location") {
             std::string path;
             iss >> path;
+            if (path[0] != '/') {
+                while (iss >> path) {
+                    if (path[0] == '\\') {
+                        break;
+                    }
+                }
+            }
             if (path.empty())
                 continue;
+            else if (path[0] == '\\')
+                this->_path = path.substr(1, path.size() - 2);
             else
                 this->_path = path;
         } else if (key == "alias") {

@@ -36,7 +36,6 @@ std::string parseUri(const std::string& uri)
 	std::string path, query;
 
 	if (isQuary(uri)) {
-			size_t pos = uri.find('?');
 			path = uri.substr(0, uri.find('?'));
 			query = uri.substr(uri.find('?') + 1);
 			HttpRequest::parseQuery(query);
