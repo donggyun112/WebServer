@@ -18,7 +18,7 @@ private:
     std::string _server_name;
     int _client_max_body_size;
     std::unordered_map<int, std::string> _error_pages;
-    std::map<std::string, LocationConfig> _locations;
+    std::vector<LocationConfig> _locations;
     ServerConfig();
     std::string _path;
     std::string _index;
@@ -32,21 +32,16 @@ public:
 
     //getLocation 필요해서 만드는중인데스
     LocationConfig getLocation(std::string httpPath) {
-        std::map<std::string, LocationConfig>::iterator it = _locations.begin();
-
-        for (; it != _locations.end(); it++) {
-            if (httpPath.substr(0, it->first.length()) == it->first)
-                return it->second;
+        for (size_t i = 0; i < _locations.size(); i++) {
+            if (httpPath.substr(0, _locations[i].getPath().size()) == _locations[i].getPath())
+            {
+                if (httpPath.size() > _locations[i].getPath().size() && httpPath[_locations[i].getPath().size()] != '/')
+                    continue;
+                return _locations[i];
+            }
         }
 		throw std::runtime_error("This path doesn't match with any location");
     }
-
-	LocationConfig operator[](std::string path) const {
-		if (_locations.find(path) != _locations.end()) {
-			return _locations.at(path);
-		}
-		throw std::runtime_error("This path doesn't match with any location");
-	}
 };
 
 #endif
