@@ -401,16 +401,14 @@ Response Client::handleGetRequest(const Config &Conf) {
         } else {
             bool autoindex = loc.getAutoindex();
             if (autoindex) {
-                // 디렉토리 리스팅 구현
-                // std::string autoIndexBody = handleAutoIndex(filePath);
-                // response.setStatusCode(OK_200);
-                // response.setHeader("Date", getCurTime());
-                // response.setHeader("Content-Type", "text/html");
-                // response.setBody(autoIndexBody);
-                // response.setHeader("Content-Length", std::to_string(autoIndexBody.length()));
-                // response.setHeader("Connection", "close");
-                // return response;
-            
+                std::string autoIndexBody = handleAutoIndex(filePath);
+                response.setStatusCode(OK_200);
+                response.setHeader("Date", getCurTime());
+                response.setHeader("Content-Type", "text/html");
+                response.setBody(autoIndexBody);
+                response.setHeader("Content-Length", std::to_string(autoIndexBody.length()));
+                response.setHeader("Connection", "close");
+                return response;
             } else {
                 response.setStatusCode(Forbidden_403);
                 response.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -546,7 +544,6 @@ std::string Client::execute(const Config &Conf) {
 }
 
 
-/* auto index
 std::string FormatTime(time_t time)
 {
 	char buffer[80];
@@ -572,13 +569,12 @@ std::string FormatSize(double size)
 
 std::string Client::handleAutoIndex(std::string servRoot)
 {
-    std::string locRoot = _request._uri;  // <-- uri를 어떻게 받을지만 정하면 됨. 임시적으로 클라이언트에 해서 편하게 받으려고만했던것.
-    std::string dirPath = servRoot + locRoot;
+    std::string dirPath = servRoot;
 
     struct stat fileStat;
     std::stringstream body;
-    body << "<html>\n<head>\n<title>Index of /" << locRoot << "</title>\n</head>\n<body>\n";
-    body << "<h1>Index of " << locRoot << "</h1>\n";
+    body << "<html>\n<head>\n<title>Index of /" << dirPath << "</title>\n</head>\n<body>\n";
+    body << "<h1>Index of " << dirPath << "</h1>\n";
 	body << "<hr> <pre>\n<table>\n<tr><th></th><th></th><th></th></tr>\n";
 
     DIR *dir = opendir(dirPath.c_str());
@@ -590,8 +586,11 @@ std::string Client::handleAutoIndex(std::string servRoot)
     {
         std::vector<std::string> fileList;
         struct dirent *ent;
-        while ((ent = readdir(dir)) != NULL)
+        size_t maxFileNameLength = 0;
+        while ((ent = readdir(dir)) != NULL) {
             fileList.push_back(ent->d_name);
+            maxFileNameLength = std::max(maxFileNameLength, strlen(ent->d_name));
+        }
         closedir(dir);
 
         std::sort(fileList.begin(), fileList.end());
@@ -603,22 +602,27 @@ std::string Client::handleAutoIndex(std::string servRoot)
             if (fileName == ".")
                 continue;
             std::string filePath = dirPath + "/" + fileName;
+            if (stat(filePath.c_str(), &fileStat) == -1) {
+                _responseStatus = 503;
+                return "";
+            }
             if (stat(filePath.c_str(), &fileStat) == 0)
             {
                 body << "<tr>" << "<td>";
                 if (S_ISDIR(fileStat.st_mode))
-                    body << "<a href=\"" << fileName << "/\">" << fileName << "/</a>";
+                    body << "<a href=\"" << fileName << "/\">" << std::left << fileName + "/" << "</a>";
                 else
-                    body << "<a href=\"" << fileName << "\">" << fileName << "</a>";
-                body << " </td> <td>\t\t" << FormatTime(fileStat.st_mtime) << "</td>";
+                    body << std::setw(maxFileNameLength + 1) << std::left << fileName;
+                body << "</td><td>\t\t" << FormatTime(fileStat.st_mtime) << "</td>";
                 double fileSize = static_cast<double>(fileStat.st_size);
-                body << "<td>\t\t" << FormatSize(fileSize) << " </td>" << "</tr>\n";
+                body << "<td>\t\t" << FormatSize(fileSize) << "</td>" << "</tr>\n";
+            }
+            else {
+                _readStatus = 500;
+                return "";
             }
         }
 		body << " </table> </pre>\n<hr>\n</body>\n</html>\n";
     }
-
     return body.str();
 }
-
-*/
