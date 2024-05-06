@@ -567,7 +567,7 @@ std::string FormatSize(double size)
 	return oss.str();
 }
 
-std::string Client::handleAutoIndex(std::string servRoot)
+std::string Client::handleAutoIndex(const std::string &servRoot)
 {
     std::string dirPath = servRoot;
 
@@ -579,7 +579,13 @@ std::string Client::handleAutoIndex(std::string servRoot)
 
     DIR *dir = opendir(dirPath.c_str());
 	if (dir == NULL) {
-		_responseStatus = 404;
+        response.setStatusCode(Forbidden_404);
+        response.setHeader("Content-Type", "text/html; charset=utf-8");
+        response.setHeader("Date", getCurTime());
+        std::string errorBody = "<html><body><h1>404 Not Found</h1><p>Directory listing not allowed.</p></body></html>";
+        response.setBody(errorBody);
+        response.setHeader("Content-Length", std::to_string(errorBody.length()));
+        response.setHeader("Connection", "close");
 		return "";
 	}
     if (dir)
@@ -618,7 +624,13 @@ std::string Client::handleAutoIndex(std::string servRoot)
                 body << "<td>\t\t" << FormatSize(fileSize) << "</td>" << "</tr>\n";
             }
             else {
-                _readStatus = 500;
+                response.setStatusCode(Forbidden_500);
+                response.setHeader("Content-Type", "text/html; charset=utf-8");
+                response.setHeader("Date", getCurTime());
+                std::string errorBody = "<html><body><h1>500 Internal Server Error</h1><p>Directory listing not allowed.</p></body></html>";
+                response.setBody(errorBody);
+                response.setHeader("Content-Length", std::to_string(errorBody.length()));
+                response.setHeader("Connection", "close");
                 return "";
             }
         }
