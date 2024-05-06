@@ -67,11 +67,9 @@ LocationConfig::LocationConfig(std::ifstream &file)
                 this->_autoindex = false;
         } else if (key == "allow_methods") {
             std::string allow_methods;
-            iss >> allow_methods;
-            if (allow_methods.empty())
-                continue;
-            else
+            while (iss >> allow_methods) {
                 this->_allow_methods.push_back(allow_methods);
+            }
         } else if (key == "return_code") {
             std::string return_code;
             iss >> return_code;
