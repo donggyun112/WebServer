@@ -171,6 +171,7 @@ void Client::printAllHeaders() const{
 bool isDirectory(const std::string &path) {
     struct stat st;
     if (stat(path.c_str(), &st) == 0) {
+
         return S_ISDIR(st.st_mode);
     }
     return false;
@@ -336,10 +337,10 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setBody(errorBody);
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
         response.setHeader("Connection", "close");
+            std::cout << __LINE__ << std::endl;
         return response;
     }
-
-
+            std::cout << __LINE__ << std::endl;
 
     // Location 블록 설정 확인
     LocationConfig loc;
@@ -348,15 +349,19 @@ Response Client::handleGetRequest(const Config &Conf) {
     } catch (const std::exception &e) {
         loc = Conf[_port].getLocation("/");
     }
-
+            std::cout << __LINE__ << std::endl;
 
     //파일인지, 디렉토리인지, 특수파일인지 확인?
     if (isExtention(HTTP_uri) == true) {
+
         filePath = Server_root + loc.getRoot() + HTTP_uri;
-    } else if (isDirectory(HTTP_uri) == true) {
+    } else if (isDirectory(Server_root + HTTP_uri) == true) {
+
         filePath = Server_root + HTTP_uri;
-    } else
-        filePath = Server_root + loc.getRoot() + HTTP_uri.substr(loc.getRoot().length(), HTTP_uri.length());
+    } else {
+        filePath = Server_root + loc.getRoot() + HTTP_uri.substr(loc.getRoot().length(), HTTP_uri.length() - loc.getRoot().length());
+    }
+            std::cout << __LINE__ << filePath <<  std::endl;
 
     // 경로 유효성 검사
     if (!isValidPath(filePath)) {
@@ -367,11 +372,13 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setBody(errorBody);
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
         response.setHeader("Connection", "close");
+            std::cout << __LINE__ << std::endl;
         return response;
     }
     // HTTP 메서드 허용 검사
     std::vector<std::string> allowMethods = loc.getAllowMethods();
     if (!allowMethods.empty() && std::find(allowMethods.begin(), allowMethods.end(), "GET") == allowMethods.end()) {
+            std::cout << __LINE__ << std::endl;
         return handleMethodNotAllowed();
     }
     // 리다이렉션 처리
@@ -382,6 +389,7 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setStatusCode(statusCode);
         response.setHeader("Location", returnUrl);
         response.setHeader("Connection", "close");
+            std::cout << __LINE__ << std::endl;
         return response;
     }
 
@@ -395,33 +403,12 @@ Response Client::handleGetRequest(const Config &Conf) {
 
     // 인덱스 파일 설정
     std::string index = loc.getIndex();
-    if (isDirectory(filePath)) {
+    if (loc.getAutoindex() == false && isDirectory(filePath)) {
         if (!index.empty()) {
             filePath += "/" + index;
-        } else {
-            bool autoindex = loc.getAutoindex();
-            if (autoindex) {
-                std::string autoIndexBody = handleAutoIndex(response, filePath);
-                response.setStatusCode(OK_200);
-                response.setHeader("Date", getCurTime());
-                response.setHeader("Content-Type", "text/html");
-                response.setBody(autoIndexBody);
-                response.setHeader("Content-Length", std::to_string(autoIndexBody.length()));
-                response.setHeader("Connection", "close");
-                return response;
-            } else {
-                response.setStatusCode(Forbidden_403);
-                response.setHeader("Content-Type", "text/html; charset=utf-8");
-                response.setHeader("Date", getCurTime());
-                std::string errorBody = "<html><body><h1>403 Forbidden</h1><p>Directory listing not allowed.</p></body></html>";
-                response.setBody(errorBody);
-                response.setHeader("Content-Length", std::to_string(errorBody.length()));
-                response.setHeader("Connection", "close");
-            
-                return response;
-            }
         }
     }
+
 
     // // try_files 설정
     // std::vector<std::string> tryFiles = loc.getTryFiles();
@@ -444,12 +431,13 @@ Response Client::handleGetRequest(const Config &Conf) {
     //     }
     // }
 
+
     // 파일 확장자 추출
     std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
 
     // 파일 읽기
     std::ifstream file(filePath.c_str(), std::ios::binary);
-    if (file.is_open()) {
+    if (isDirectory(filePath) == false && file.is_open()) {
         // 파일 크기 확인
         file.seekg(0, std::ios::end);
         std::streamsize fileSize = file.tellg();
@@ -465,12 +453,12 @@ Response Client::handleGetRequest(const Config &Conf) {
             response.setBody(errorBody);
             response.setHeader("Content-Length", std::to_string(errorBody.length()));
             response.setHeader("Connection", "close");
+            std::cout << __LINE__ << std::endl;
             return response;
         }
         // 파일 내용 읽기
         std::string body(fileSize, '\0');
         file.read(&body[0], fileSize);
-
         response.setStatusCode(OK_200);
         response.setHeader("Date", getCurTime());
         response.setHeader("Content-Type", getContentType(extension));
@@ -478,7 +466,27 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setHeader("Content-Length", std::to_string(body.length()));
         response.setHeader("Connection", "keep-alive");
         file.close();
-    } else {
+    } else if (isDirectory(filePath) == true && loc.getAutoindex() == true) {
+            std::string autoIndexBody = handleAutoIndex(response, filePath);
+            response.setStatusCode(OK_200);
+            response.setHeader("Date", getCurTime());
+            response.setHeader("Content-Type", "text/html");
+            response.setBody(autoIndexBody);
+            response.setHeader("Content-Length", std::to_string(autoIndexBody.length()));
+            response.setHeader("Connection", "close");
+            std::cout << __LINE__ << std::endl;
+            return response;
+    } else if (isDirectory(filePath) == true && loc.getAutoindex() == false) {
+            response.setStatusCode(Forbidden_403);
+            response.setHeader("Content-Type", "text/html; charset=utf-8");
+            response.setHeader("Date", getCurTime());
+            std::string errorBody = "<html><body><h1>403 Forbidden</h1><p>Directory listing not allowed.</p></body></html>";
+            response.setBody(errorBody);
+            response.setHeader("Content-Length", std::to_string(errorBody.length()));
+            response.setHeader("Connection", "close");
+            std::cout << __LINE__ << std::endl;
+            return response;
+    } else if (isDirectory(filePath) == false) { //이 블록 동작 무조건 안함
         std::cout << "File not found: " << filePath << std::endl;
         response.setStatusCode(NotFound_404);
         response.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -487,6 +495,7 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setBody(errorBody);
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
         response.setHeader("Connection", "close");
+        return response;
     }
 
     response.setHeader("Server", "42Webserv");
@@ -538,7 +547,6 @@ Response Client::sendResponse(const Config &Conf) {
 std::string Client::execute(const Config &Conf) {
 	Response response = sendResponse(Conf);
 	std::string responseStr = response.get_responses();
-	// std::cout << responseStr << std::endl;
 	_tempResult = responseStr;
 	return responseStr;
 }
@@ -586,7 +594,7 @@ std::string Client::handleAutoIndex(Response response, const std::string &servRo
         response.setBody(errorBody);
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
         response.setHeader("Connection", "close");
-		return "";
+		return response.get_responses();
 	}
     if (dir)
     {
@@ -631,7 +639,7 @@ std::string Client::handleAutoIndex(Response response, const std::string &servRo
                 response.setBody(errorBody);
                 response.setHeader("Content-Length", std::to_string(errorBody.length()));
                 response.setHeader("Connection", "close");
-                return "";
+                return response.get_responses();
             }
         }
 		body << " </table> </pre>\n<hr>\n</body>\n</html>\n";
