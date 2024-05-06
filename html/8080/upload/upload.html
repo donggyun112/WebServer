@@ -80,7 +80,7 @@
     <div class="container">
         <h1>파일 업로드 및 삭제</h1>
         
-        <form action="/cgi-bin/upload.py" method="post" enctype="multipart/form-data">
+        <form action="/upload.py" method="post" enctype="multipart/form-data">
             <input type="file" name="file">
             <input type="submit" value="업로드">
         </form>
@@ -92,7 +92,7 @@
             <li><a href="/files/file3.pdf">file3.pdf</a> <a href="/cgi-bin/delete.py?file=file3.pdf">[삭제]</a></li>
         </ul>
         
-        <a href="features.html" class="btn">뒤로 가기</a>
+        <a href="/features" class="btn">뒤로 가기</a>
     </div>
 </body>
 </html>
