@@ -5,6 +5,17 @@
 #include <sstream>
 #include <string>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <climits>
+#include <cstring>
+
+enum Method {
+    GET = 1,
+    POST,
+    PUT,
+    DELETE,
+};
 
 Client::Client(Port port) : _port(port) {
     clearAll();
@@ -161,13 +172,6 @@ void Client::printAllHeaders() const{
     }
 }
 
-
-
-#include <sys/stat.h>
-#include <unistd.h>
-#include <climits>
-#include <cstring>
-
 bool isDirectory(const std::string &path) {
     struct stat st;
     if (stat(path.c_str(), &st) == 0) {
@@ -182,22 +186,18 @@ bool isValidPath(const std::string &path) {
     if (path.empty()) {
         return false;
     }
-    
     // 경로가 너무 긴 경우
     if (path.length() > PATH_MAX) {
         return false;
     }
-    
     // 경로에 불법적인 문자가 포함된 경우
     if (path.find_first_of("\0\\") != std::string::npos) {
         return false;
     }
-    
     // 경로가 상대경로인 경우
     if (path[0] != '/') {
         return false;
     }
-    
     return true;
 }
 
@@ -348,6 +348,10 @@ Response Client::handleGetRequest(const Config &Conf) {
         loc = Conf[_port].getLocation("/");
     }
 
+    if (isMethodPossible(GET, loc) == false) {
+        return handleMethodNotAllowed();
+    }
+
     //파일인지, 디렉토리인지, 특수파일인지 확인?
     if (isExtention(HTTP_uri) == true) {
         filePath = Server_root + loc.getRoot() + HTTP_uri;
@@ -396,9 +400,8 @@ Response Client::handleGetRequest(const Config &Conf) {
     // 인덱스 파일 설정
     std::string index = loc.getIndex();
     if (isDirectory(filePath)) {
-        if (!index.empty()) {
+        if (!index.empty())
             filePath += "/" + index;
-        }
     }
 
 
@@ -497,6 +500,7 @@ Response Client::handleGetRequest(const Config &Conf) {
     response.setHeader("Server", "42Webserv");
     return response;
 }
+
 Response handleMethodNotAllowed() {
     Response response;
     response.setStatusCode(MethodNotAllowed_405);
@@ -511,13 +515,16 @@ Response handleMethodNotAllowed() {
     return response;
 }
 
+bool    Client::isMethodPossible(int method, const LocationConfig &Loc) {
+    for (size_t i = 0; i < Loc.getAllowMethods().size(); ++i) {
+        if (method == getMethodNumber(Loc.getAllowedMethod(i)))
+            return true;
+    }
+    return false;
+}
+
 Response Client::sendResponse(const Config &Conf) {
-    enum Method {
-        GET = 1,
-        POST,
-        PUT,
-        DELETE
-    };
+
 
     int method = getMethodNumber(_request._method);
     switch (method) {

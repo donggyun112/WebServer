@@ -64,6 +64,7 @@ class Client {
 		// void 			setHeader(const std::string &key, const std::string &value);
 		Response			sendResponse(const Config &Conf);
 		Response			handleGetRequest(const Config &Conf);
+        bool                isMethodPossible(int method, const LocationConfig &Loc);
 
         //getReadStatus;
 
