@@ -1,4 +1,4 @@
-#include "EchoServer.hpp"
+#include "../Server/EchoServer.hpp"
 #include "../Parse/Config.hpp"
 
 using namespace std;
