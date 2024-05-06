@@ -573,8 +573,8 @@ std::string Client::handleAutoIndex(std::string servRoot)
 
     struct stat fileStat;
     std::stringstream body;
-    body << "<html>\n<head>\n<title>Index of /" << dirPath << "</title>\n</head>\n<body>\n";
-    body << "<h1>Index of " << dirPath << "</h1>\n";
+    body << "<html>\n<head>\n<title> AutoIndex </title>\n</head>\n<body>\n";
+    body << "<h1>Index of / </h1>\n";
 	body << "<hr> <pre>\n<table>\n<tr><th></th><th></th><th></th></tr>\n";
 
     DIR *dir = opendir(dirPath.c_str());
