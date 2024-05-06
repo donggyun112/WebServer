@@ -1,7 +1,7 @@
 #include "LocationConfig.hpp"
 #include "Config.hpp"
 
-LocationConfig::LocationConfig(std::ifstream &file)
+LocationConfig::LocationConfig(std::ifstream &file) : _autoindex(false)
 {
     std::string     line;
     std::string     key, value;
