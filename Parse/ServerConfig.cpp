@@ -7,6 +7,8 @@ std::string ServerConfig::getServerName() const{return this->_server_name;}
 
 Port ServerConfig::getPortName() const {return _port;}
 
+size_t ServerConfig::getNumberOfLocation() {return _locations.size();}
+
 ServerConfig::ServerConfig(std::ifstream &file)
 {
     std::string     line;

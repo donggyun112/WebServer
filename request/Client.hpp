@@ -64,11 +64,12 @@ class Client {
 		// void 			setHeader(const std::string &key, const std::string &value);
 		Response			sendResponse(const Config &Conf);
 		Response			handleGetRequest(const Config &Conf);
+        bool                isMethodPossible(int method, const LocationConfig &Loc);
 
         //getReadStatus;
 
         // autoindex 
-        std::string     handleAutoIndex(Response response, const std::string &servRoot);
+        void     handleAutoIndex(Response &response, const std::string &servRoot);
         void printAllHeaders() const;
         std::string getTempResult() const {
             return this->_tempResult;

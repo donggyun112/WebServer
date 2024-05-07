@@ -182,6 +182,11 @@ std::vector<std::string>    LocationConfig::getAllowMethods() const {
     return _allow_methods;
 }
 
+std::string            LocationConfig::getAllowedMethod(size_t i) const {
+    if (i >= _allow_methods.size()) {return "";}
+    else return _allow_methods[i];
+}
+
 std::string                 LocationConfig::getReturnCode() const {
     return _return_code;
 }

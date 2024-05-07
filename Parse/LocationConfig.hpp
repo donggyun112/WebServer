@@ -55,5 +55,7 @@ class LocationConfig {
     std::vector<int>            getUploadCleanup() const ;
     std::vector<std::string>    getTryFiles() const ;
     // // 추가적인 필요한 변수들
+    std::string                 getAllowedMethod(size_t i) const;
+    
 };
 #endif

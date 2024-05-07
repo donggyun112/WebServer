@@ -29,12 +29,15 @@ public:
     std::string getServerName() const;
     std::string getPath() const { return _path; }
     Port getPortName() const;
+    size_t getNumberOfLocation();
 
-    //getLocation 필요해서 만드는중인데스
 
-    std::vector<LocationConfig> getLocation() {
-        return _locations;
+    
+    //용도에 맞게 바꿨으니 이거 지우지 마시오.
+    LocationConfig getLocation(int i) {
+        return _locations[i];
     }
+
     bool    isExtention(std::string httpPath) { 
         if (httpPath.find_last_of('.') == std::string::npos)
             return false;
@@ -60,5 +63,7 @@ public:
 		throw std::runtime_error("This path doesn't match with any location");
     }
 };
+
+
 
 #endif
