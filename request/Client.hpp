@@ -69,7 +69,7 @@ class Client {
         //getReadStatus;
 
         // autoindex 
-        std::string     handleAutoIndex(Response response, const std::string &servRoot);
+        void     handleAutoIndex(Response &response, const std::string &servRoot);
         void printAllHeaders() const;
         std::string getTempResult() const {
             return this->_tempResult;

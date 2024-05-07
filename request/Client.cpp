@@ -310,6 +310,7 @@ std::string nomralizeUrl(const std::string &HTTP_uri) {
 	}
 	return normalizedUrl;	
 }
+
 Response handleMethodNotAllowed();
 
 bool    isExtention(std::string httpPath) { 
@@ -317,8 +318,6 @@ bool    isExtention(std::string httpPath) {
         return false;
     return true;
 }
-
-
 
 Response Client::handleGetRequest(const Config &Conf) {
     Response response;
@@ -373,11 +372,7 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setHeader("Connection", "close");
         return response;
     }
-    // HTTP 메서드 허용 검사
-    std::vector<std::string> allowMethods = loc.getAllowMethods();
-    if (!allowMethods.empty() && std::find(allowMethods.begin(), allowMethods.end(), "GET") == allowMethods.end()) {
-        return handleMethodNotAllowed();
-    }
+
     // 리다이렉션 처리
     std::string returnCode = loc.getReturnCode();
     std::string returnUrl = loc.getReturnUrl();
@@ -403,28 +398,6 @@ Response Client::handleGetRequest(const Config &Conf) {
         if (!index.empty())
             filePath += "/" + index;
     }
-
-
-    // // try_files 설정
-    // std::vector<std::string> tryFiles = loc.getTryFiles();
-    // if (!tryFiles.empty()) {
-    //     for (std::vector<std::string>::const_iterator it = tryFiles.begin(); it != tryFiles.end(); ++it) {
-    //         std::string tryFile = *it;
-    //         if (tryFile == "$uri") {
-    //             tryFile = filePath;
-
-    //         } else if (tryFile == "$uri/") {
-    //             tryFile = filePath + "/";
-
-    //         }
-
-    //         if (isExist(tryFile)) {
-    //             filePath = tryFile;
-
-    //             break;
-    //         }
-    //     }
-    // }
 
     // 파일 확장자 추출
     std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
@@ -459,17 +432,10 @@ Response Client::handleGetRequest(const Config &Conf) {
         response.setHeader("Content-Length", std::to_string(body.length()));
         response.setHeader("Connection", "keep-alive");
         file.close();
-
     } else {
          if (isDirectory(filePath) == true && loc.getAutoindex() == true) {
-            std::string autoIndexBody = handleAutoIndex(response, filePath);
-            response.setStatusCode(OK_200);
-            response.setHeader("Date", getCurTime());
-            response.setHeader("Content-Type", "text/html");
-            response.setBody(autoIndexBody);
-            response.setHeader("Content-Length", std::to_string(autoIndexBody.length()));
-            response.setHeader("Connection", "close");
-    } else if (isDirectory(filePath) == true && loc.getAutoindex() == false) {
+            handleAutoIndex(response, filePath);
+        } else if (isDirectory(filePath) == true && loc.getAutoindex() == false) {
             response.setStatusCode(Forbidden_403);
             response.setHeader("Content-Type", "text/html; charset=utf-8");
             response.setHeader("Date", getCurTime());
@@ -477,25 +443,19 @@ Response Client::handleGetRequest(const Config &Conf) {
             response.setBody(errorBody);
             response.setHeader("Content-Length", std::to_string(errorBody.length()));
             response.setHeader("Connection", "close");
-    } else if (isDirectory(filePath) == false && loc.getAutoindex() == false) {
-        std::cout << "File not found: " << filePath << std::endl;
-        response.setStatusCode(NotFound_404);
-        response.setHeader("Content-Type", "text/html; charset=utf-8");
-        response.setHeader("Date", getCurTime());
-        std::string errorBody = "<html><body><h1>404 Not Found</h1><p>The requested file was not found.</p></body></html>";
-        response.setBody(errorBody);
-        response.setHeader("Content-Length", std::to_string(errorBody.length()));
-        response.setHeader("Connection", "close");
-    } else if (isDirectory(filePath) == false && loc.getAutoindex() == true) {
-        std::cout << "autoindex and no file" << std::endl;
-        std::string autoIndexBody = handleAutoIndex(response, filePath.substr(0, filePath.find_last_of('/')));
-        response.setStatusCode(OK_200);
-        response.setHeader("Date", getCurTime());
-        response.setHeader("Content-Type", "text/html");
-        response.setBody(autoIndexBody);
-        response.setHeader("Content-Length", std::to_string(autoIndexBody.length()));
-        response.setHeader("Connection", "close");
-    }
+        } else if (isDirectory(filePath) == false && loc.getAutoindex() == false) {
+            std::cout << "File not found: " << filePath << std::endl;
+            response.setStatusCode(NotFound_404);
+            response.setHeader("Content-Type", "text/html; charset=utf-8");
+            response.setHeader("Date", getCurTime());
+            std::string errorBody = "<html><body><h1>404 Not Found</h1><p>The requested file was not found.</p></body></html>";
+            response.setBody(errorBody);
+            response.setHeader("Content-Length", std::to_string(errorBody.length()));
+            response.setHeader("Connection", "close");
+        } else if (isDirectory(filePath) == false && loc.getAutoindex() == true) {
+            std::cout << "Case : autoindex and no file" << std::endl;
+            handleAutoIndex(response, filePath.substr(0, filePath.find_last_of('/')));
+        }
     }
     response.setHeader("Server", "42Webserv");
     return response;
@@ -532,8 +492,6 @@ Response Client::sendResponse(const Config &Conf) {
             return handleGetRequest(Conf);
         case POST:
             // return handlePostRequest(Conf);
-        case PUT:
-            // return handlePutRequest(Conf);
         case DELETE:
             // return handleDeleteRequest(Conf);
         default:
@@ -576,7 +534,7 @@ std::string FormatSize(double size)
 	return oss.str();
 }
 
-std::string Client::handleAutoIndex(Response response, const std::string &servRoot)
+void Client::handleAutoIndex(Response &response, const std::string &servRoot)
 {
     std::string dirPath = servRoot;
 
@@ -595,7 +553,6 @@ std::string Client::handleAutoIndex(Response response, const std::string &servRo
         response.setBody(errorBody);
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
         response.setHeader("Connection", "close");
-		return response.get_responses();
 	}
     if (dir)
     {
@@ -619,7 +576,7 @@ std::string Client::handleAutoIndex(Response response, const std::string &servRo
             std::string filePath = dirPath + "/" + fileName;
             if (stat(filePath.c_str(), &fileStat) == -1) {
                 _responseStatus = 503;
-                return "";
+                return ;
             }
             if (stat(filePath.c_str(), &fileStat) == 0)
             {
@@ -638,12 +595,17 @@ std::string Client::handleAutoIndex(Response response, const std::string &servRo
                 response.setHeader("Date", getCurTime());
                 std::string errorBody = "<html><body><h1>500 Internal Server Error</h1><p>Directory listing not allowed.</p></body></html>";
                 response.setBody(errorBody);
-                response.setHeader("Content-Length", std::to_string(errorBody.length()));
+                response.setHeader("Content-Length", std::to_string(errorBody.length())); // C++11 버전입니다.
                 response.setHeader("Connection", "close");
-                return response.get_responses();
+                return ;
             }
         }
 		body << " </table> </pre>\n<hr>\n</body>\n</html>\n";
+        response.setStatusCode(OK_200);
+        response.setHeader("Date", getCurTime());
+        response.setHeader("Content-Type", "text/html");
+        response.setBody(body.str());
+        response.setHeader("Content-Length", std::to_string(body.str().length())); // C++11 버전입니다.
+        response.setHeader("Connection", "close");
     }
-    return body.str();
 }
