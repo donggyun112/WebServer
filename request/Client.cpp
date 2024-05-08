@@ -172,7 +172,7 @@ void Client::printAllHeaders() const{
     }
 }
 
-bool isDirectory(const std::string &path) {
+bool Client::Utils::isDirectory(const std::string &path) {
     struct stat st;
     if (stat(path.c_str(), &st) == 0) {
 
@@ -181,7 +181,7 @@ bool isDirectory(const std::string &path) {
     return false;
 }
 
-bool isValidPath(const std::string &path) {
+bool Client::Utils::isValidPath(const std::string &path) {
     // 경로가 비어있는 경우
     if (path.empty()) {
         return false;
@@ -201,7 +201,7 @@ bool isValidPath(const std::string &path) {
     return true;
 }
 
-std::string normalizePath(const std::string &path) {
+std::string Client::Utils::normalizePath(const std::string &path) {
     std::string normalizedPath = path;
     
     // 연속된 슬래시를 하나의 슬래시로 치환
@@ -235,7 +235,7 @@ std::string normalizePath(const std::string &path) {
     return normalizedPath;
 }
 
-int getMethodNumber(const std::string &method) {
+int Client::Utils::getMethodNumber(const std::string &method) {
 	if (method == "GET")
 		return 1;
 	else if (method == "POST")
@@ -247,9 +247,7 @@ int getMethodNumber(const std::string &method) {
 	return 0;
 }
 
-#include <sys/time.h>
-
-std::string getCurTime() {
+std::string Client::Utils::getCurTime() {
 	struct timeval tv;
 	struct tm *tm;
 	char buf[64];
@@ -260,7 +258,7 @@ std::string getCurTime() {
 	return std::string(buf);
 }
 
-bool isExist(const std::string& path)
+bool Client::Utils::isExist(const std::string& path)
 {
 	std::string full_path = path;
 	std::ifstream ifs(full_path.c_str());
@@ -268,7 +266,7 @@ bool isExist(const std::string& path)
 	return ifs.is_open();
 }
 
-std::string getContentType(const std::string &extension) {
+std::string Client::Utils::getContentType(const std::string &extension) {
     if (extension == "html")
         return "text/html; charset=utf-8";
     else if (extension == "css")
@@ -300,7 +298,7 @@ std::string getContentType(const std::string &extension) {
         return "application/octet-stream";
 }
 
-std::string nomralizeUrl(const std::string &HTTP_uri) {
+std::string Client::Utils::nomralizeUrl(const std::string &HTTP_uri) {
 	std::string normalizedUrl = HTTP_uri;
 	
 	// //제거
@@ -311,32 +309,92 @@ std::string nomralizeUrl(const std::string &HTTP_uri) {
 	return normalizedUrl;	
 }
 
-Response handleMethodNotAllowed();
-
-bool    isExtention(std::string httpPath) { 
+bool    Client::Utils::isExtention(std::string httpPath) { 
     if (httpPath.find_last_of('.') == std::string::npos)
         return false;
     return true;
 }
 
+Response Client::createErrorResponse(int status, const std::string errorMessage) {
+	Response response;
+	response.setStatusCode(status);
+	response.setHeader("Content-Type", "text/html; charset=utf-8");
+	response.setHeader("Date", Utils::getCurTime());
+	std::string errorBody = "<html><body><h1>" + std::to_string(status) + " " + response.errors[status] + "</h1><p>" + errorMessage + "</p></body></html>";
+	response.setBody(errorBody);
+	response.setHeader("Content-Length", std::to_string(errorBody.length()));
+	response.setHeader("Connection", "close");
+	return response;
+
+}
+
+std::string Client::Utils::getFilePath(const std::string &serverRoot, const std::string &httpUri, const LocationConfig &loc) {
+    std::string filePath;
+    std::string alias = loc.getAlias();
+
+    if (!alias.empty() && httpUri.find(alias) == 0) {
+        filePath = alias + httpUri.substr(alias.length());
+    }
+    else if (isExtention(httpUri) == true) {
+        filePath = serverRoot + loc.getRoot() + httpUri;
+    } else if (isDirectory(serverRoot + httpUri) == true) {
+
+        filePath = serverRoot + httpUri;
+    } else {
+        filePath = serverRoot + loc.getRoot() + httpUri.substr(loc.getRoot().length(), httpUri.length() - loc.getRoot().length());
+    }
+
+    return filePath;
+}
+
+
+Response Client::handleRedirect(const LocationConfig &location) {
+    Response response;
+    std::string returnCode = location.getReturnCode();
+    std::string returnUrl = location.getReturnUrl();
+
+    if (!returnCode.empty() && !returnUrl.empty()) {
+        int statusCode = std::stoi(returnCode);
+        response.setStatusCode(statusCode);
+        response.setHeader("Location", returnUrl);
+        response.setHeader("Connection", "close");
+    }
+	std::cout << "Redirected to: " << returnUrl << std::endl;
+	response.setStatusCode(OK_200);
+	std::cout << response.getStatusCode() << std::endl;
+    return response;
+}
+
+std::string Client::Utils::getFileExtension(const std::string &filePath) {
+    size_t dotPos = filePath.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        return filePath.substr(dotPos + 1);
+    }
+    return "";
+}
+
+std::streamsize Client::Utils::getFileSize(std::ifstream &file) {
+    file.seekg(0, std::ios::end);
+    std::streamsize fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+    return fileSize;
+}
+
+std::string Client::Utils::readFileContent(std::ifstream &file, std::streamsize fileSize) {
+    std::string content(fileSize, '\0');
+    file.read(&content[0], fileSize);
+    return content;
+}
+
 Response Client::handleGetRequest(const Config &Conf) {
     Response response;
-    std::string HTTP_uri = this->getUri();
-    std::string filePath;
-
     // URL 정규화
-    HTTP_uri = nomralizeUrl(HTTP_uri);
+    std::string HTTP_uri = Utils::nomralizeUrl(_request._uri);
+	const std::string Server_root = Utils::normalizePath(Conf[this->getPort()].getPath());
 
-	std::string Server_root = Conf[this->getPort()].getPath();
+
     if (Server_root.empty()) {
-        response.setStatusCode(InternalServerError_500);
-        response.setHeader("Content-Type", "text/html; charset=utf-8");
-        response.setHeader("Date", getCurTime());
-        std::string errorBody = "<html><body><h1>500 Internal Server Error</h1><p>Server configuration error: root directory not set.</p></body></html>";
-        response.setBody(errorBody);
-        response.setHeader("Content-Length", std::to_string(errorBody.length()));
-        response.setHeader("Connection", "close");
-        return response;
+		return createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
     }
 
     // Location 블록 설정 확인
@@ -345,127 +403,79 @@ Response Client::handleGetRequest(const Config &Conf) {
         loc = Conf[_port].getLocation(HTTP_uri);
     } catch (const std::exception &e) {
         loc = Conf[_port].getLocation("/");
+		if (Utils::isMethodPossible(GET, loc) == false) {
+        	return handleMethodNotAllowed();
+    	}
     }
 
-    if (isMethodPossible(GET, loc) == false) {
-        return handleMethodNotAllowed();
-    }
-
-    //파일인지, 디렉토리인지, 특수파일인지 확인?
-    if (isExtention(HTTP_uri) == true) {
-        filePath = Server_root + loc.getRoot() + HTTP_uri;
-    } else if (isDirectory(Server_root + HTTP_uri) == true) {
-
-        filePath = Server_root + HTTP_uri;
-    } else {
-        filePath = Server_root + loc.getRoot() + HTTP_uri.substr(loc.getRoot().length(), HTTP_uri.length() - loc.getRoot().length());
-    }
+    std::string filePath = Utils::getFilePath(Server_root, HTTP_uri, loc);
 
     // 경로 유효성 검사
-    if (!isValidPath(filePath)) {
-        response.setStatusCode(BadRequest_400);
-        response.setHeader("Content-Type", "text/html; charset=utf-8");
-        response.setHeader("Date", getCurTime());
-        std::string errorBody = "<html><body><h1>400 Bad Request</h1><p>Invalid request path.</p></body></html>";
-        response.setBody(errorBody);
-        response.setHeader("Content-Length", std::to_string(errorBody.length()));
-        response.setHeader("Connection", "close");
-        return response;
+    if (!Utils::isValidPath(filePath)) {
+		return createErrorResponse(BadRequest_400, "Invalid request path.");
     }
 
-    // 리다이렉션 처리
-    std::string returnCode = loc.getReturnCode();
-    std::string returnUrl = loc.getReturnUrl();
-    if (!returnCode.empty() && !returnUrl.empty()) {
-        int statusCode = std::stoi(returnCode);
-        response.setStatusCode(statusCode);
-        response.setHeader("Location", returnUrl);
-        response.setHeader("Connection", "close");
-        return response;
-    }
-
-    // 별칭 설정
-    std::string alias = loc.getAlias();
-    if (!alias.empty()) {
-        if (HTTP_uri.find(alias) == 0) {
-            filePath = alias + HTTP_uri.substr(alias.length());
-        }
-    }
+    
+	Response redirectResponse = handleRedirect(loc);
+	if (redirectResponse.getStatusCode() != OK_200) {
+		return redirectResponse;
+	}
 
     // 인덱스 파일 설정
     std::string index = loc.getIndex();
-    if (isDirectory(filePath)) {
-        if (!index.empty())
-            filePath += "/" + index;
+    if (Utils::isDirectory(filePath) && !index.empty()) {
+        filePath += "/" + index;
     }
 
     // 파일 확장자 추출
-    std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
-
+    std::string extension = Utils::getFileExtension(filePath);
     // 파일 읽기
     std::ifstream file(filePath.c_str(), std::ios::binary);
-    if (file.is_open()) {
+
+    if (file.is_open() && file.good()) {
         // 파일 크기 확인
-        file.seekg(0, std::ios::end);
-        std::streamsize fileSize = file.tellg();
-        file.seekg(0, std::ios::beg);
+        std::streamsize fileSize = Utils::getFileSize(file);
 
         // 파일 크기 제한 설정
-        const std::streamsize maxFileSize = 10 * 1024 * 1024; // 예시: 10MB
+        const std::streamsize maxFileSize = 10 * 1024 * 1024;
         if (fileSize > maxFileSize) {
-            response.setStatusCode(PayloadTooLarge_413);
-            response.setHeader("Content-Type", "text/html; charset=utf-8");
-            response.setHeader("Date", getCurTime());
-            std::string errorBody = "<html><body><h1>413 Payload Too Large</h1><p>The requested file is too large.</p></body></html>";
-            response.setBody(errorBody);
-            response.setHeader("Content-Length", std::to_string(errorBody.length()));
-            response.setHeader("Connection", "close");
-            return response;
+			return createErrorResponse(PayloadTooLarge_413, "The requested file is too large.");
         }
         // 파일 내용 읽기
-        std::string body(fileSize, '\0');
-        file.read(&body[0], fileSize);
+        std::string body = Utils::readFileContent(file, fileSize);
+        file.close();
+
         response.setStatusCode(OK_200);
-        response.setHeader("Date", getCurTime());
-        response.setHeader("Content-Type", getContentType(extension));
+        response.setHeader("Date", Utils::getCurTime());
+        response.setHeader("Content-Type", Utils::getContentType(extension));
         response.setBody(body);
         response.setHeader("Content-Length", std::to_string(body.length()));
         response.setHeader("Connection", "keep-alive");
-        file.close();
+
     } else {
-         if (isDirectory(filePath) == true && loc.getAutoindex() == true) {
-            handleAutoIndex(response, filePath);
-        } else if (isDirectory(filePath) == true && loc.getAutoindex() == false) {
-            response.setStatusCode(Forbidden_403);
-            response.setHeader("Content-Type", "text/html; charset=utf-8");
-            response.setHeader("Date", getCurTime());
-            std::string errorBody = "<html><body><h1>403 Forbidden</h1><p>Directory listing not allowed.</p></body></html>";
-            response.setBody(errorBody);
-            response.setHeader("Content-Length", std::to_string(errorBody.length()));
-            response.setHeader("Connection", "close");
-        } else if (isDirectory(filePath) == false && loc.getAutoindex() == false) {
-            std::cout << "File not found: " << filePath << std::endl;
-            response.setStatusCode(NotFound_404);
-            response.setHeader("Content-Type", "text/html; charset=utf-8");
-            response.setHeader("Date", getCurTime());
-            std::string errorBody = "<html><body><h1>404 Not Found</h1><p>The requested file was not found.</p></body></html>";
-            response.setBody(errorBody);
-            response.setHeader("Content-Length", std::to_string(errorBody.length()));
-            response.setHeader("Connection", "close");
-        } else if (isDirectory(filePath) == false && loc.getAutoindex() == true) {
-            std::cout << "Case : autoindex and no file" << std::endl;
-            handleAutoIndex(response, filePath.substr(0, filePath.find_last_of('/')));
-        }
+        if (Utils::isDirectory(filePath)) {
+			if (loc.getAutoindex() == true) {
+            	handleAutoIndex(response, filePath);
+			} else {
+				return createErrorResponse(Forbidden_403, "Directory listing not allowed.");
+			}
+        } else {
+			if (loc.getAutoindex() == false) {
+				return createErrorResponse(NotFound_404, "The requested file was not found.");
+			} else {
+				handleAutoIndex(response, filePath.substr(0, filePath.find_last_of('/')));
+			}
+		}
     }
     response.setHeader("Server", "42Webserv");
     return response;
 }
 
-Response handleMethodNotAllowed() {
+Response Client::handleMethodNotAllowed() {
     Response response;
     response.setStatusCode(MethodNotAllowed_405);
     response.setHeader("Content-Type", "text/html");
-    response.setHeader("Date", getCurTime());
+    response.setHeader("Date", Utils::getCurTime());
 
     std::string errorBody = "<html><body><h1>405 Method Not Allowed</h1><p>The requested method is not allowed.</p></body></html>";
     response.setBody(errorBody);
@@ -475,9 +485,9 @@ Response handleMethodNotAllowed() {
     return response;
 }
 
-bool    Client::isMethodPossible(int method, const LocationConfig &Loc) {
+bool    Client::Utils::isMethodPossible(int method, const LocationConfig &Loc) {
     for (size_t i = 0; i < Loc.getAllowMethods().size(); ++i) {
-        if (method == getMethodNumber(Loc.getAllowedMethod(i)))
+        if (method == Utils::getMethodNumber(Loc.getAllowedMethod(i)))
             return true;
     }
     return false;
@@ -486,7 +496,7 @@ bool    Client::isMethodPossible(int method, const LocationConfig &Loc) {
 Response Client::sendResponse(const Config &Conf) {
 
 
-    int method = getMethodNumber(_request._method);
+    int method = Utils::getMethodNumber(_request._method);
     switch (method) {
         case GET:
             return handleGetRequest(Conf);
@@ -498,10 +508,6 @@ Response Client::sendResponse(const Config &Conf) {
             return handleMethodNotAllowed();
     }
 }
-
-
-
-
 
 std::string Client::execute(const Config &Conf) {
 	Response response = sendResponse(Conf);
@@ -548,7 +554,7 @@ void Client::handleAutoIndex(Response &response, const std::string &servRoot)
 	if (dir == NULL) {
         response.setStatusCode(NotFound_404);
         response.setHeader("Content-Type", "text/html; charset=utf-8");
-        response.setHeader("Date", getCurTime());
+        response.setHeader("Date", Utils::getCurTime());
         std::string errorBody = "<html><body><h1>404 Not Found</h1><p>Directory listing not allowed.</p></body></html>";
         response.setBody(errorBody);
         response.setHeader("Content-Length", std::to_string(errorBody.length()));
@@ -592,7 +598,7 @@ void Client::handleAutoIndex(Response &response, const std::string &servRoot)
             else {
                 response.setStatusCode(InternalServerError_500);
                 response.setHeader("Content-Type", "text/html; charset=utf-8");
-                response.setHeader("Date", getCurTime());
+                response.setHeader("Date", Utils::getCurTime());
                 std::string errorBody = "<html><body><h1>500 Internal Server Error</h1><p>Directory listing not allowed.</p></body></html>";
                 response.setBody(errorBody);
                 response.setHeader("Content-Length", std::to_string(errorBody.length())); // C++11 버전입니다.
@@ -602,7 +608,7 @@ void Client::handleAutoIndex(Response &response, const std::string &servRoot)
         }
 		body << " </table> </pre>\n<hr>\n</body>\n</html>\n";
         response.setStatusCode(OK_200);
-        response.setHeader("Date", getCurTime());
+        response.setHeader("Date", Utils::getCurTime());
         response.setHeader("Content-Type", "text/html");
         response.setBody(body.str());
         response.setHeader("Content-Length", std::to_string(body.str().length())); // C++11 버전입니다.
