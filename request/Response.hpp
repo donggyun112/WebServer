@@ -1,12 +1,12 @@
 
-#pragma once
-
-
+#ifndef RESPONSE_HPP
+#define RESPONSE_HPP
 
 #include "../utils/utils.hpp"
 #include <string>
 #include <map>
 #include <iostream>
+
 
 
 
@@ -92,7 +92,7 @@ public:
 	}
 
 	std::string get_responses() {
-		std::string response = _version + " " + std::to_string(_status) + " " + Error::errors[_status] + "\r\n";
+		std::string response = _version + " " +  web::toString(_status) + " " + Error::errors[_status] + "\r\n";
 		for (std::multimap<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it) {
 			response += it->first + ": " + it->second + "\r\n";
 		}
@@ -101,3 +101,4 @@ public:
 	}
 };
 
+#endif

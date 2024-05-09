@@ -1,7 +1,0 @@
-
-
-class ResponseHandle {
-
-	private:
-		
-};

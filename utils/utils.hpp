@@ -1,7 +1,10 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#pragma once
+
 #include <iostream>
 #include <map>
+#include <string>
+#include <sys/time.h>
+#include <sstream>
 
 enum StatusCode {
   // Information responses
@@ -165,9 +168,9 @@ public:
 	}
 };
 
-
-
-
+namespace web {
+    std::string toString(int num);
+}
 
 typedef int FD;
 typedef unsigned int Port;
@@ -220,5 +223,3 @@ public:
 
 template <typename T>
 std::map<T*, int> SmartPointer<T>::referenceCount;
-
-#endif
