@@ -15,6 +15,7 @@
 # include "Request.hpp"
 # include "../utils/utils.hpp"
 # include "../Parse/Config.hpp"
+# include <sys/time.h>
 
 class HttpRequest;
 class Response;
@@ -36,6 +37,24 @@ class Client {
         int         _responseStatus;
         std::string _tempResult;
         Client();
+		class Utils {
+			public:
+				static std::string		getCurTime();
+				static std::string		getContentType(const std::string &extension);
+				static std::string		getFileExtension(const std::string &filePath);
+				static std::string		getFilePath(const std::string &serverRoot, const std::string &httpUri, const LocationConfig &loc);
+				static std::string		getFileContent(std::ifstream &file, std::streamsize fileSize);
+				static std::streamsize	getFileSize(std::ifstream &file);
+				static bool				isDirectory(const std::string &path);
+				static bool				isExist(const std::string &path);
+				static bool				isExtention(std::string httpPath);
+				static bool				isMethodPossible(int method, const LocationConfig &Loc);
+				static bool				isValidPath(const std::string &path);
+				static std::string		nomralizeUrl(const std::string &HTTP_uri);
+				static std::string		normalizePath(const std::string &path);
+				static std::string		readFileContent(std::ifstream &file, std::streamsize fileSize);
+				static int				getMethodNumber(const std::string &method);	
+		};
     public:
         Client(Port port);
         Client(const Client &Copy);
@@ -58,13 +77,12 @@ class Client {
         int             getReadStatus() const {return this->_readStatus;}
 
         std::string     execute(const Config &Conf);
-
-		// void			setResponseStatus(int status);
-		// void			setTempResult(const std::string &result);
-		// void 			setHeader(const std::string &key, const std::string &value);
+		
 		Response			sendResponse(const Config &Conf);
 		Response			handleGetRequest(const Config &Conf);
-        bool                isMethodPossible(int method, const LocationConfig &Loc);
+		Response 			createErrorResponse(int status, const std::string errorBody);
+		Response			handleRedirect(const LocationConfig &location);
+		Response 			handleMethodNotAllowed();
 
         //getReadStatus;
 

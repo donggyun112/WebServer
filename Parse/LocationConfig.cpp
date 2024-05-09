@@ -169,8 +169,8 @@ std::string                 LocationConfig::getRoot() const {
 }
 
 std::string                 LocationConfig::getIndex() const {
-    // if (_index.empty())
-    //     return "index.html";
+    if (_index.empty())
+        return "index.html";
     return _index;
 }
 
