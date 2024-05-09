@@ -10,6 +10,8 @@
 #include <climits>
 #include <cstring>
 
+std::map<int, std::string> Error::errors;
+
 enum Method {
     GET = 1,
     POST,
@@ -320,7 +322,7 @@ Response Client::createErrorResponse(int status, const std::string errorMessage)
 	response.setStatusCode(status);
 	response.setHeader("Content-Type", "text/html; charset=utf-8");
 	response.setHeader("Date", Utils::getCurTime());
-	std::string errorBody = "<html><body><h1>" + std::to_string(status) + " " + response.errors[status] + "</h1><p>" + errorMessage + "</p></body></html>";
+	std::string errorBody = "<html><body><h1>" + std::to_string(status) + " " + Error::errors[status] + "</h1><p>" + errorMessage + "</p></body></html>";
 	response.setBody(errorBody);
 	response.setHeader("Content-Length", std::to_string(errorBody.length()));
 	response.setHeader("Connection", "close");
@@ -358,6 +360,8 @@ Response Client::handleRedirect(const LocationConfig &location) {
         response.setStatusCode(statusCode);
         response.setHeader("Location", returnUrl);
         response.setHeader("Connection", "close");
+		response.set_redirect(returnUrl, statusCode);
+		return response;
     }
 	std::cout << "Redirected to: " << returnUrl << std::endl;
 	response.setStatusCode(OK_200);

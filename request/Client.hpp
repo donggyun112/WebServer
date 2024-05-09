@@ -17,6 +17,8 @@
 # include "../Parse/Config.hpp"
 # include <sys/time.h>
 
+class Error;
+
 class HttpRequest;
 class Response;
 enum {
@@ -93,5 +95,6 @@ class Client {
             return this->_tempResult;
         }
 };
+
 
 #endif
