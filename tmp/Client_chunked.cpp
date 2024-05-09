@@ -12,7 +12,7 @@ void    Client::handleChunkedMessage(std::string &str) {
     int length;
     std::getline(oss, line);
     length = myToString(line);
-    if (length == 0) _readStatus = READ_HEADER_DONE;
+    if (length == 0) _readStatus = READ_DONE;
     else if (length > 0) {
         std::getline(oss, line);
         _request._body += line;
