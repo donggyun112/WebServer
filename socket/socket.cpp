@@ -61,6 +61,12 @@ FD Socket::socket(int domain, int type, int protocol) {
         std::cerr << "Error: Socket creation failed. Error code: " << errno << std::endl;
         throw std::runtime_error("Error: Socket creation failed");
     }
+	try {
+		getProtocolName();
+	} catch (std::runtime_error &e) {
+		std::cerr << "Error: is not TCP protocol" << std::endl;
+		throw std::runtime_error("Error: is not TCP protocol");
+	}
     return _listenSocket;
 }
 
@@ -165,12 +171,6 @@ void Socket::__init__SocketoptAuto(int opt) {
 /* Socket 자동 활성화 */
 void Socket::autoActivate(int domain, int type, int protocol) {
     socket(domain, type, protocol);
-	try {
-		getProtocolName();
-	} catch (std::runtime_error &e) {
-		std::cerr << "Error: is not TCP protocol" << std::endl;
-		throw std::runtime_error("Error: is not TCP protocol");
-	}
     std::cout << "Socket activated" << std::endl;
     __init__SocketoptAuto(1);
     std::cout << "Socket options set" << std::endl;
