@@ -2,12 +2,14 @@
 
 #include <iostream>
 #include "RequestHandle.hpp"
+#include "ResponseHandle.hpp"
 
 class Client {
 	private:
-		Port _port;
-		RequestHandle _requestHandle;
-		std::string _response;
+		Port 			_port;
+		RequestHandle	_requestHandle;
+		ResponseHandle	_responseHandle;
+		std::string		_response;
 		Client();
 	public:
 		Client(Port port);
@@ -16,6 +18,7 @@ class Client {
 		void clearAll();
 		void setBuffer(const std::string &buffer);
 		int  getReadStatus() const;
-		void executeRequest(const Config &Conf);
-		const std::string getResponse() const;
+		void generateResponse(const Config &Conf);
+		Port getPort() const;
+		std::string getResponse() const;
 };

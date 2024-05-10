@@ -6,6 +6,8 @@ SRCS =	Server/EchoServer.cpp \
 		request/Client.cpp \
 		request/RequestHandle.cpp \
 		request/Request.cpp \
+		request/ResponseHandle.cpp \
+		request/Response.cpp \
 		socket/socket.cpp \
 		Parse/Config.cpp \
 		Parse/ServerConfig.cpp \

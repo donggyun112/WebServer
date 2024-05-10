@@ -6,10 +6,15 @@ Client::Client(const Client &Copy) : _port(Copy._port), _requestHandle(Copy._req
 
 void Client::clearAll() {
 	_requestHandle.clearAll();
+	_responseHandle.clearAll();
 }
 
 Client::~Client() {
 	clearAll();
+}
+
+Port Client::getPort() const {
+	return _port;
 }
 
 void Client::setBuffer(const std::string &buffer) {
@@ -20,10 +25,12 @@ int Client::getReadStatus() const {
 	return _requestHandle.getReadStatus();
 }
 
-void Client::executeRequest(const Config &Conf) {
-	_response = _requestHandle.execute(Conf);
+void Client::generateResponse(const Config &Conf) {
+	_responseHandle.generateResponse(_requestHandle, Conf);
+	_response = _responseHandle.getResponse();
+	clearAll();
 }
 
-const std::string Client::getResponse() const {
+std::string Client::getResponse() const {
 	return _response;
 }

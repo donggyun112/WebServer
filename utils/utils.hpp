@@ -167,6 +167,12 @@ public:
 		return errors[status];
 	}
 };
+enum Method {
+    GET = 1,
+    POST,
+    PUT,
+    DELETE,
+};
 
 namespace web {
     std::string toString(int num);

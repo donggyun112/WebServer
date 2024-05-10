@@ -11,11 +11,11 @@
 # include <cstring>
 # include <iomanip>
 # include <dirent.h> // DIR을 위함.
-// # include "structRq.hpp"
+# include "structRq.hpp"
 # include "Request.hpp"
-# include "Response.hpp"
 # include "../utils/utils.hpp"
 # include "../Parse/Config.hpp"
+// # include "../request/Client.hpp"
 # include <sys/time.h>
 
 class HttpRequest;
@@ -40,24 +40,6 @@ class RequestHandle {
         int         _responseStatus;
         std::string _tempResult;
         RequestHandle();
-		class Utils {
-			public:
-				static std::string		getCurTime();
-				static std::string		getContentType(const std::string &extension);
-				static std::string		getFileExtension(const std::string &filePath);
-				static std::string		getFilePath(const std::string &serverRoot, const std::string &httpUri, const LocationConfig &loc);
-				static std::string		getFileContent(std::ifstream &file, std::streamsize fileSize);
-				static std::streamsize	getFileSize(std::ifstream &file);
-				static bool				isDirectory(const std::string &path);
-				static bool				isExist(const std::string &path);
-				static bool				isExtention(std::string httpPath);
-				static bool				isMethodPossible(int method, const LocationConfig &Loc);
-				static bool				isValidPath(const std::string &path);
-				static std::string		nomralizeUrl(const std::string &HTTP_uri);
-				static std::string		normalizePath(const std::string &path);
-				static std::string		readFileContent(std::ifstream &file, std::streamsize fileSize);
-				static int				getMethodNumber(const std::string &method);	
-		};
     public:
         RequestHandle(Port port);
         RequestHandle(const RequestHandle &Copy);
@@ -79,18 +61,7 @@ class RequestHandle {
         void            clearAll();
         int             getReadStatus() const {return this->_readStatus;}
 
-        std::string     execute(const Config &Conf);
-		
-		Response			sendResponse(const Config &Conf);
-		Response			handleGetRequest(const Config &Conf);
-		Response 			createErrorResponse(int status, const std::string errorBody);
-		Response			handleRedirect(const LocationConfig &location);
-		Response 			handleMethodNotAllowed();
 
-        //getReadStatus;
-
-        // autoindex 
-        void     handleAutoIndex(Response &response, const std::string &servRoot);
         void printAllHeaders() const;
         std::string getTempResult() const {
             return this->_tempResult;
