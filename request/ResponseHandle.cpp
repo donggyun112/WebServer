@@ -9,7 +9,7 @@ ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._res
 
 ResponseHandle::~ResponseHandle() {}
 
-void ResponseHandle::generateResponse(const RequestHandle &Req, const Config &Conf) {
+void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
 	if (initPathFromLocation(Req, Conf) == false) {
 		return ;
 	}
@@ -188,22 +188,26 @@ std::string ResponseUtils::getContentType(const std::string &extension) {
         return "application/octet-stream";
 }
 
-bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config &Conf) {
+bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
+	// Conf.setServerName(Req.getHost());
 
 	// URL 정규화
 	_httpUri = ResponseUtils::nomralizeUrl(_httpUri);
-	_serverRoot = ResponseUtils::normalizePath(Conf[_port].getPath());
+	std::cout << "Normalized URL: " << _httpUri << std::endl;
+	_serverRoot = ResponseUtils::normalizePath(Conf.getServerConfig(_port, Req.getHost()).getPath());
 	if (_serverRoot.empty()) {
 		_response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
 		return false;
     }
 
 	try {
-		_loc = Conf[_port].getLocation(_httpUri);
+		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
+		std::cout << "Success to get location" << std::endl;
 	} catch (const std::exception &e) {
-		_loc = Conf[_port].getLocation("/");
+		std::cout << "Success to get location" << std::endl;
+		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation("/");
 		if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
 			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 			return false;

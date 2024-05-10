@@ -45,6 +45,8 @@ class RequestHandle {
         RequestHandle(const RequestHandle &Copy);
         ~RequestHandle();
 
+		std::string	 	getHost() const;
+        Port             getPort() const;
         std::string     getBuffer() const;
         std::string     getMethod() const;
         std::string     getUri() const;
@@ -53,7 +55,6 @@ class RequestHandle {
         std::string     getCookie(const std::string& key) const;
         std::string     getBody() const;
         const Request   &getRequest() const;
-        Port             getPort() const;
         int             getResponseStatus() const;
         void            setRequest();
         void            setBuffer(const std::string& buffer);

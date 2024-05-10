@@ -56,6 +56,19 @@ std::string RequestHandle::getCookie(const std::string& key) const {
     return it->second;
 }
 
+std::string RequestHandle::getHost() const {
+	const Headers::const_iterator it = _request._headers.find("Host");
+	if (it == _request._headers.end())
+		return "";
+
+	std::string host = it->second;
+	size_t pos = host.find(":");
+	if (pos != std::string::npos)
+		host = host.substr(0, pos);
+	return host;
+	// return it->second;
+}
+
 const Request &RequestHandle::getRequest() const {
     return _request;
 }

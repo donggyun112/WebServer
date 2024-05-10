@@ -30,7 +30,12 @@ void    Config::parseConfig(const std::string filename)
     }
 }
 
-Config::Config(int argc, char **argv) {
+void	Config::setServerName(std::string serverName)
+{
+	_serverNmae = serverName;
+}
+
+Config::Config(int argc, char **argv) : _servers() {
     if (argc != 2) {
         std::cerr << "Error: Invalid number of arguments" << std::endl;
         parseConfig("nginx.conf");
@@ -49,6 +54,13 @@ ServerConfig Config::operator[](Port port) const {
 	// return _servers[0];
 }
 
+ServerConfig Config::getServerConfig(Port port, const std::string &serverName) const {
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		if (_servers[i].getPortName() == port && _servers[i].getServerName() == serverName)
+			return _servers[i];
+	}
+	return this->operator[](port);
+}
 
 ServerConfig Config::operator[](int i) const {
     return _servers[i];

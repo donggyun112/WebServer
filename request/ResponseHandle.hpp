@@ -36,12 +36,12 @@ class ResponseHandle {
 		std::string 	_serverRoot;
 		Port			_port;
 		LocationConfig	_loc;
-		bool 			initPathFromLocation(const RequestHandle &Req, const Config &Conf);
+		bool 			initPathFromLocation(const RequestHandle &Req, Config &Conf);
 	public:
 		ResponseHandle();
 		ResponseHandle(const ResponseHandle &Copy);
 		~ResponseHandle();
-		void		generateResponse(const RequestHandle &Req, const Config &Conf);
+		void		generateResponse(const RequestHandle &Req, Config &Conf);
 		Response	handleGetRequest();
 		Response	handleMethodNotAllowed();
 		Response	createErrorResponse(int code, const std::string &message);
