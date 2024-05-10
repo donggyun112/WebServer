@@ -12,53 +12,53 @@
 #include <string>
 #include <fcntl.h>
 #include "../utils/utils.hpp"
+#include <netdb.h>
 
 class Socket {
 private:
-    FD _listenSocket;
+	FD _listenSocket;
 	Port _port;
 	std::string _host;
-	struct sockaddr_in _server_Addr;
-	
-	void __init__();
+	struct addrinfo *_addrInfo;
+
 	void __init__(std::string host, Port port);
 	void __init__(Port port);
-
+	Socket();
 
 public:
-    Socket();
-    Socket(const Socket& other);
+	Socket(const Socket& other);
 	Socket(std::string host, Port port);
-    ~Socket();
+	~Socket();
 
 	Socket& operator=(const Socket& other);
-	operator FD() const { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
-	operator FD&() { return _listenSocket; } // 타입 캐스팅 연산자 오버로딩
+	operator FD() const { return _listenSocket; }
+	operator FD&() { return _listenSocket; }
 
-
-    FD socket(int domain, int type, int protocol);
-	Status bind(const std::string host, const Port port);
+	FD socket(int domain, int type, int protocol);
+	Status bind();
 	Status listen(size_t backlog);
 	Status close();
 	FD accept() const;
 
-	void setSocketOption(int level, int option_name, int opt);
-	void __init__SocketoptAuto(int opt);
+	void			__init__SocketoptAuto(int opt);
 
-	Status nonblocking();
-	static Status nonblocking(const FD &socket);
+	Status 			nonblocking();
+	static Status 	nonblocking(const FD &socket);
 
-	void autoActivate(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0);
+	void 			autoActivate(int domain=AF_INET, int type=SOCK_STREAM, int protocol=0);
 
-	Socket *clone() const;
+	Socket 			*clone() const;
 
-	void setServerAddr(struct sockaddr_in serverAddr) { _server_Addr = serverAddr; }
-	void setSocket(FD socket) { _listenSocket = socket; }
+	void 			setSocketOption(int level, int option_name, int opt);
+	void 			setAddrInfo(struct addrinfo *addrInfo);
+	void 			setSocket(FD socket) { _listenSocket = socket; }
 
-	FD getSocket() const { return _listenSocket; }
-	struct sockaddr_in getServerAddr() const { return _server_Addr; }
-	Port getPort() const { return _port; }
-	std::string getHost() const { return _host; }
-
+	FD 				getSocket() const { return _listenSocket; }
+	struct addrinfo *getAddrInfo() const { return _addrInfo; }
+	Port 			getPort() const { return _port; }
+	std::string 	getHost() const { return _host; }
+	std::string 	getSocketIP() const;
+	Port			getSocketPort() const;
+	std::string		getProtocolName() const;
 };
 #endif
