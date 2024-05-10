@@ -6,9 +6,9 @@
 #include <stdexcept>
 #include <stdlib.h>
 #include "structRq.hpp"
-#include "Client.hpp"
+#include <sstream>
 
-class Client;
+class RequestHandle;
 
 class HttpRequest {
 	public:
