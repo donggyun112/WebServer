@@ -30,13 +30,19 @@ namespace ResponseUtils {
 
 class ResponseHandle {
 	private:
-		Response _response;
+		Response 		_response;
+		std::string 	_filePath;
+		std::string 	_httpUri;
+		std::string 	_serverRoot;
+		Port			_port;
+		LocationConfig	_loc;
+		bool 			initPathFromLocation(const RequestHandle &Req, const Config &Conf);
 	public:
 		ResponseHandle();
 		ResponseHandle(const ResponseHandle &Copy);
 		~ResponseHandle();
 		void		generateResponse(const RequestHandle &Req, const Config &Conf);
-		Response	handleGetRequest(const RequestHandle &Req, const Config &Conf);
+		Response	handleGetRequest();
 		Response	handleMethodNotAllowed();
 		Response	createErrorResponse(int code, const std::string &message);
 		Response 	handleRedirect(const LocationConfig &location);
