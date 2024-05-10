@@ -1,18 +1,23 @@
 #include "ResponseHandle.hpp"
 
 
-ResponseHandle::ResponseHandle() {}
+ResponseHandle::ResponseHandle() {
+
+}
 
 ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._response) {}
 
 ResponseHandle::~ResponseHandle() {}
 
 void ResponseHandle::generateResponse(const RequestHandle &Req, const Config &Conf) {
+	if (initPathFromLocation(Req, Conf) == false) {
+		return ;
+	}
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
 	switch (method)
 	{
 		case GET:
-			_response = handleGetRequest(Req, Conf);
+			_response = handleGetRequest();
 		case POST:
 			// _response = handlePostRequest(Conf);
 		case DELETE:
@@ -20,64 +25,6 @@ void ResponseHandle::generateResponse(const RequestHandle &Req, const Config &Co
 		default:
 			break;
 	}
-}
-
-int ResponseUtils::getMethodNumber(const std::string &method) {
-	if (method == "GET")
-		return 1;
-	else if (method == "POST")
-		return 2;
-	else if (method == "DELETE")
-		return 3;
-	else if (method == "PUT")
-		return 4;
-	else
-		return 0;
-}
-
-std::string ResponseUtils::nomralizeUrl(const std::string &HTTP_uri) {
-	std::string normalizedUrl = HTTP_uri;
-	
-	// //제거
-	std::string::size_type pos = 0;
-	while ((pos = normalizedUrl.find("//", pos)) != std::string::npos) {
-		normalizedUrl.erase(pos, 1);
-	}
-	return normalizedUrl;	
-}
-
-std::string ResponseUtils::normalizePath(const std::string &path) {
-    std::string normalizedPath = path;
-    
-    // 연속된 슬래시를 하나의 슬래시로 치환
-    std::string::size_type pos = 0;
-    while ((pos = normalizedPath.find("//", pos)) != std::string::npos) {
-        normalizedPath.erase(pos, 1);
-    }
-    
-    // 경로의 마지막 문자가 '/'인 경우 제거
-    if (!normalizedPath.empty() && normalizedPath[normalizedPath.length() - 1] == '/') {
-        normalizedPath.erase(normalizedPath.length() - 1);
-    }
-    
-    // 상대경로 요소 제거
-    while ((pos = normalizedPath.find("/../")) != std::string::npos) {
-        if (pos == 0) {
-            return "";
-        }
-        std::string::size_type prevPos = normalizedPath.rfind('/', pos - 1);
-        if (prevPos == std::string::npos) {
-            return "";
-        }
-        normalizedPath.erase(prevPos, pos - prevPos + 3);
-    }
-    
-    // 현재 디렉토리 요소 제거
-    while ((pos = normalizedPath.find("/./")) != std::string::npos) {
-        normalizedPath.erase(pos, 2);
-    }
-    
-    return normalizedPath;
 }
 
 void ResponseHandle::clearAll() {
@@ -103,24 +50,6 @@ Response ResponseHandle::createErrorResponse(int code, const std::string &messag
 
 
 
-bool    ResponseUtils::isMethodPossible(int method, const LocationConfig &Loc) {
-    for (size_t i = 0; i < Loc.getAllowMethods().size(); ++i) {
-        if (method == ResponseUtils::getMethodNumber(Loc.getAllowedMethod(i)))
-            return true;
-    }
-    return false;
-}
-
-std::string ResponseUtils::getCurTime() {
-	struct timeval tv;
-	struct tm *tm;
-	char buf[64];
-
-	gettimeofday(&tv, NULL);
-	tm = localtime(&tv.tv_sec);
-	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tm);
-	return std::string(buf);
-}
 
 Response ResponseHandle::handleMethodNotAllowed() {
     Response response;
@@ -259,55 +188,56 @@ std::string ResponseUtils::getContentType(const std::string &extension) {
         return "application/octet-stream";
 }
 
-Response ResponseHandle::handleGetRequest(const RequestHandle &Req, const Config &Conf) {
+bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config &Conf) {
+	_httpUri = Req.getUri();
+	_port = Req.getPort();
+
+	// URL 정규화
+	_httpUri = ResponseUtils::nomralizeUrl(_httpUri);
+	_serverRoot = ResponseUtils::normalizePath(Conf[_port].getPath());
+	if (_serverRoot.empty()) {
+		_response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
+		return false;
+    }
+
+	try {
+		_loc = Conf[_port].getLocation(_httpUri);
+	} catch (const std::exception &e) {
+		_loc = Conf[_port].getLocation("/");
+		if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
+			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
+			return false;
+		}
+	}
+	_filePath = ResponseUtils::getFilePath(_serverRoot, _httpUri, _loc);
+	if (!ResponseUtils::isValidPath(_filePath)) {
+		_response = createErrorResponse(BadRequest_400, "Invalid request path.");
+		return false;
+	}
+	return true;
+
+
+}
+
+Response ResponseHandle::handleGetRequest() {
     Response response;
-	Port _port = Req.getPort();
 
-    // URL 정규화
-    std::string HTTP_uri = ResponseUtils::nomralizeUrl(Req.getUri());
-	// 서버 루트 디렉토리 설정
-	const std::string Server_root = ResponseUtils::normalizePath(Conf[_port].getPath());
-
-
-    if (Server_root.empty()) {
-		return createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
-    }
-
-    // Location 블록 설정 확인
-    LocationConfig loc;
-    try {
-        loc = Conf[_port].getLocation(HTTP_uri);
-    } catch (const std::exception &e) {
-        loc = Conf[_port].getLocation("/");
-		if (ResponseUtils::isMethodPossible(GET, loc) == false) {
-        	return handleMethodNotAllowed();
-    	}
-    }
-
-    std::string filePath = ResponseUtils::getFilePath(Server_root, HTTP_uri, loc);
-	std::cout << "File Path: " << filePath << std::endl;
-    // 경로 유효성 검사
-    if (!ResponseUtils::isValidPath(filePath)) {
-		return createErrorResponse(BadRequest_400, "Invalid request path.");
-    }
-
-    
-	Response redirectResponse = handleRedirect(loc);
+	Response redirectResponse = handleRedirect(_loc);
 	if (redirectResponse.getStatusCode() != OK_200) {
 		return redirectResponse;
 	}
 
     // 인덱스 파일 설정
-    std::string index = loc.getIndex();
-    if (ResponseUtils::isDirectory(filePath) && !index.empty()) {
-        filePath += "/" + index;
+    std::string index = _loc.getIndex();
+    if (ResponseUtils::isDirectory(_filePath) && !index.empty()) {
+        _filePath += "/" + index;
     }
 
     // 파일 확장자 추출
-    std::string extension = ResponseUtils::getFileExtension(filePath);
+    std::string extension = ResponseUtils::getFileExtension(_filePath);
     // 파일 읽기
-    std::ifstream file(filePath.c_str(), std::ios::binary);
-	std::cout << "File Path: " << filePath << std::endl;
+    std::ifstream file(_filePath.c_str(), std::ios::binary);
+	std::cout << "File Path: " << _filePath << std::endl;
     if (file.is_open() && file.good()) {
         // 파일 크기 확인
         std::streamsize fileSize = ResponseUtils::getFileSize(file);
@@ -329,17 +259,17 @@ Response ResponseHandle::handleGetRequest(const RequestHandle &Req, const Config
         response.setHeader("Connection", "keep-alive");
 
     } else {
-        if (ResponseUtils::isDirectory(filePath)) {
-			if (loc.getAutoindex() == true) {
-            	handleAutoIndex(response, filePath);
+        if (ResponseUtils::isDirectory(_filePath)) {
+			if (_loc.getAutoindex() == true) {
+            	handleAutoIndex(response, _filePath);
 			} else {
 				return createErrorResponse(Forbidden_403, "Directory listing not allowed.");
 			}
         } else {
-			if (loc.getAutoindex() == false) {
+			if (_loc.getAutoindex() == false) {
 				return createErrorResponse(NotFound_404, "The requested file was not found.");
 			} else {
-				handleAutoIndex(response, filePath.substr(0, filePath.find_last_of('/')));
+				handleAutoIndex(response, _filePath.substr(0, _filePath.find_last_of('/')));
 			}
 		}
     }
@@ -444,4 +374,84 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
         response.setHeader("Content-Length", web::toString(body.str().length())); // C++11 버전입니다.
         response.setHeader("Connection", "close");
     }
+}
+
+
+
+bool    ResponseUtils::isMethodPossible(int method, const LocationConfig &Loc) {
+    for (size_t i = 0; i < Loc.getAllowMethods().size(); ++i) {
+        if (method == ResponseUtils::getMethodNumber(Loc.getAllowedMethod(i)))
+            return true;
+    }
+    return false;
+}
+
+std::string ResponseUtils::getCurTime() {
+	struct timeval tv;
+	struct tm *tm;
+	char buf[64];
+
+	gettimeofday(&tv, NULL);
+	tm = localtime(&tv.tv_sec);
+	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tm);
+	return std::string(buf);
+}
+
+
+int ResponseUtils::getMethodNumber(const std::string &method) {
+	if (method == "GET")
+		return 1;
+	else if (method == "POST")
+		return 2;
+	else if (method == "DELETE")
+		return 3;
+	else if (method == "PUT")
+		return 4;
+	else
+		return 0;
+}
+
+std::string ResponseUtils::nomralizeUrl(const std::string &HTTP_uri) {
+	std::string normalizedUrl = HTTP_uri;
+	
+	// //제거
+	std::string::size_type pos = 0;
+	while ((pos = normalizedUrl.find("//", pos)) != std::string::npos) {
+		normalizedUrl.erase(pos, 1);
+	}
+	return normalizedUrl;	
+}
+
+std::string ResponseUtils::normalizePath(const std::string &path) {
+    std::string normalizedPath = path;
+    
+    // 연속된 슬래시를 하나의 슬래시로 치환
+    std::string::size_type pos = 0;
+    while ((pos = normalizedPath.find("//", pos)) != std::string::npos) {
+        normalizedPath.erase(pos, 1);
+    }
+    
+    // 경로의 마지막 문자가 '/'인 경우 제거
+    if (!normalizedPath.empty() && normalizedPath[normalizedPath.length() - 1] == '/') {
+        normalizedPath.erase(normalizedPath.length() - 1);
+    }
+    
+    // 상대경로 요소 제거
+    while ((pos = normalizedPath.find("/../")) != std::string::npos) {
+        if (pos == 0) {
+            return "";
+        }
+        std::string::size_type prevPos = normalizedPath.rfind('/', pos - 1);
+        if (prevPos == std::string::npos) {
+            return "";
+        }
+        normalizedPath.erase(prevPos, pos - prevPos + 3);
+    }
+    
+    // 현재 디렉토리 요소 제거
+    while ((pos = normalizedPath.find("/./")) != std::string::npos) {
+        normalizedPath.erase(pos, 2);
+    }
+    
+    return normalizedPath;
 }
