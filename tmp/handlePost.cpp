@@ -8,20 +8,55 @@
 
 #include <sys/wait.h>
 
-#include "../request/Client.hpp"
+#include "../request/RequestHandle.hpp"
+#include "../request/ResponseHandle.hpp"
 #include "../request/Response.hpp"
 #include "../Parse/Config.hpp"
 #include "../Parse/LocationConfig.hpp"
 
+std::string handleFormData(std::string cgiPath);
 
-// body길이 넘으면 414 (uri too long)
-//버튼 들어오는거 데이터 확인
-//succes 201 created
+std::string getPart(const std::string& body, const std::string& boundary) {
+    size_t start = body.find(boundary);
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += boundary.length();
+    size_t end = body.find(boundary, start);
+    if (end == std::string::npos) {
+        return "";
+    }
+    return body.substr(start, end - start);
+}
 
+std::string getfileContent(const std::string &body) {
+    size_t start = body.find("\r\n\r\n");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 4;
+    return body.substr(start);
+}
 
-const int MAX_REQUEST_SIZE = 1024 * 1024; // 1MB
+std::string getBodyHeader(const std::string& part) {
+    size_t end = part.find("\r\n\r\n");
+    if (end == std::string::npos) {
+        return "";
+    }
+    return part.substr(0, end);
+}
 
-std::string parseFileName(const std::string& header) {
+std::string getType(const std::string& header) {
+    size_t start = header.find("Content-Type: ");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 14;
+    size_t end = header.find("\r\n", start);
+    return header.substr(start, end - start);
+}
+
+std::string getFileName(const std::string& header) {
     // Content-Disposition 헤더에서 파일 이름 파싱
     size_t start = header.find("filename=\"");
     if (start != std::string::npos) {
@@ -32,83 +67,77 @@ std::string parseFileName(const std::string& header) {
     return "";
 }
 
-// std::string parseBody() --> 파일 업로드 처리 1 boundary로 구분
-
-
-Response Client::handlePostRequest(const Config &Conf) {
-	Response response;
-	const std::string server_root = Conf[_port].getPath();
-	std::string uri = getUri();
-	// std::string fileName()
-    // 요청 본문 크기 검사
-	// std::string 
-
-    if (getBody().length() > MAX_REQUEST_SIZE)
-		return createErrorResponse(UriTooLong_414, "Body too large");
-
-	// if (uri.find(".") == std::string::npos) ==> folder 인 경우 index붙여서 뭐 고려해보고
-	// {
-	// 	//error
-	// 	// handleFormData(partHeader, getBody());
-	// } else
-	if (uri.find(".") != std::string::npos && \
-			uri.substr(uri.find_last_of(".") + 1) == "py")
-	{	
-		LocationConfig loc;
-		try {
-			loc = Conf[_port].getLocation(uri);
-		}
-		catch (std::exception &e) {
-			loc = Conf[_port].getLocation("/");
-		}
-		std::string cgipath = server_root + loc.getFastcgiPass() + uri;
-		// open x -> 404 calculator.py 존재?
-		handleFormData(cgipath);
-	}
-	//else if (getHeader("Content-Disposition") == "file") {
-		// 파일 업로드 처리
-		// std::string fileName = parseFileName(getHeader("Content-Disposition"));
-		// handleFileUpload(fileName, getBody());
-		// std::ofstream file("uploaded_data.txt", std::ios::binary);
-		// file << getBody();
-		// file.close();
-		// response.setStatusCode(Created_201);
-		// response.setHeader("Date", Utils::getCurTime());
-		// response.setHeader("Content-Type", "text/plain");
-		// response.setHeaders("Content-Length", "0");
-
-	// }
-    // }
-
-    // 리소스 처리 (예: 파일 생성)
-/*
-void    Client::handleChunkedMessage(std::string &str) {
-    std::stringstream oss(str);
-    std::string line;
-    int length;
-    std::getline(oss, line);
-    length = myToString(line);
-    if (length == 0) _readStatus = READ_HEADER_DONE;
-    else if (length > 0) {
-        std::getline(oss, line);
-        _request._body += line;
-        _readStatus = READ_BODY_DOING;
-    } else throw 404;
+std::string getBoundary(const std::string& header) {
+    size_t start = header.find("boundary=");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 9;
+    return header.substr(start);
 }
-*/
-    // 응답 생성
-    // std::string message = "HTTP/1.1 201 Created\r\n";
-    // message += "Content-Type: text/plain\r\n";
-    // message += "Content-Length: 0\r\n";
-    // message += "\r\n";
 
-    // std::cout << message << std::endl;
+std::string getContentType(std::string &header)
+{
+    size_t start = header.find("Content-Type: ");
+    if (start == std::string::npos)
+        return "";
+    start += 14;
+    size_t end = header.find(";", start);
+    return header.substr(start, end - start);
+}
 
+Response ResponseHandle::handlePostRequest() {
+	Response response;
+    
+    // Response redirectResponse = handleRedirect(_loc);
+	// if (redirectResponse.getStatusCode() != OK_200) {
+	// 	return redirectResponse;
+	// }
+
+    std::string contentType = getHeader("Content-Type");
+    if (contentType.find("multipart/form-data") != std::string::npos) {
+        
+        const std::string part = getPart(_body, getBoundary(getHeader("Content-Type")));
+        const std::string bodyHeader = getBodyHeader(part);
+
+        const std::string fileContent = getfileContent(part);
+        if (fileContent.empty())
+            return createErrorResponse(BadRequest_400, "Bad Request");
+        const std::streamsize maxFileSize = 10 * 1024 * 1024;
+        if (fileContent.size() > maxFileSize)
+            return createErrorResponse(UriTooLong_414, "Body too large");
+
+        if (!fileContent.empty()) { //content가 있을 시
+            std::string responseBody = handleFormData(_filePath);
+            if (responseBody.empty()) {
+                return createErrorResponse(InternalServerError_500, "Internal Server Error");
+            }
+
+            std::string fileName = getFileName(bodyHeader);
+            if (fileName.empty()) {
+                return createErrorResponse(InternalServerError_500, "Internal Server Error");
+            }
+            std::ofstream file(fileName);
+            if (!file) {
+                return createErrorResponse(InternalServerError_500, "Internal Server Error");
+            }
+
+            response.setStatusCode(Created_201);
+            response.setHeader("Date", ResponseUtils::getCurTime());
+            response.setHeader("Content-Type", "text/plain");
+            response.setHeader("Content-Length", "0");
+            response.setHeader("connection", "keep-alive");
+            response.setBody(responseBody);
+        }
+    } else {
+        return createErrorResponse(BadRequest_400, "Bad Request");
+    }
+    response.setHeader("Server", "42Webserv");
     return response;
 }
 
-void handleFormData(std::string cgiPath) {
-    int cgiInput[2];
+std::string handleFormData(std::string cgiPath) {
+    int cgiInput[2]; // -> pipe가 아니라 file로 바꿔야 했던거같은데 max 크기 정해놔서 괜찮지 않을까?
     pid_t pid;
 
     if (pipe(cgiInput) < 0)
@@ -125,6 +154,7 @@ void handleFormData(std::string cgiPath) {
         // std::string pythonPath = "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages";
         // std::string pythonEnv = "PYTHONPATH=" + pythonPath;
         // char* envp[] = {(char*)pythonEnv.c_str(), NULL};
+        // 혹시 몰라 일단 남겨둠 -> python 실행 해보고 필요해지면 추가 할 예정
 
         std::string py3 = "/usr/bin/python3";
         char* const arg[] = {(char *)py3.c_str(), (char *)cgiPath.c_str(), NULL};
@@ -144,17 +174,10 @@ void handleFormData(std::string cgiPath) {
             output.append(buf, bytesRead);
         }
         close(cgiInput[0]);
-
         std::cout << output;
+        return output;
     }
-}
-void handleFileUpload(const std::string& header, const std::string& body) {
-    // 파일 업로드 처리 로직
-    std::string fileName = parseFileName(header);
-    std::ofstream file(fileName.c_str(), std::ios::binary);
-    file.write(body.c_str(), body.length());
-    file.close();
-    std::cout << "File uploaded: " << fileName << std::endl;
+    return "";
 }
 
 int main() {
