@@ -64,8 +64,6 @@ public:
         std::cout << "Http Path: " << httpPath << std::endl;
         if (isExtention(httpPath)) {
 			httpPath = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
-			setPathInfo(httpPath);
-			std::cout << "CGI Path: " << httpPath << std::endl;
         } else {
             httpPath = this->_locations[0].getRoot() + httpPath;
         }      

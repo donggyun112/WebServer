@@ -61,6 +61,7 @@ class RequestHandle {
         void            clearRequest();
         void            clearAll();
         int             getReadStatus() const {return this->_readStatus;}
+		void			setEnv();
 
 
         void printAllHeaders() const;
