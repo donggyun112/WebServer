@@ -55,9 +55,8 @@
         <p>이 웹서버는 강력하고 안전한 서비스를 제공합니다. 최신 기술과 고급 보안 기능을 통해 안정적이고 신뢰할 수 있는 환경에서 웹 애플리케이션을 호스팅할 수 있습니다.</p>
         <a href="/features" class="btn">자세히 알아보기</a>
    <!-- CGI 호출 버튼 및 히든 필드 추가 -->
-		<form action="/cgi-bin/script.py" method="get">
-			<input type="hidden" name="action" value="upload">
-			<button type="submit" class="btn">CGI 호출</button>
+		<form action="/cgi-bin/script.py/upload" method="get">
+			<input type="submit" value="CGI 호출">
 		</form>
     </div>
 </body>

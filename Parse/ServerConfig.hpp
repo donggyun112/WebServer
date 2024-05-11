@@ -44,10 +44,28 @@ public:
         return true;
     }
 
+
+	void	setPathInfo(std::string &httpPath) {
+		
+		if (httpPath.find('?') != std::string::npos) {
+			setenv("QUERY_STRING", httpPath.substr(httpPath.find('?') + 1).c_str(), 1);
+			httpPath = httpPath.substr(0, httpPath.find('?'));
+		}
+		else if (httpPath.find('/') != std::string::npos) {
+			setenv("PATH_INFO", httpPath.substr(httpPath.find('/')).c_str(), 1);
+			httpPath = httpPath.substr(0, httpPath.find('/'));
+			std::cout << "PATH_INFO: " << getenv("PATH_INFO") << std::endl;
+		}
+	}
+	// LocationConfig에서 이걸 처리하는게 맞는지 모르겠음 보통이런건 request에서 처리하는게 맞는거 같은데
+
+
     LocationConfig getLocation(std::string httpPath) {
-                std::cout << "Http Path: " << httpPath << std::endl;
+        std::cout << "Http Path: " << httpPath << std::endl;
         if (isExtention(httpPath)) {
-            httpPath = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
+			httpPath = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
+			setEnv(httpPath);
+			std::cout << "CGI Path: " << httpPath << std::endl;
         } else {
             httpPath = this->_locations[0].getRoot() + httpPath;
         }      
