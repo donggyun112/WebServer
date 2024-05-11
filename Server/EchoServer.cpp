@@ -127,8 +127,8 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 
 				ptr->setBuffer(buffer);
 				if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
-					std::string Response = ptr->execute(Conf);
-
+					ptr->generateResponse(Conf);
+					std::string Response =  ptr->getResponse();
 					changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}
@@ -140,7 +140,7 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 		// std::cout << "WRITE| fd : " << currEvent.ident << " | buffer = " << _clientMap[currEvent.ident]->getTempResult() << std::endl;
 
 		//짤라서 보내는게 정석인데 일단 그냥 보낸다. 짤라서 보낸다면 -> response buffer도 짤라줘야 하고, 만약 다 보냈다면? get 함수 필요.
-		send(currEvent.ident, ptr->getTempResult().c_str(), ptr->getTempResult().length(), 0);
+		send(currEvent.ident, ptr->getResponse().c_str(), ptr->getResponse().length(), 0);
 		ptr->clearAll();
 		// std::cout << "Send done | fd : " << currEvent.ident << std::endl;
 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);	
