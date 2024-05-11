@@ -13,16 +13,21 @@ void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
 	if (initPathFromLocation(Req, Conf) == false) {
 		return ;
 	}
+	std::cout << "Start to generate response" << std::endl;
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
 	switch (method)
 	{
 		case GET:
 			_response = handleGetRequest();
+			break;
 		case POST:
 			// _response = handlePostRequest(Conf);
+			break;
 		case DELETE:
 			// return handleDeleteRequest(Conf);
+			break;
 		default:
+			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 			break;
 	}
 }
@@ -116,12 +121,12 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location) {
     std::string returnUrl = location.getReturnUrl();
 
     if (!returnCode.empty() && !returnUrl.empty()) {
+		std::cout << "Redirected to: " << returnUrl << std::endl;
         int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
         response.setHeader("Connection", "close");
 		return response;
     }
-	std::cout << "Redirected to: " << returnUrl << std::endl;
 	response.setStatusCode(OK_200);
     return response;
 }
@@ -226,18 +231,22 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 Response ResponseHandle::handleGetRequest() {
     Response response;
 
+	std::cout << "Start to handle GET request" << std::endl;
+	// 리다이렉트 처리
 	Response redirectResponse = handleRedirect(_loc);
 	if (redirectResponse.getStatusCode() != OK_200) {
 		return redirectResponse;
 	}
 
     // 인덱스 파일 설정
+	std::cout << "Start to get file" << std::endl;
     std::string index = _loc.getIndex();
     if (ResponseUtils::isDirectory(_filePath) && !index.empty()) {
         _filePath += "/" + index;
     }
 
     // 파일 확장자 추출
+	std::cout << "Start to get file extension" << std::endl;
     std::string extension = ResponseUtils::getFileExtension(_filePath);
     // 파일 읽기
     std::ifstream file(_filePath.c_str(), std::ios::binary);

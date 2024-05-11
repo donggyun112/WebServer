@@ -122,7 +122,7 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 				_closeList.push_back(currEvent.ident);
 				_clientMap[currEvent.ident] = NULL;
 			} else {
-				std::cout << "READ | fd : " << currEvent.ident << " | buffer = " << buffer << std::endl;
+				std::cout << "READ | fd : " << currEvent.ident << " | buffer = " << std::endl << buffer << std::endl;
 				Client *ptr = _clientMap[currEvent.ident];
 
 				ptr->setBuffer(buffer);
