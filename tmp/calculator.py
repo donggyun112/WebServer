@@ -10,6 +10,8 @@ form = cgi.FieldStorage()
 # rgt = form.getvalue('rgt', '0')
 # operator = form.getvalue('operator', '+')
 
+
+
 lft = 2
 rgt = 3
 operator = '+'
@@ -36,4 +38,4 @@ print("""<!DOCTYPE html>
     <h1>계산 결과</h1>
     <p>{} {} {} = {}</p>
 </body>
-</html>""".format(lft, operator, rgt, result))
+</html>""".format(lft, operator, rgt, result)) # -> body만이 아니라 header까지 싹 다 response

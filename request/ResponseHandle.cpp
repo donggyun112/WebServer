@@ -320,66 +320,51 @@ Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
     return response;
 }
 
-Response ResponseHandle::handlePostRequest(const RequestHandle &Req) {
-	Response response;
+std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
     
     std::string contentType = Req.parseHeader("Content-Type");
     if (contentType.find("multipart/form-data") != std::string::npos) {
         
-        const std::string part = parsePart(_body, parseBoundary(parseHeader("Content-Type")));
+        const std::string part = parsePart(_body, parseBoundary(contentType));
         const std::string bodyHeader = parseBodyHeader(part);
+        if (bodyHeader.empty())
+            return createErrorResponse(BadRequest_400, "Bad Request");
+        std::string fileName = parseFileName(bodyHeader);
+        if (fileName.empty())
+            return createErrorResponse(BadRequest_400, "Bad Request");
 
         const std::string fileContent = parsefileContent(part);
         if (fileContent.empty())
             return createErrorResponse(BadRequest_400, "Bad Request");
+
         const std::streamsize maxFileSize = 10 * 1024 * 1024;
         if (fileContent.size() > maxFileSize)
             return createErrorResponse(UriTooLong_414, "Body too large");
 
         if (!fileContent.empty()) {
-            setEnv(Req);
-            std::string responseBody = handleFormData(_filePath);
-            if (responseBody.empty()) {
-                return createErrorResponse(InternalServerError_500, "Internal Server Error");
-            }
+            std::string responseData = handleFormData(_filePath);
 
-            std::string fileName = parseFileName(bodyHeader);
-            if (fileName.empty()) {
+            if (responseData.empty())
                 return createErrorResponse(InternalServerError_500, "Internal Server Error");
-            }
+
             std::ifstream file(fileName);
-            if (!file.good()) {
+            if (!file.good())
                 return createErrorResponse(InternalServerError_500, "Internal Server Error");
-            }
-
-            response.setStatusCode(Created_201);
-            response.setHeader("Date", ResponseUtils::getCurTime());
-            response.setHeader("Content-Type", "text/plain");
-            response.setHeader("Content-Length", "0");
-            response.setHeader("connection", "keep-alive");
-            response.setBody(responseBody);
+            file.close();
         }
     }
     else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
     {
-        setEnv(Req);
-        std::string responseBody = handleFormData(_filePath);
-        if (responseBody.empty()) {
+        std::string responseData = handleFormData(_filePath);
+
+        if (responseData.empty()) {
             return createErrorResponse(InternalServerError_500, "Internal Server Error");
         }
-
-        response.setStatusCode(204);
-        response.setHeader("Date", ResponseUtils::parseCurTime());
-        response.setHeader("Content-Type", "text/plain");
-        response.setHeader("Content-Length", "0");
-        response.setHeader("connection", "keep-alive");
-        response.setBody(responseBody);
     }
     else {
         return createErrorResponse(BadRequest_400, "Bad Request");
     }
-    response.setHeader("Server", "42Webserv");
-    return response;
+    return responseData;
 }
 
 std::string ResponseHandle::handleFormData(const std::string &cgiPath) {
@@ -387,12 +372,13 @@ std::string ResponseHandle::handleFormData(const std::string &cgiPath) {
     pid_t pid;
 
     if (pipe(cgiInput) < 0)
-        throw std::runtime_error("pipe error");
+        return "";
     
     if ((pid = fork()) < 0)
-        throw std::runtime_error("fork error");
+        return "";
 
     if (pid == 0) {
+        setEnv(Req);
         close(cgiInput[0]);
         dup2(cgiInput[1], STDOUT_FILENO);
         close(cgiInput[1]);
@@ -402,28 +388,29 @@ std::string ResponseHandle::handleFormData(const std::string &cgiPath) {
         // char* envp[] = {(char*)pythonEnv.c_str(), NULL};
         // 혹시 몰라 일단 남겨둠 -> python 실행 해보고 필요해지면 추가 할 예정
 
-        std::string py3 = "/usr/bin/python3";
+        std::string py3 = "/usr/bin/python3"; //
         char* const arg[] = {(char *)py3.c_str(), (char *)cgiPath.c_str(), NULL};
 
         if (execve(py3.c_str(), arg, NULL) == -1) {
             perror("execve failed");
-            exit(1);
+            exit(404);
         }
     } else {
+        int status;
         close(cgiInput[1]);
-        wait(NULL);
+        waitpid(pid, &status, 0);
+        // if (status == 404)
+        //     return "";
 
         std::string output;
         char buf[1024];
         ssize_t bytesRead;
         while ((bytesRead = read(cgiInput[0], buf, sizeof(buf))) > 0) {
             output.append(buf, bytesRead);
-        }
+        } // --> nonblocking
         close(cgiInput[0]);
-        std::cout << output;
         return output;
     }
-    return "";
 }
 
 std::string ResponseUtils::getFormattedTime(time_t time)
