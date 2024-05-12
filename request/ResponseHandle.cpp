@@ -18,7 +18,7 @@ void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
 	switch (method)
 	{
 		case GET:
-			_response = handleGetRequest();
+			_response = handleGetRequest(Req);
 			break;
 		case POST:
 			// _response = handlePostRequest(Conf);
@@ -76,15 +76,25 @@ bool	ResponseUtils::isExtention(std::string httpPath) {
     return true;
 }
 
-std::string ResponseUtils::getFilePath(const std::string &serverRoot, const std::string &httpUri, const LocationConfig &loc) {
+std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc) {
     std::string filePath;
     std::string alias = loc.getAlias();
-
     if (!alias.empty() && httpUri.find(alias) == 0) {
         filePath = alias + httpUri.substr(alias.length());
     }
     else if (ResponseUtils::isExtention(httpUri) == true) {
-        filePath = serverRoot + loc.getRoot() + httpUri;
+		if (loc.getFastcgiPass().empty()) {
+        	filePath = serverRoot + loc.getRoot() + httpUri;
+		} else {
+			std::cout << "is CGI" << std::endl;
+			loc.setCgi(true);
+			_scriptName = httpUri.substr(0, httpUri.find_last_of('/'));
+			_pathInfo = httpUri.substr(httpUri.find_last_of('/'));
+			_httpUri = _scriptName;
+			setenv("SCRIPT_NAME", _scriptName.c_str(), 1);
+			setenv("PATH_INFO", _pathInfo.c_str(), 1);
+			filePath = serverRoot + loc.getFastcgiPass() + httpUri;
+		}
     } else if (ResponseUtils::isDirectory(serverRoot + httpUri) == true) {
 
         filePath = serverRoot + httpUri;
@@ -218,7 +228,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 			return false;
 		}
 	}
-	_filePath = ResponseUtils::getFilePath(_serverRoot, _httpUri, _loc);
+	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
 	if (!ResponseUtils::isValidPath(_filePath)) {
 		_response = createErrorResponse(BadRequest_400, "Invalid request path.");
 		return false;
@@ -228,11 +238,18 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 
 }
 
-Response ResponseHandle::handleGetRequest() {
+Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
     Response response;
+	if (_loc.isCgi() == true) {
+		// CGI 처리
+		
+		std::cout << "Start to handle CGI" << std::endl;
+		// response = handleCgi(_loc, _filePath);
+	}
 
 	std::cout << "Start to handle GET request" << std::endl;
 	// 리다이렉트 처리
+	
 	Response redirectResponse = handleRedirect(_loc);
 	if (redirectResponse.getStatusCode() != OK_200) {
 		return redirectResponse;

@@ -20,7 +20,7 @@ namespace ResponseUtils {
 	std::string readFileContent(std::ifstream &file, std::streamsize fileSize);
 	std::streamsize getFileSize(std::ifstream &file);
 	std::string getCurTime();
-	std::string getFilePath(const std::string &serverRoot, const std::string &httpUri, const LocationConfig &loc);
+	
 	std::string getContentType(const std::string &extension);
 	int			getMethodNumber(const std::string &method);
 	std::string	getFileExtension(const std::string &filePath);
@@ -32,6 +32,8 @@ class ResponseHandle {
 	private:
 		Response 		_response;
 		std::string 	_filePath;
+		std::string 	_pathInfo;
+		std::string 	_scriptName;
 		std::string 	_httpUri;
 		std::string 	_serverRoot;
 		Port			_port;
@@ -42,8 +44,9 @@ class ResponseHandle {
 		ResponseHandle(const ResponseHandle &Copy);
 		~ResponseHandle();
 		void		generateResponse(const RequestHandle &Req, Config &Conf);
-		Response	handleGetRequest();
+		Response	handleGetRequest(const RequestHandle &Req);
 		Response	handleMethodNotAllowed();
+		std::string getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc);
 		Response	createErrorResponse(int code, const std::string &message);
 		Response 	handleRedirect(const LocationConfig &location);
 		void		handleAutoIndex(Response &response, const std::string &servRoot);
