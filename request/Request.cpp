@@ -38,7 +38,6 @@ std::string parseUri(const std::string& uri, Request &req)
 	if (isQuary(uri)) {
 			path = uri.substr(0, uri.find('?'));
 			req._query = uri.substr(uri.find('?') + 1);
-			// HttpRequest::parseQuery(query, req);
 	}
 	else 
 		path = uri;
@@ -94,4 +93,73 @@ void HttpRequest::setCookie(Request &req)
 			req._cookie[key] = value;
 		}
 	}
+}
+
+std::string HttpRequest::parsePart(const std::string& body, const std::string& boundary) {
+    size_t start = body.find(boundary);
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += boundary.length();
+    size_t end = body.find(boundary, start);
+    if (end == std::string::npos) {
+        return "";
+    }
+    return body.substr(start, end - start);
+}
+
+std::string HttpRequest::parseFileContent(const std::string &body) {
+    size_t start = body.find("\r\n\r\n");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 4;
+    return body.substr(start);
+}
+
+std::string HttpRequest::parseBodyHeader(const std::string& part) {
+    size_t end = part.find("\r\n\r\n");
+    if (end == std::string::npos) {
+        return "";
+    }
+    return part.substr(0, end);
+}
+
+std::string HttpRequest::parseType(const std::string& body_header) {
+    size_t start = header.find("Content-Type: ");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 14;
+    size_t end = header.find("\r\n", start);
+    return header.substr(start, end - start);
+}
+
+std::string HttpRequest::parseFileName(const std::string& body_header) {
+    size_t start = header.find("filename=\"");
+    if (start != std::string::npos) {
+        start += 10;
+        size_t end = header.find("\"", start);
+        return header.substr(start, end - start);
+    }
+    return "";
+}
+
+std::string HttpRequest::parseBoundary(const std::string& body_header) {
+    size_t start = header.find("boundary=");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 9;
+    return header.substr(start);
+}
+
+std::string HttpRequest::parseContentType(std::string &body_header)
+{
+    size_t start = header.find("Content-Type: ");
+    if (start == std::string::npos)
+        return "";
+    start += 14;
+    size_t end = header.find(";", start);
+    return header.substr(start, end - start);
 }
