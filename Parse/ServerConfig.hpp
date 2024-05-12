@@ -61,12 +61,15 @@ public:
 
 
     LocationConfig getLocation(std::string httpPath) {
-        std::cout << "Http Path: " << httpPath << std::endl;
+        std::cout << "Http Path1: " << httpPath << std::endl;
         if (isExtention(httpPath)) {
 			httpPath = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
-        } else {
-            httpPath = this->_locations[0].getRoot() + httpPath;
-        }      
+        }
+        //  else {
+            // httpPath = this->_locations[0].getRoot() + httpPath;
+        // std::cout << "Http Path2: " << httpPath << std::endl;
+// 
+        // }      
         for (size_t i = 0; i < _locations.size(); i++) {
             if (httpPath.substr(0, _locations[i].getPath().size()) == _locations[i].getPath())
             {
