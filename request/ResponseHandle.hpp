@@ -50,6 +50,7 @@ class ResponseHandle {
 		Response	createErrorResponse(int code, const std::string &message);
 		Response 	handleRedirect(const LocationConfig &location);
 		void		handleAutoIndex(Response &response, const std::string &servRoot);
+		Response	handleDeleteRequest();
 		void		clearAll();
 		void		setEnv(const RequestHandle &Req);
 		const std::string getResponse();

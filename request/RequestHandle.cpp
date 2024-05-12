@@ -89,8 +89,6 @@ void RequestHandle::setBuffer(const std::string& buffer) {
 void RequestHandle::setRequest() {
     std::istringstream iss(_buffer);
 	std::string line, header, body;
-    int contentLength = 0;
-
 	try {
         if (iss.str().find("\r\n") != std::string::npos \
                 && _readStatus == READ_NOT_DONE) {
@@ -103,7 +101,6 @@ void RequestHandle::setRequest() {
         if (pos == std::string::npos &&\
             _readStatus == READ_LINE_DONE)
             return ;
-
 		if (pos != std::string::npos &&\
              _readStatus == READ_LINE_DONE)
 		{
@@ -118,13 +115,11 @@ void RequestHandle::setRequest() {
             contentLength = _request._contentLength;
             _readStatus = READ_HEADER_DONE;
 		}
-
-		if ((_readStatus == READ_HEADER_DONE || \
-                _readStatus == READ_BODY_DOING) && contentLength > 0)
+		if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING ) // 수정해야됨
         {
             body = iss.str().substr(pos + 4);
-            contentLength -= body.length();
-            if (contentLength > 0) {
+            _request._currentLength += body.length();
+            if (_request._currentLength < _request._contentLength ) {
                 _readStatus = READ_BODY_DOING;
                 return ;
             }
@@ -146,6 +141,10 @@ void RequestHandle::setRequest() {
         std::cerr << "Exception caught: " << e.what() << std::endl;
 		_readStatus = READ_ERROR;
         _responseStatus = 400;
+	}
+	if (_readStatus == READ_DONE) {
+		setEnv();
+		printAllEnv();
 	}
 }
 

@@ -168,7 +168,7 @@ public:
 	}
 };
 enum Method {
-    GET = 1,
+    GET,
     POST,
     PUT,
     DELETE,
