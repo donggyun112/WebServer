@@ -9,20 +9,25 @@ ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._res
 
 ResponseHandle::~ResponseHandle() {}
 
-void ResponseHandle::generateResponse(const RequestHandle &Req, const Config &Conf) {
+void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
 	if (initPathFromLocation(Req, Conf) == false) {
 		return ;
 	}
+	std::cout << "Start to generate response" << std::endl;
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
 	switch (method)
 	{
 		case GET:
 			_response = handleGetRequest();
+			break;
 		case POST:
 			// _response = handlePostRequest(Conf);
+			break;
 		case DELETE:
 			// return handleDeleteRequest(Conf);
+			break;
 		default:
+			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 			break;
 	}
 }
@@ -116,12 +121,12 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location) {
     std::string returnUrl = location.getReturnUrl();
 
     if (!returnCode.empty() && !returnUrl.empty()) {
+		std::cout << "Redirected to: " << returnUrl << std::endl;
         int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
         response.setHeader("Connection", "close");
 		return response;
     }
-	std::cout << "Redirected to: " << returnUrl << std::endl;
 	response.setStatusCode(OK_200);
     return response;
 }
@@ -188,22 +193,26 @@ std::string ResponseUtils::getContentType(const std::string &extension) {
         return "application/octet-stream";
 }
 
-bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config &Conf) {
+bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
+	// Conf.setServerName(Req.getHost());
 
 	// URL 정규화
 	_httpUri = ResponseUtils::nomralizeUrl(_httpUri);
-	_serverRoot = ResponseUtils::normalizePath(Conf[_port].getPath());
+	std::cout << "Normalized URL: " << _httpUri << std::endl;
+	_serverRoot = ResponseUtils::normalizePath(Conf.getServerConfig(_port, Req.getHost()).getPath());
 	if (_serverRoot.empty()) {
 		_response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
 		return false;
     }
 
 	try {
-		_loc = Conf[_port].getLocation(_httpUri);
+		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
+		std::cout << "Success to get location" << std::endl;
 	} catch (const std::exception &e) {
-		_loc = Conf[_port].getLocation("/");
+		std::cout << "Success to get location" << std::endl;
+		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation("/");
 		if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
 			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 			return false;
@@ -222,18 +231,22 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 Response ResponseHandle::handleGetRequest() {
     Response response;
 
+	std::cout << "Start to handle GET request" << std::endl;
+	// 리다이렉트 처리
 	Response redirectResponse = handleRedirect(_loc);
 	if (redirectResponse.getStatusCode() != OK_200) {
 		return redirectResponse;
 	}
 
     // 인덱스 파일 설정
+	std::cout << "Start to get file" << std::endl;
     std::string index = _loc.getIndex();
     if (ResponseUtils::isDirectory(_filePath) && !index.empty()) {
         _filePath += "/" + index;
     }
 
     // 파일 확장자 추출
+	std::cout << "Start to get file extension" << std::endl;
     std::string extension = ResponseUtils::getFileExtension(_filePath);
     // 파일 읽기
     std::ifstream file(_filePath.c_str(), std::ios::binary);
