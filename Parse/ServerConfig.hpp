@@ -64,13 +64,15 @@ public:
         std::string extention;
         if (isExtention(httpPath))
 			extention = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
+        std::cout << "extension string : " << extention << std::endl;
         for (size_t i = 0; i < _locations.size(); i++) {
-            if (httpPath.substr(0, _locations[i].getPath().size()) == _locations[i].getPath())
-                return _locations[i];
-        }
-        for (size_t i = 0; i < _locations.size(); i++) {
-            if (!extention.empty() && (extention.substr(0, _locations[i].getPath().size()) == _locations[i].getPath()))
-                return _locations[i];
+            if (_locations[i].getPath().find('.') == std::string::npos) {
+                if (httpPath.substr(0, _locations[i].getPath().length()) == _locations[i].getPath())
+                    return _locations[i];
+            } else {
+                if (!extention.empty() && (_locations[i].getPath() == extention.substr(0, _locations[i].getPath().length())))
+                    return _locations[i];
+            }
         }
 		throw std::runtime_error("This path doesn't match with any location");
     }
