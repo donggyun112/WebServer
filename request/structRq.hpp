@@ -14,6 +14,7 @@ struct Request{
     Cookies     _cookie;
     std::string _body;
     int         _contentLength;
+    int         _currentLength;
 };
 
 #endif

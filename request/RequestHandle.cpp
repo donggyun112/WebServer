@@ -108,7 +108,6 @@ void printAllEnv() {
 void RequestHandle::setRequest() {
     std::istringstream iss(_buffer);
 	std::string line, header, body;
-    int contentLength = 0;
 	std::cout << "Status: " << _readStatus << std::endl;
 	std::cout << "what ???\n";
 	try {
@@ -137,31 +136,28 @@ void RequestHandle::setRequest() {
                 _request._contentLength = 0;
             if (_request._headers.find("Cookie") != _request._headers.end())
                 HttpRequest::setCookie(_request);
-            contentLength = _request._contentLength;
             _readStatus = READ_HEADER_DONE;
 			std::cout << "3\n";
 		}
 		std::cout << "what ???2\n";
-		std::cout << "Content-Length: " << contentLength << std::endl;
-		if ((_readStatus == READ_HEADER_DONE || \
-                _readStatus == READ_BODY_DOING) && contentLength > 0) // 수정해야됨
+		std::cout << "Content-Length: " << _request._contentLength << std::endl;
+		if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING ) // 수정해야됨
         {
 			std::cout << "4\n";
-            body = iss.str().substr(pos);
+            body = iss.str().substr(pos + 4);
 			std::cout << "Body: " << body << std::endl;
-            contentLength -= body.length();
-            if (contentLength > 0) {
+            _request._currentLength += body.length();
+            if (_request._currentLength < _request._contentLength ) {
                 _readStatus = READ_BODY_DOING;
-				std::cout << "Not yet done\n";
+				std::cout << "Not yet done | \ncontent-Length : " << _request._contentLength << "current-Length : " << _request._contentLength << std::endl;
                 return ;
             }
-            else if (contentLength == 0)
+            else if (_request._currentLength == _request._contentLength)
                 _readStatus = READ_DONE;
-            else if (contentLength < 0)
-                line.substr(0, line.length() + contentLength);
+            else if (_request._currentLength > _request._contentLength)
+                _responseStatus = 404;
 		}
-        else if (_readStatus == READ_HEADER_DONE && \
-                    _request._contentLength == 0) {
+        else if (_request._contentLength == _request._currentLength) {
             _readStatus = READ_DONE;
 			std::cout << "what ???1\n";
         }
@@ -175,7 +171,7 @@ void RequestHandle::setRequest() {
 		_readStatus = READ_ERROR;
         _responseStatus = 400;
 	}
-	std::cout << "7\n";
+	std::cout << "7th + readStatus = " << _readStatus << std::endl;;
 	if (_readStatus == READ_DONE) {
 		setEnv();
 		printAllEnv();
@@ -191,6 +187,7 @@ void RequestHandle::clearRequest()
     _request._cookie.clear();
     _request._body.clear();
     _request._contentLength = 0;
+	_request._currentLength = 0;
 }
 
 void RequestHandle::clearAll()
