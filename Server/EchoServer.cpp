@@ -128,7 +128,6 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 				ptr->setBuffer(buffer);
 				if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
 					ptr->generateResponse(Conf);
-					std::string Response =  ptr->getResponse();
 					changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}
