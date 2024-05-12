@@ -9,20 +9,30 @@ ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._res
 
 ResponseHandle::~ResponseHandle() {}
 
-void ResponseHandle::generateResponse(const RequestHandle &Req, const Config &Conf) {
+void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
 	if (initPathFromLocation(Req, Conf) == false) {
 		return ;
 	}
+	std::cout << "Start to generate response" << std::endl;
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
+    std::cout << "method number = " << method << "string = " << Req.getMethod() << "123" << std::endl;
 	switch (method)
 	{
 		case GET:
-			_response = handleGetRequest();
+			_response = handleGetRequest(Req);
+            std::cout << "Goto GET" << std::endl;
+			break;
 		case POST:
 			// _response = handlePostRequest(Conf);
+            std::cout << "Goto POST" << std::endl;
+			break;
 		case DELETE:
-			// return handleDeleteRequest(Conf);
+			_response = handleDeleteRequest();
+            std::cout << "Goto DELETE" << std::endl;
+			break;
 		default:
+			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
+            std::cout << "Goto ERROR" << std::endl;
 			break;
 	}
 }
@@ -30,7 +40,7 @@ void ResponseHandle::generateResponse(const RequestHandle &Req, const Config &Co
 void ResponseHandle::clearAll() {
 	_response.clearAll();
 }
-
+void printAllEnv();
 const std::string ResponseHandle::getResponse() {
 	return _response.getResponses();
 }
@@ -71,19 +81,32 @@ bool	ResponseUtils::isExtention(std::string httpPath) {
     return true;
 }
 
-std::string ResponseUtils::getFilePath(const std::string &serverRoot, const std::string &httpUri, const LocationConfig &loc) {
+std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc) {
     std::string filePath;
     std::string alias = loc.getAlias();
-
     if (!alias.empty() && httpUri.find(alias) == 0) {
         filePath = alias + httpUri.substr(alias.length());
+        std::cout << "1" << std::endl;
     }
     else if (ResponseUtils::isExtention(httpUri) == true) {
-        filePath = serverRoot + loc.getRoot() + httpUri;
+        std::cout << "2" << std::endl;
+		if (loc.getFastcgiPass().empty()) {
+        	filePath = serverRoot + loc.getRoot() + httpUri;
+		} else {
+			std::cout << "is CGI" << std::endl;
+			loc.setCgi(true);
+			_scriptName = httpUri.substr(0, httpUri.find_last_of('/'));
+			_pathInfo = httpUri.substr(httpUri.find_last_of('/'));
+			_httpUri = _scriptName;
+			setenv("SCRIPT_NAME", _scriptName.c_str(), 1);
+			setenv("PATH_INFO", _pathInfo.c_str(), 1);
+			filePath = serverRoot + loc.getFastcgiPass() + httpUri;
+		}
     } else if (ResponseUtils::isDirectory(serverRoot + httpUri) == true) {
-
+        std::cout << "3" << std::endl;
         filePath = serverRoot + httpUri;
     } else {
+        std::cout << "4" << std::endl;
         filePath = serverRoot + loc.getRoot() + httpUri.substr(loc.getRoot().length(), httpUri.length() - loc.getRoot().length());
     }
 
@@ -116,22 +139,26 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location) {
     std::string returnUrl = location.getReturnUrl();
 
     if (!returnCode.empty() && !returnUrl.empty()) {
+		std::cout << "Redirected to: " << returnUrl << std::endl;
         int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
         response.setHeader("Connection", "close");
 		return response;
     }
-	std::cout << "Redirected to: " << returnUrl << std::endl;
 	response.setStatusCode(OK_200);
     return response;
 }
 
 bool ResponseUtils::isDirectory(const std::string &path) {
     struct stat st;
-    if (stat(path.c_str(), &st) == 0) {
 
+    if (stat(path.c_str(), &st) == 0) {
+        if (S_ISREG(st.st_mode)) {
+            return false;  // 파일인 경우 false 반환
+        }
         return S_ISDIR(st.st_mode);
     }
+
     return false;
 }
 
@@ -188,52 +215,68 @@ std::string ResponseUtils::getContentType(const std::string &extension) {
         return "application/octet-stream";
 }
 
-bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config &Conf) {
+bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
+	// Conf.setServerName(Req.getHost());
 
 	// URL 정규화
 	_httpUri = ResponseUtils::nomralizeUrl(_httpUri);
-	_serverRoot = ResponseUtils::normalizePath(Conf[_port].getPath());
+	std::cout << "Normalized URL: " << _httpUri << std::endl;
+	_serverRoot = ResponseUtils::normalizePath(Conf.getServerConfig(_port, Req.getHost()).getPath());
 	if (_serverRoot.empty()) {
 		_response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
 		return false;
     }
 
 	try {
-		_loc = Conf[_port].getLocation(_httpUri);
+		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
+		std::cout << "Success to get location "<< _loc.getPath() << std::endl;
 	} catch (const std::exception &e) {
-		_loc = Conf[_port].getLocation("/");
-		if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
-			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
-			return false;
-		}
+
+		std::cout << "Failed to get location" << std::endl;
+		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation("/");
 	}
-	_filePath = ResponseUtils::getFilePath(_serverRoot, _httpUri, _loc);
+	if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
+		_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
+		return false;
+	}
+	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
 	if (!ResponseUtils::isValidPath(_filePath)) {
 		_response = createErrorResponse(BadRequest_400, "Invalid request path.");
 		return false;
 	}
 	return true;
-
-
 }
 
-Response ResponseHandle::handleGetRequest() {
+Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
     Response response;
+	if (_loc.isCgi() == true) {
+		// CGI 처리
+		setEnv(Req);
+		printAllEnv();
+		
+		std::cout << "Start to handle CGI" << std::endl;
+		// response = handleCgi(_loc, _filePath);
+	}
 
+	std::cout << "Start to handle GET request" << std::endl;
+	// 리다이렉트 처리
+	
 	Response redirectResponse = handleRedirect(_loc);
 	if (redirectResponse.getStatusCode() != OK_200) {
 		return redirectResponse;
 	}
 
     // 인덱스 파일 설정
+	std::cout << "Start to get file" << std::endl;
     std::string index = _loc.getIndex();
     if (ResponseUtils::isDirectory(_filePath) && !index.empty()) {
         _filePath += "/" + index;
     }
 
     // 파일 확장자 추출
+	std::cout << "Start to get file extension" << std::endl;
     std::string extension = ResponseUtils::getFileExtension(_filePath);
     // 파일 읽기
     std::ifstream file(_filePath.c_str(), std::ios::binary);
@@ -380,8 +423,9 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 
 bool    ResponseUtils::isMethodPossible(int method, const LocationConfig &Loc) {
     for (size_t i = 0; i < Loc.getAllowMethods().size(); ++i) {
-        if (method == ResponseUtils::getMethodNumber(Loc.getAllowedMethod(i)))
+        if (method == ResponseUtils::getMethodNumber(Loc.getAllowedMethod(i))) {
             return true;
+        }
     }
     return false;
 }
@@ -400,13 +444,13 @@ std::string ResponseUtils::getCurTime() {
 
 int ResponseUtils::getMethodNumber(const std::string &method) {
 	if (method == "GET")
-		return 1;
+		return GET;
 	else if (method == "POST")
-		return 2;
+		return POST;
 	else if (method == "DELETE")
-		return 3;
+		return DELETE;
 	else if (method == "PUT")
-		return 4;
+		return PUT;
 	else
 		return 0;
 }
@@ -454,4 +498,57 @@ std::string ResponseUtils::normalizePath(const std::string &path) {
     }
     
     return normalizedPath;
+}
+
+void printAllEnv() {
+	std::cout << "REQUEST_METHOD: " << getenv("REQUEST_METHOD") << std::endl;
+	std::cout << "REQUEST_URI: " << getenv("REQUEST_URI") << std::endl;
+	std::cout << "QUERY_STRING: " << getenv("QUERY_STRING") << std::endl;
+	std::cout << "SCRIPT_NAME: " << getenv("SCRIPT_NAME") << std::endl;
+	std::cout << "PATH_INFO: " << getenv("PATH_INFO") << std::endl;
+	std::cout << "SERVER_NAME: " << getenv("SERVER_NAME") << std::endl;
+	std::cout << "SERVER_PORT: " << getenv("SERVER_PORT") << std::endl;
+	std::cout << "HTTP_HOST: " << getenv("HTTP_HOST") << std::endl;
+	std::cout << "HTTP_USER_AGENT: " << getenv("HTTP_USER_AGENT") << std::endl;
+	std::cout << "HTTP_ACCEPT: " << getenv("HTTP_ACCEPT") << std::endl;
+	std::cout << "HTTP_ACCEPT_LANGUAGE: " << getenv("HTTP_ACCEPT_LANGUAGE") << std::endl;
+	std::cout << "HTTP_ACCEPT_ENCODING: " << getenv("HTTP_ACCEPT_ENCODING") << std::endl;
+	std::cout << "HTTP_ACCEPT_CHARSET: " << getenv("HTTP_ACCEPT_CHARSET") << std::endl;
+	std::cout << "HTTP_KEEP_ALIVE: " << getenv("HTTP_KEEP_ALIVE") << std::endl;
+	std::cout << "HTTP_CONTENT_TYPE: " << getenv("HTTP_CONTENT_TYPE") << std::endl;
+	std::cout << "HTTP_CONTENT_LENGTH: " << getenv("HTTP_CONTENT_LENGTH") << std::endl;
+
+}
+
+void	ResponseHandle::setEnv(const RequestHandle &Req) {
+	std::string host = Req.getHost();
+	std::string uri = _httpUri;
+	std::string scriptName = _scriptName;
+	std::string query = Req.getQuery();
+	std::string queryString = "";
+	std::string requestUri = Req.getUri();
+	std::string requestMethod = Req.getMethod();
+	std::string serverName = host;
+	std::string serverPort = web::toString(_port);
+	setenv("REQUEST_METHOD", requestMethod.c_str(), 1);
+	setenv("REQUEST_URI", requestUri.c_str(), 1);
+	setenv("QUERY_STRING", query.c_str(), 1);
+	setenv("SCRIPT_NAME", scriptName.c_str(), 1);
+	setenv("PATH_INFO", _pathInfo.c_str(), 1);
+	setenv("QUERY_STRING", query.c_str(), 1);
+	setenv("SERVER_NAME", serverName.c_str(), 1);
+	setenv("SERVER_PORT", serverPort.c_str(), 1);
+	setenv("HTTP_HOST", host.c_str(), 1);
+	setenv("HTTP_USER_AGENT", Req.getHeader("User-Agent").c_str(), 1);
+	setenv("HTTP_ACCEPT", Req.getHeader("Accept").c_str(), 1);
+	setenv("HTTP_ACCEPT_LANGUAGE", Req.getHeader("Accept-Language").c_str(), 1);
+	setenv("HTTP_ACCEPT_ENCODING", Req.getHeader("Accept-Encoding").c_str(), 1);
+	setenv("HTTP_ACCEPT_CHARSET", Req.getHeader("Accept-Charset").c_str(), 1);
+	setenv("HTTP_KEEP_ALIVE", Req.getHeader("Keep-Alive").c_str(), 1);
+	setenv("HTTP_CONNECTION", Req.getHeader("Connection").c_str(), 1);
+	setenv("HTTP_REFERER", Req.getHeader("Referer").c_str(), 1);
+	setenv("HTTP_COOKIE", Req.getHeader("Cookie").c_str(), 1);
+	setenv("HTTP_CONTENT_TYPE", Req.getHeader("Content-Type").c_str(), 1);
+	setenv("HTTP_CONTENT_LENGTH", Req.getHeader("Content-Length").c_str(), 1);
+	setenv("BODY", Req.getBody().c_str(), 1);
 }

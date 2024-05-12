@@ -12,8 +12,10 @@ struct Request{
     std::string _version;
     Headers     _headers;
     Cookies     _cookie;
+	std::string _query;
     std::string _body;
     int         _contentLength;
+    int         _currentLength;
 };
 
 #endif

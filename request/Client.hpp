@@ -18,7 +18,7 @@ class Client {
 		void clearAll();
 		void setBuffer(const std::string &buffer);
 		int  getReadStatus() const;
-		void generateResponse(const Config &Conf);
+		void generateResponse(Config Conf);
 		Port getPort() const;
 		std::string getResponse() const;
 };

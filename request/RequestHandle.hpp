@@ -45,21 +45,23 @@ class RequestHandle {
         RequestHandle(const RequestHandle &Copy);
         ~RequestHandle();
 
-        std::string     getBuffer() const;
-        std::string     getMethod() const;
-        std::string     getUri() const;
-        std::string     getVersion() const;
-        std::string     getHeader(const std::string& key) const;
-        std::string     getCookie(const std::string& key) const;
-        std::string     getBody() const;
-        const Request   &getRequest() const;
-        Port             getPort() const;
-        int             getResponseStatus() const;
-        void            setRequest();
-        void            setBuffer(const std::string& buffer);
-        void            clearRequest();
-        void            clearAll();
-        int             getReadStatus() const {return this->_readStatus;}
+		std::string	 			getHost() const;
+        Port            		getPort() const;
+        std::string     		getBuffer() const;
+        std::string     		getMethod() const;
+        std::string     		getUri() const;
+        std::string     		getVersion() const;
+        std::string     		getHeader(const std::string& key) const;
+        std::string     		getCookie(const std::string& key) const;
+        std::string     		getBody() const;
+        const Request   		&getRequest() const;
+        int             		getResponseStatus() const;
+        void            		setRequest();
+        void            		setBuffer(const std::string& buffer);
+        void            		clearRequest();
+        void            		clearAll();
+        int             		getReadStatus() const {return this->_readStatus;}
+		const std::string		&getQuery() const;
 
 
         void printAllHeaders() const;

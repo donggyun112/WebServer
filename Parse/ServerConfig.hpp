@@ -38,32 +38,44 @@ public:
         return _locations[i];
     }
 
-    bool    isExtention(std::string httpPath) { 
+    bool    isExtention(std::string httpPath) {
         if (httpPath.find_last_of('.') == std::string::npos)
             return false;
         return true;
     }
 
+
+	void	setPathInfo(std::string &httpPath) {
+		
+		if (httpPath.find('?') != std::string::npos) {
+			setenv("QUERY_STRING", httpPath.substr(httpPath.find('?') + 1).c_str(), 1);
+			httpPath = httpPath.substr(0, httpPath.find('?'));
+		}
+		else if (httpPath.find('/') != std::string::npos) {
+			setenv("PATH_INFO", httpPath.substr(httpPath.find('/')).c_str(), 1);
+			httpPath = httpPath.substr(0, httpPath.find('/'));
+			std::cout << "PATH_INFO: " << getenv("PATH_INFO") << std::endl;
+		}
+	}
+	// LocationConfig에서 이걸 처리하는게 맞는지 모르겠음 보통이런건 request에서 처리하는게 맞는거 같은데
+
+
     LocationConfig getLocation(std::string httpPath) {
-                std::cout << "Http Path: " << httpPath << std::endl;
-        if (isExtention(httpPath)) {
-            httpPath = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
-        } else {
-            httpPath = this->_locations[0].getRoot() + httpPath;
-        }      
+        std::string extention;
+        if (isExtention(httpPath))
+			extention = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
+        std::cout << "extension string : " << extention << std::endl;
         for (size_t i = 0; i < _locations.size(); i++) {
-            if (httpPath.substr(0, _locations[i].getPath().size()) == _locations[i].getPath())
-            {
-                if (httpPath.size() > _locations[i].getPath().size() && httpPath[_locations[i].getPath().size()] != '/')
-                    continue;
-                std::cout << "Location Path: " << _locations[i].getPath() << std::endl;
-                return _locations[i];
+            if (_locations[i].getPath().find('.') == std::string::npos) {
+                if (httpPath.substr(0, _locations[i].getPath().length()) == _locations[i].getPath())
+                    return _locations[i];
+            } else {
+                if (!extention.empty() && (_locations[i].getPath() == extention.substr(0, _locations[i].getPath().length())))
+                    return _locations[i];
             }
         }
 		throw std::runtime_error("This path doesn't match with any location");
     }
 };
-
-
 
 #endif
