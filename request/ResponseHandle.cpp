@@ -15,19 +15,24 @@ void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
 	}
 	std::cout << "Start to generate response" << std::endl;
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
+    std::cout << "method number = " << method << "string = " << Req.getMethod() << "123" << std::endl;
 	switch (method)
 	{
 		case GET:
 			_response = handleGetRequest();
+            std::cout << "Goto GET" << std::endl;
 			break;
 		case POST:
 			// _response = handlePostRequest(Conf);
+            std::cout << "Goto POST" << std::endl;
 			break;
 		case DELETE:
-			// return handleDeleteRequest(Conf);
+			_response = handleDeleteRequest();
+            std::cout << "Goto DELETE" << std::endl;
 			break;
 		default:
 			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
+            std::cout << "Goto ERROR" << std::endl;
 			break;
 	}
 }
@@ -82,13 +87,16 @@ std::string ResponseUtils::getFilePath(const std::string &serverRoot, const std:
 
     if (!alias.empty() && httpUri.find(alias) == 0) {
         filePath = alias + httpUri.substr(alias.length());
+        std::cout << "1" << std::endl;
     }
     else if (ResponseUtils::isExtention(httpUri) == true) {
+        std::cout << "2" << std::endl;
         filePath = serverRoot + loc.getRoot() + httpUri;
     } else if (ResponseUtils::isDirectory(serverRoot + httpUri) == true) {
-
+        std::cout << "3" << std::endl;
         filePath = serverRoot + httpUri;
     } else {
+        std::cout << "4" << std::endl;
         filePath = serverRoot + loc.getRoot() + httpUri.substr(loc.getRoot().length(), httpUri.length() - loc.getRoot().length());
     }
 
@@ -133,10 +141,14 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location) {
 
 bool ResponseUtils::isDirectory(const std::string &path) {
     struct stat st;
-    if (stat(path.c_str(), &st) == 0) {
 
+    if (stat(path.c_str(), &st) == 0) {
+        if (S_ISREG(st.st_mode)) {
+            return false;  // 파일인 경우 false 반환
+        }
         return S_ISDIR(st.st_mode);
     }
+
     return false;
 }
 
@@ -209,15 +221,15 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 
 	try {
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
-		std::cout << "Success to get location" << std::endl;
+		std::cout << "Success to get location"<< _loc.getPath() << std::endl;
 	} catch (const std::exception &e) {
-		std::cout << "Success to get location" << std::endl;
+		std::cout << "failed to get location" << std::endl;
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation("/");
-		if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
+	}
+		if (ResponseUtils::isMethodPossible( ResponseUtils::getMethodNumber(Req.getMethod()), _loc) == false) {
 			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 			return false;
 		}
-	}
 	_filePath = ResponseUtils::getFilePath(_serverRoot, _httpUri, _loc);
 	if (!ResponseUtils::isValidPath(_filePath)) {
 		_response = createErrorResponse(BadRequest_400, "Invalid request path.");
@@ -393,8 +405,9 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 
 bool    ResponseUtils::isMethodPossible(int method, const LocationConfig &Loc) {
     for (size_t i = 0; i < Loc.getAllowMethods().size(); ++i) {
-        if (method == ResponseUtils::getMethodNumber(Loc.getAllowedMethod(i)))
+        if (method == ResponseUtils::getMethodNumber(Loc.getAllowedMethod(i))) {
             return true;
+        }
     }
     return false;
 }
@@ -413,13 +426,13 @@ std::string ResponseUtils::getCurTime() {
 
 int ResponseUtils::getMethodNumber(const std::string &method) {
 	if (method == "GET")
-		return 1;
+		return GET;
 	else if (method == "POST")
-		return 2;
+		return POST;
 	else if (method == "DELETE")
-		return 3;
+		return DELETE;
 	else if (method == "PUT")
-		return 4;
+		return PUT;
 	else
 		return 0;
 }

@@ -108,23 +108,18 @@ void printAllEnv() {
 void RequestHandle::setRequest() {
     std::istringstream iss(_buffer);
 	std::string line, header, body;
-	std::cout << "Status: " << _readStatus << std::endl;
-	std::cout << "what ???\n";
 	try {
         if (iss.str().find("\r\n") != std::string::npos \
                 && _readStatus == READ_NOT_DONE) {
     		std::getline(iss, line);
-			std::cout << "what ???\n";
 	    	HttpRequest::parseRequestLine(_request, line);
             _readStatus = READ_LINE_DONE;
         }
 
 		size_t pos = iss.str().find("\r\n\r\n");
-		std::cout << "what ???\n";
         if (pos == std::string::npos &&\
             _readStatus == READ_LINE_DONE)	
             return ;
-		std::cout << "what ???3\n";
 		if (pos != std::string::npos &&\
              _readStatus == READ_LINE_DONE)
 		{
@@ -137,19 +132,13 @@ void RequestHandle::setRequest() {
             if (_request._headers.find("Cookie") != _request._headers.end())
                 HttpRequest::setCookie(_request);
             _readStatus = READ_HEADER_DONE;
-			std::cout << "3\n";
 		}
-		std::cout << "what ???2\n";
-		std::cout << "Content-Length: " << _request._contentLength << std::endl;
 		if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING ) // 수정해야됨
         {
-			std::cout << "4\n";
             body = iss.str().substr(pos + 4);
-			std::cout << "Body: " << body << std::endl;
             _request._currentLength += body.length();
             if (_request._currentLength < _request._contentLength ) {
                 _readStatus = READ_BODY_DOING;
-				std::cout << "Not yet done | \ncontent-Length : " << _request._contentLength << "current-Length : " << _request._contentLength << std::endl;
                 return ;
             }
             else if (_request._currentLength == _request._contentLength)
@@ -159,19 +148,16 @@ void RequestHandle::setRequest() {
 		}
         else if (_request._contentLength == _request._currentLength) {
             _readStatus = READ_DONE;
-			std::cout << "what ???1\n";
         }
         _request._body += HttpRequest::parseBody(body);
 		HttpRequest::isVaildRequest(_request);
         _responseStatus = 200;
 	}
 	catch (std::invalid_argument& e) {
-		std::cout << "6\n";
         std::cerr << "Exception caught: " << e.what() << std::endl;
 		_readStatus = READ_ERROR;
         _responseStatus = 400;
 	}
-	std::cout << "7th + readStatus = " << _readStatus << std::endl;;
 	if (_readStatus == READ_DONE) {
 		setEnv();
 		printAllEnv();

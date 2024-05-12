@@ -14,6 +14,7 @@ SRCS =	Server/EchoServer.cpp \
 		Parse/LocationConfig.cpp \
 		tmp/mainTest.cpp \
 		utils/utils.cpp \
+		handleDeleteRequest/handleDeleteRequest.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 

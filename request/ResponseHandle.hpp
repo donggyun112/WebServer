@@ -47,6 +47,7 @@ class ResponseHandle {
 		Response	createErrorResponse(int code, const std::string &message);
 		Response 	handleRedirect(const LocationConfig &location);
 		void		handleAutoIndex(Response &response, const std::string &servRoot);
+		Response	handleDeleteRequest();
 		void		clearAll();
 		const std::string getResponse();
 };
