@@ -38,7 +38,7 @@ public:
         return _locations[i];
     }
 
-    bool    isExtention(std::string httpPath) { 
+    bool    isExtention(std::string httpPath) {
         if (httpPath.find_last_of('.') == std::string::npos)
             return false;
         return true;
@@ -61,28 +61,19 @@ public:
 
 
     LocationConfig getLocation(std::string httpPath) {
-        std::cout << "Http Path1: " << httpPath << std::endl;
-        if (isExtention(httpPath)) {
-			httpPath = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
-        }
-        //  else {
-            // httpPath = this->_locations[0].getRoot() + httpPath;
-        // std::cout << "Http Path2: " << httpPath << std::endl;
-// 
-        // }      
+        std::string extention;
+        if (isExtention(httpPath))
+			extention = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
         for (size_t i = 0; i < _locations.size(); i++) {
             if (httpPath.substr(0, _locations[i].getPath().size()) == _locations[i].getPath())
-            {
-                if (httpPath.size() > _locations[i].getPath().size() && httpPath[_locations[i].getPath().size()] != '/')
-                    continue;
-                std::cout << "Location Path: " << _locations[i].getPath() << std::endl;
                 return _locations[i];
-            }
+        }
+        for (size_t i = 0; i < _locations.size(); i++) {
+            if (!extention.empty() && (extention.substr(0, _locations[i].getPath().size()) == _locations[i].getPath()))
+                return _locations[i];
         }
 		throw std::runtime_error("This path doesn't match with any location");
     }
 };
-
-
 
 #endif

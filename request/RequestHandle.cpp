@@ -88,10 +88,8 @@ void RequestHandle::setBuffer(const std::string& buffer) {
 
 void RequestHandle::setRequest() {
     std::istringstream iss(_buffer);
-    std::string line, header, body;
-    std::cout << "Status: " << _readStatus << std::endl;
-    std::cout << "what ???\n";
-    try {
+	std::string line, header, body;
+	try {
         if (iss.str().find("\r\n") != std::string::npos \
                 && _readStatus == READ_NOT_DONE) {
             std::getline(iss, line);
@@ -105,8 +103,8 @@ void RequestHandle::setRequest() {
         if (pos == std::string::npos &&\
             _readStatus == READ_LINE_DONE)  
             return ;
-        std::cout << "what ???3\n";
-        if (pos != std::string::npos &&\
+
+		if (pos != std::string::npos &&\
              _readStatus == READ_LINE_DONE)
         {
             header = iss.str().substr(0, pos);
@@ -118,15 +116,11 @@ void RequestHandle::setRequest() {
             if (_request._headers.find("Cookie") != _request._headers.end())
                 HttpRequest::setCookie(_request);
             _readStatus = READ_HEADER_DONE;
-            std::cout << "3\n";
-        }
-        std::cout << "what ???2\n";
-        std::cout << "Content-Length: " << _request._contentLength << std::endl;
-        if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING ) // 수정해야됨
+		}
+		if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING ) // 수정해야됨
         {
             std::cout << "4\n";
             body = iss.str().substr(pos + 4);
-            std::cout << "Body: " << body << std::endl;
             _request._currentLength += body.length();
             if (_request._currentLength < _request._contentLength ) {
                 _readStatus = READ_BODY_DOING;
@@ -151,8 +145,6 @@ void RequestHandle::setRequest() {
         std::cerr << "Exception caught: " << e.what() << std::endl;
         _readStatus = READ_ERROR;
         _responseStatus = 400;
-    }
-    std::cout << "7th + readStatus = " << _readStatus << std::endl;;
 }
 
 
