@@ -145,6 +145,7 @@ void RequestHandle::setRequest() {
         std::cerr << "Exception caught: " << e.what() << std::endl;
         _readStatus = READ_ERROR;
         _responseStatus = 400;
+    }
 }
 
 

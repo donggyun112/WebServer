@@ -19,8 +19,7 @@ void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
 	switch (method)
 	{
 		case GET:
-
-			_response = handleGetRequest();
+			_response = handleGetRequest(Req);
             std::cout << "Goto GET" << std::endl;
 			break;
 		case POST:
@@ -232,7 +231,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 
 	try {
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
-		std::cout << "Success to get location"<< _loc.getPath() << std::endl;
+		std::cout << "Success to get location "<< _loc.getPath() << std::endl;
 	} catch (const std::exception &e) {
 
 		std::cout << "Failed to get location" << std::endl;
