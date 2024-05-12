@@ -1,6 +1,14 @@
 #include "LocationConfig.hpp"
 #include "Config.hpp"
 
+bool	LocationConfig::isCgi() const {
+	return _cgi;
+}
+
+void	LocationConfig::setCgi(bool cgi) {
+	_cgi = cgi;
+}
+
 LocationConfig::LocationConfig(std::ifstream &file) : _autoindex(false)
 {
     std::string     line;
