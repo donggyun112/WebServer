@@ -51,6 +51,7 @@ class ResponseHandle {
 		Response 	handleRedirect(const LocationConfig &location);
 		void		handleAutoIndex(Response &response, const std::string &servRoot);
 		void		clearAll();
+		void		setEnv(const RequestHandle &Req);
 		const std::string getResponse();
 };
 

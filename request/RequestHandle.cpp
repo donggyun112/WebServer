@@ -73,6 +73,10 @@ const Request &RequestHandle::getRequest() const {
     return _request;
 }
 
+const std::string &RequestHandle::getQuery() const {
+	return _request._query;
+}
+
 int RequestHandle::getResponseStatus() const {
     return _responseStatus;
 }
@@ -133,7 +137,8 @@ void RequestHandle::setRequest() {
                     _request._contentLength == 0) {
             _readStatus = READ_DONE;
         }
-        _request._body += HttpRequest::parseBody(body);
+        // _request._body += HttpRequest::parseBody(body, _request);
+        _request._body += body;
 		HttpRequest::isVaildRequest(_request);
         _responseStatus = 200;
 	}
@@ -152,7 +157,9 @@ void RequestHandle::clearRequest()
     _request._headers.clear();
     _request._cookie.clear();
     _request._body.clear();
+	_request._query.clear();
     _request._contentLength = 0;
+	_request._currentLength = 0;
 }
 
 void RequestHandle::clearAll()
@@ -164,91 +171,6 @@ void RequestHandle::clearAll()
 
     //for test
     _tempResult = "";
-}
-
-void printAllEnv() {
-	std::cout << "REQUEST_METHOD: " << getenv("REQUEST_METHOD") << std::endl;
-	std::cout << "REQUEST_URI: " << getenv("REQUEST_URI") << std::endl;
-	std::cout << "QUERY_STRING: " << getenv("QUERY_STRING") << std::endl;
-	std::cout << "SCRIPT_NAME: " << getenv("SCRIPT_NAME") << std::endl;
-	std::cout << "PATH_INFO: " << getenv("PATH_INFO") << std::endl;
-	std::cout << "SERVER_NAME: " << getenv("SERVER_NAME") << std::endl;
-	std::cout << "SERVER_PORT: " << getenv("SERVER_PORT") << std::endl;
-	std::cout << "HTTP_HOST: " << getenv("HTTP_HOST") << std::endl;
-	std::cout << "HTTP_USER_AGENT: " << getenv("HTTP_USER_AGENT") << std::endl;
-	std::cout << "HTTP_ACCEPT: " << getenv("HTTP_ACCEPT") << std::endl;
-	std::cout << "HTTP_ACCEPT_LANGUAGE: " << getenv("HTTP_ACCEPT_LANGUAGE") << std::endl;
-	std::cout << "HTTP_ACCEPT_ENCODING: " << getenv("HTTP_ACCEPT_ENCODING") << std::endl;
-	std::cout << "HTTP_ACCEPT_CHARSET: " << getenv("HTTP_ACCEPT_CHARSET") << std::endl;
-	std::cout << "HTTP_KEEP_ALIVE: " << getenv("HTTP_KEEP_ALIVE") << std::endl;
-	// setenv("REQUEST_METHOD", requestMethod.c_str(), 1);
-	// setenv("REQUEST_URI", requestUri.c_str(), 1);
-	// setenv("QUERY_STRING", query.c_str(), 1);
-	// setenv("SCRIPT_NAME", scriptName.c_str(), 1);
-	// setenv("PATH_INFO", path.c_str(), 1);
-	// setenv("QUERY_STRING", query.c_str(), 1);
-	// setenv("SERVER_NAME", serverName.c_str(), 1);
-	// setenv("SERVER_PORT", serverPort.c_str(), 1);
-	// setenv("HTTP_HOST", host.c_str(), 1);
-	// setenv("HTTP_USER_AGENT", getHeader("User-Agent").c_str(), 1);
-	// setenv("HTTP_ACCEPT", getHeader("Accept").c_str(), 1);
-	// setenv("HTTP_ACCEPT_LANGUAGE", getHeader("Accept-Language").c_str(), 1);
-	// setenv("HTTP_ACCEPT_ENCODING", getHeader("Accept-Encoding").c_str(), 1);
-	// setenv("HTTP_ACCEPT_CHARSET", getHeader("Accept-Charset").c_str(), 1);
-	// setenv("HTTP_KEEP_ALIVE", getHeader("Keep-Alive").c_str(), 1);
-	// setenv("HTTP_CONNECTION", getHeader("Connection").c_str(), 1);
-	// setenv("HTTP_REFERER", getHeader("Referer").c_str(), 1);
-	// setenv("HTTP_COOKIE", getHeader("Cookie").c_str(), 1);
-	// setenv("HTTP_CONTENT_TYPE", getHeader("Content-Type").c_str(), 1);
-	// setenv("HTTP_CONTENT_LENGTH", getHeader("Content-Length").c_str(), 1);
-
-}
-
-void	RequestHandle::setEnv() {
-	std::string host = getHost();
-	std::string uri = getUri();
-	std::string path = uri;
-	std::string query = "";
-	std::string scriptName = "";
-	std::string queryString = "";
-	std::string requestUri = uri;
-	std::string requestMethod = getMethod();
-	std::string serverName = host;
-	std::string serverPort = web::toString(getPort());
-
-	if (uri.find('?') != std::string::npos) {
-		query = uri.substr(uri.find('?') + 1);
-		path = uri.substr(0, uri.find('?'));
-	}
-	if (path.find('/') != std::string::npos) {
-		scriptName = path.substr(0, path.find_last_of('/') + 1);
-		path = path.substr(path.find_last_of('/') + 1);
-	}
-	if (query.find('&') != std::string::npos) {
-		queryString = query.substr(query.find('&') + 1);
-		query = query.substr(0, query.find('&'));
-	}
-	setenv("REQUEST_METHOD", requestMethod.c_str(), 1);
-	setenv("REQUEST_URI", requestUri.c_str(), 1);
-	setenv("QUERY_STRING", query.c_str(), 1);
-	setenv("SCRIPT_NAME", scriptName.c_str(), 1);
-	setenv("PATH_INFO", path.c_str(), 1);
-	setenv("QUERY_STRING", query.c_str(), 1);
-	setenv("SERVER_NAME", serverName.c_str(), 1);
-	setenv("SERVER_PORT", serverPort.c_str(), 1);
-	setenv("HTTP_HOST", host.c_str(), 1);
-	setenv("HTTP_USER_AGENT", getHeader("User-Agent").c_str(), 1);
-	setenv("HTTP_ACCEPT", getHeader("Accept").c_str(), 1);
-	setenv("HTTP_ACCEPT_LANGUAGE", getHeader("Accept-Language").c_str(), 1);
-	setenv("HTTP_ACCEPT_ENCODING", getHeader("Accept-Encoding").c_str(), 1);
-	setenv("HTTP_ACCEPT_CHARSET", getHeader("Accept-Charset").c_str(), 1);
-	setenv("HTTP_KEEP_ALIVE", getHeader("Keep-Alive").c_str(), 1);
-	setenv("HTTP_CONNECTION", getHeader("Connection").c_str(), 1);
-	setenv("HTTP_REFERER", getHeader("Referer").c_str(), 1);
-	setenv("HTTP_COOKIE", getHeader("Cookie").c_str(), 1);
-	setenv("HTTP_CONTENT_TYPE", getHeader("Content-Type").c_str(), 1);
-	setenv("HTTP_CONTENT_LENGTH", getHeader("Content-Length").c_str(), 1);
-
 }
 
 void RequestHandle::printAllHeaders() const{

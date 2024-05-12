@@ -35,7 +35,7 @@ void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
 void ResponseHandle::clearAll() {
 	_response.clearAll();
 }
-
+void printAllEnv();
 const std::string ResponseHandle::getResponse() {
 	return _response.getResponses();
 }
@@ -221,12 +221,12 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
 		std::cout << "Success to get location" << std::endl;
 	} catch (const std::exception &e) {
-		std::cout << "Success to get location" << std::endl;
+		std::cout << "Failed to get location" << std::endl;
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation("/");
-		if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
-			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
-			return false;
-		}
+	}
+	if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
+		_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
+		return false;
 	}
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
 	if (!ResponseUtils::isValidPath(_filePath)) {
@@ -242,6 +242,8 @@ Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
     Response response;
 	if (_loc.isCgi() == true) {
 		// CGI 처리
+		setEnv(Req);
+		printAllEnv();
 		
 		std::cout << "Start to handle CGI" << std::endl;
 		// response = handleCgi(_loc, _filePath);
@@ -484,4 +486,57 @@ std::string ResponseUtils::normalizePath(const std::string &path) {
     }
     
     return normalizedPath;
+}
+
+void printAllEnv() {
+	std::cout << "REQUEST_METHOD: " << getenv("REQUEST_METHOD") << std::endl;
+	std::cout << "REQUEST_URI: " << getenv("REQUEST_URI") << std::endl;
+	std::cout << "QUERY_STRING: " << getenv("QUERY_STRING") << std::endl;
+	std::cout << "SCRIPT_NAME: " << getenv("SCRIPT_NAME") << std::endl;
+	std::cout << "PATH_INFO: " << getenv("PATH_INFO") << std::endl;
+	std::cout << "SERVER_NAME: " << getenv("SERVER_NAME") << std::endl;
+	std::cout << "SERVER_PORT: " << getenv("SERVER_PORT") << std::endl;
+	std::cout << "HTTP_HOST: " << getenv("HTTP_HOST") << std::endl;
+	std::cout << "HTTP_USER_AGENT: " << getenv("HTTP_USER_AGENT") << std::endl;
+	std::cout << "HTTP_ACCEPT: " << getenv("HTTP_ACCEPT") << std::endl;
+	std::cout << "HTTP_ACCEPT_LANGUAGE: " << getenv("HTTP_ACCEPT_LANGUAGE") << std::endl;
+	std::cout << "HTTP_ACCEPT_ENCODING: " << getenv("HTTP_ACCEPT_ENCODING") << std::endl;
+	std::cout << "HTTP_ACCEPT_CHARSET: " << getenv("HTTP_ACCEPT_CHARSET") << std::endl;
+	std::cout << "HTTP_KEEP_ALIVE: " << getenv("HTTP_KEEP_ALIVE") << std::endl;
+	std::cout << "HTTP_CONTENT_TYPE: " << getenv("HTTP_CONTENT_TYPE") << std::endl;
+	std::cout << "HTTP_CONTENT_LENGTH: " << getenv("HTTP_CONTENT_LENGTH") << std::endl;
+
+}
+
+void	ResponseHandle::setEnv(const RequestHandle &Req) {
+	std::string host = Req.getHost();
+	std::string uri = _httpUri;
+	std::string scriptName = _scriptName;
+	std::string query = Req.getQuery();
+	std::string queryString = "";
+	std::string requestUri = Req.getUri();
+	std::string requestMethod = Req.getMethod();
+	std::string serverName = host;
+	std::string serverPort = web::toString(_port);
+	setenv("REQUEST_METHOD", requestMethod.c_str(), 1);
+	setenv("REQUEST_URI", requestUri.c_str(), 1);
+	setenv("QUERY_STRING", query.c_str(), 1);
+	setenv("SCRIPT_NAME", scriptName.c_str(), 1);
+	setenv("PATH_INFO", _pathInfo.c_str(), 1);
+	setenv("QUERY_STRING", query.c_str(), 1);
+	setenv("SERVER_NAME", serverName.c_str(), 1);
+	setenv("SERVER_PORT", serverPort.c_str(), 1);
+	setenv("HTTP_HOST", host.c_str(), 1);
+	setenv("HTTP_USER_AGENT", Req.getHeader("User-Agent").c_str(), 1);
+	setenv("HTTP_ACCEPT", Req.getHeader("Accept").c_str(), 1);
+	setenv("HTTP_ACCEPT_LANGUAGE", Req.getHeader("Accept-Language").c_str(), 1);
+	setenv("HTTP_ACCEPT_ENCODING", Req.getHeader("Accept-Encoding").c_str(), 1);
+	setenv("HTTP_ACCEPT_CHARSET", Req.getHeader("Accept-Charset").c_str(), 1);
+	setenv("HTTP_KEEP_ALIVE", Req.getHeader("Keep-Alive").c_str(), 1);
+	setenv("HTTP_CONNECTION", Req.getHeader("Connection").c_str(), 1);
+	setenv("HTTP_REFERER", Req.getHeader("Referer").c_str(), 1);
+	setenv("HTTP_COOKIE", Req.getHeader("Cookie").c_str(), 1);
+	setenv("HTTP_CONTENT_TYPE", Req.getHeader("Content-Type").c_str(), 1);
+	setenv("HTTP_CONTENT_LENGTH", Req.getHeader("Content-Length").c_str(), 1);
+	setenv("BODY", Req.getBody().c_str(), 1);
 }
