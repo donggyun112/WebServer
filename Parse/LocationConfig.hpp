@@ -29,10 +29,11 @@ class LocationConfig {
     std::string                 _upload_limit_rate;
     std::vector<int>            _upload_cleanup;
 	std::vector<std::string>    _try_files;
+	bool 					  	_cgi;
     
     public:
     ~LocationConfig() {}
-	LocationConfig() {}
+	LocationConfig() :_cgi(false) {}
     // setter
     LocationConfig(std::ifstream &file);
     
@@ -54,6 +55,8 @@ class LocationConfig {
     std::string                 getUploadLimitRate() const ;
     std::vector<int>            getUploadCleanup() const ;
     std::vector<std::string>    getTryFiles() const ;
+	bool						isCgi() const;
+	void						setCgi(bool cgi);
     // // 추가적인 필요한 변수들
     std::string                 getAllowedMethod(size_t i) const;
     

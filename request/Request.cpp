@@ -31,14 +31,14 @@ bool isQuary(const std::string &uri)
 	return false;
 }
 
-std::string parseUri(const std::string& uri)
+std::string parseUri(const std::string& uri, Request &req)
 {
-	std::string path, query;
+	std::string path;
 
 	if (isQuary(uri)) {
 			path = uri.substr(0, uri.find('?'));
-			query = uri.substr(uri.find('?') + 1);
-			HttpRequest::parseQuery(query);
+			req._query = uri.substr(uri.find('?') + 1);
+			// HttpRequest::parseQuery(query, req);
 	}
 	else 
 		path = uri;
@@ -58,7 +58,7 @@ void HttpRequest::parseRequestLine(Request &req, const std::string& line)
 	iss >> tmpUri;
 	if (iss.fail())
 		throw std::invalid_argument("Invalid Request URI");
-	req._uri = parseUri(tmpUri);
+	req._uri = parseUri(tmpUri, req);
 
 	iss >> req._version;
 	if (iss.fail())
@@ -94,37 +94,4 @@ void HttpRequest::setCookie(Request &req)
 			req._cookie[key] = value;
 		}
 	}
-}
-
-void HttpRequest::parseQuery(const std::string& line)
-{
-	std::istringstream iss(line);
-	std::string token;
-
-	if (line.find("&") == std::string::npos) {
-		std::string key = line.substr(0, line.find("="));
-		std::string value = line.substr(line.find("=") + 1);
-		setenv(key.c_str(), value.c_str(), 1);
-		return ;
-	}
-
-	while (std::getline(iss, token, '&')) {
-		std::istringstream iss_token(token);
-		std::string key, value;
-		key = token.substr(0, token.find("="));
-		value = token.substr(token.find("=") + 1);
-		setenv(key.c_str(), value.c_str(), 1);
-	}
-}
-
-std::string HttpRequest::parseBody(const std::string& body)
-{
-	std::istringstream iss(body);
-	std::string line;
-
-	std::getline(iss, line);
-	if (line.find('=') != std::string::npos && \
-			line.find('&') != std::string::npos)
-		parseQuery(line);
-    return line;
 }
