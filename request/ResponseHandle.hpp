@@ -47,7 +47,7 @@ class ResponseHandle {
 		Response	handleGetRequest(const RequestHandle &Req);
 		Response	handlePostRequest(const RequestHandle &Req);
 		std::string	handleMethodNotAllowed();
-		std::string handleFormData(const std::string &cgiPath);
+		std::string handleFormData(const std::string &cgiPath, const RequestHandle &Req);
 		std::string getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc);
 		Response	createErrorResponse(int code, const std::string &message);
 		Response 	handleRedirect(const LocationConfig &location);

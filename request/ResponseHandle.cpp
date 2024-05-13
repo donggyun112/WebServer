@@ -367,7 +367,7 @@ std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
     return responseData;
 }
 
-std::string ResponseHandle::handleFormData(const std::string &cgiPath) {
+std::string ResponseHandle::handleFormData(const std::string &cgiPath, const RequestHandle &Req) {
     int cgiInput[2];
     pid_t pid;
 
