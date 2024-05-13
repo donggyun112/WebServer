@@ -5,6 +5,8 @@
 #include <string>
 #include <sys/time.h>
 #include <sstream>
+#include "../request/Response.hpp"
+#include "../request/ResponseHandle.hpp"
 
 enum StatusCode {
   // Information responses
@@ -84,7 +86,9 @@ enum StatusCode {
 
 class Error {
 public:
+	static std::string errorHandler(const ServerConfig &Serv, int num);
     static std::map<int, std::string> errors;
+	static std::map<int, std::string> errorResponseBodyStrings;
 	Error() {
 		errors[Continue_100] = "Continue";
 		errors[SwitchingProtocol_101] = "Switching Protocol";
@@ -158,6 +162,49 @@ public:
 		errors[LoopDetected_508] = "Loop Detected";
 		errors[NotExtended_510] = "Not Extended";
 		errors[NetworkAuthenticationRequired_511] = "Network Authentication Required";
+	
+		errorResponseBodyStrings[BadRequest_400] = "Your request is invalid.";
+		errorResponseBodyStrings[Unauthorized_401] = "You are not authorized to access this page.";
+		errorResponseBodyStrings[PaymentRequired_402] = "Payment is required to access this page.";
+		errorResponseBodyStrings[Forbidden_403] = "You are forbidden from accessing this page.";
+		errorResponseBodyStrings[NotFound_404] = "The page you are looking for is not found.";
+		errorResponseBodyStrings[MethodNotAllowed_405] = "The method you are using is not allowed.";
+		errorResponseBodyStrings[NotAcceptable_406] = "The page you are looking for is not acceptable.";
+		errorResponseBodyStrings[ProxyAuthenticationRequired_407] = "Proxy authentication is required.";
+		errorResponseBodyStrings[RequestTimeout_408] = "The request has timed out.";
+		errorResponseBodyStrings[Conflict_409] = "There is a conflict in the request.";
+		errorResponseBodyStrings[Gone_410] = "The page you are looking for is gone.";
+		errorResponseBodyStrings[LengthRequired_411] = "The length of the request is required.";
+		errorResponseBodyStrings[PreconditionFailed_412] = "The precondition of the request has failed.";
+		errorResponseBodyStrings[PayloadTooLarge_413] = "The payload of the request is too large.";
+		errorResponseBodyStrings[UriTooLong_414] = "The URI of the request is too long.";
+		errorResponseBodyStrings[UnsupportedMediaType_415] = "The media type of the request is unsupported.";
+		errorResponseBodyStrings[RangeNotSatisfiable_416] = "The range of the request is not satisfiable.";
+		errorResponseBodyStrings[ExpectationFailed_417] = "The expectation of the request has failed.";
+		errorResponseBodyStrings[ImATeapot_418] = "I'm a teapot.";
+		errorResponseBodyStrings[MisdirectedRequest_421] = "The request is misdirected.";
+		errorResponseBodyStrings[UnprocessableContent_422] = "The content of the request is unprocessable.";
+		errorResponseBodyStrings[Locked_423] = "The request is locked.";
+		errorResponseBodyStrings[FailedDependency_424] = "The request has failed due to dependency.";
+		errorResponseBodyStrings[TooEarly_425] = "The request is too early.";
+		errorResponseBodyStrings[UpgradeRequired_426] = "The request requires an upgrade.";
+		errorResponseBodyStrings[PreconditionRequired_428] = "The precondition of the request is required.";
+		errorResponseBodyStrings[TooManyRequests_429] = "The request has too many requests.";
+		errorResponseBodyStrings[RequestHeaderFieldsTooLarge_431] = "The header fields of the request are too large.";
+		errorResponseBodyStrings[UnavailableForLegalReasons_451] = "The request is unavailable for legal reasons.";
+
+		//500
+		errorResponseBodyStrings[InternalServerError_500] = "Internal server error.";
+		errorResponseBodyStrings[NotImplemented_501] = "The request is not implemented.";
+		errorResponseBodyStrings[BadGateway_502] = "The gateway is bad.";
+		errorResponseBodyStrings[ServiceUnavailable_503] = "The service is unavailable.";
+		errorResponseBodyStrings[GatewayTimeout_504] = "The gateway has timed out.";
+		errorResponseBodyStrings[HttpVersionNotSupported_505] = "The HTTP version is not supported.";
+		errorResponseBodyStrings[VariantAlsoNegotiates_506] = "The variant also negotiates.";
+		errorResponseBodyStrings[InsufficientStorage_507] = "The storage is insufficient.";
+		errorResponseBodyStrings[LoopDetected_508] = "The loop is detected.";
+		errorResponseBodyStrings[NotExtended_510] = "The request is not extended.";
+		errorResponseBodyStrings[NetworkAuthenticationRequired_511] = "The network authentication is required.";
 	};
 	const std::string& operator[](int status) const {
 		return errors.at(status);
@@ -165,6 +212,18 @@ public:
 
 	static std::string getError(int status) {
 		return errors[status];
+	}
+
+	static std::string createErrorResponse(int code) {
+		Response response;
+		response.setStatusCode(code);
+		response.setHeader("Content-Type", "text/html; charset=utf-8");
+		response.setHeader("Date", ResponseUtils::getCurTime());
+		std::string errorBody = "<html><body><h1>" + web::toString(code) + " " + errors[code] + "</h1><p>" + errorResponseBodyStrings[code] + "</p></body></html>";
+		response.setBody(errorBody);
+		response.setHeader("Content-Length", web::toString(errorBody.length()));
+		response.setHeader("Connection", "close");
+		return response.getResponses();
 	}
 };
 enum Method {

@@ -22,8 +22,15 @@ int Client::getReadStatus() const {
 	return _requestHandle.getReadStatus();
 }
 
+
+
 void Client::generateResponse(Config Conf) {
-	_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
+	try {
+		_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
+	}
+	catch (int num) {
+		_response = Error::errorHandler(Conf[_port], num);
+	}
 	clearAll();
 }
 
