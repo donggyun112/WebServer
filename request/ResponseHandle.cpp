@@ -84,16 +84,23 @@ bool	ResponseUtils::isExtention(std::string httpPath) {
 std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc) {
     std::string filePath;
     std::string alias = loc.getAlias();
+    std::cout << "in getFilePath : ServerRoot = " << serverRoot << std::endl;
+    std::cout << "in getFilePath : httpUri = " << httpUri << std::endl;
+    std::cout << "loc.getRoot : " << loc.getRoot() << std::endl;
     if (!alias.empty() && httpUri.find(alias) == 0) {
         filePath = alias + httpUri.substr(alias.length());
         std::cout << "1" << std::endl;
     }
     else if (ResponseUtils::isExtention(httpUri) == true) {
         std::cout << "2" << std::endl;
-		if (loc.getFastcgiPass().empty()) {
+		if (loc.getFastcgiPass().empty() && loc.getPath().find('.') != std::string::npos) {
+            std::cout << "in getFilePath : " << __LINE__ << std::endl;
         	filePath = serverRoot + loc.getRoot() + httpUri;
-		} else {
+		} else if (loc.getFastcgiPass().empty() && loc.getPath().find('.') == std::string::npos) {
+            filePath = serverRoot + httpUri;
+        } else {
 			std::cout << "is CGI" << std::endl;
+            std::cout << "in getFilePath : " << __LINE__ << std::endl;
 			loc.setCgi(true);
 			_scriptName = httpUri.substr(0, httpUri.find_last_of('/'));
 			_pathInfo = httpUri.substr(httpUri.find_last_of('/'));
@@ -103,7 +110,7 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 			filePath = serverRoot + loc.getFastcgiPass() + httpUri;
 		}
     } else if (ResponseUtils::isDirectory(serverRoot + httpUri) == true) {
-        std::cout << "3" << std::endl;
+            std::cout << "in getFilePath : " << __LINE__ << std::endl;
         filePath = serverRoot + httpUri;
     } else {
         std::cout << "4" << std::endl;
