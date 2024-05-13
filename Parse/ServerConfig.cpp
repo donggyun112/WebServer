@@ -37,7 +37,10 @@ ServerConfig::ServerConfig(std::ifstream &file)
             iss >> server_name;
             this->_server_name = server_name;
         } else if (key == "error_pages") {
-            this->_error_pages = parseErrorPages(iss); // 발생 가능할 에러 생각
+            std::string error_pages;
+            iss >> error_pages;
+            this->_error_pages_path = this->_path + error_pages;
+            std::cout << "error_pages_path: " << this->_error_pages_path << std::endl;
         } else if (key == "client_max_body_size") {
             std::string client_max_body_size;
             iss >> client_max_body_size;

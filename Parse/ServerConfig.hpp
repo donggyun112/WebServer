@@ -18,10 +18,10 @@ private:
     Port _port;
     std::string _server_name;
     int _client_max_body_size;
-    std::unordered_map<int, std::string> _error_pages;
     std::vector<LocationConfig> _locations;
     ServerConfig();
     std::string _path;
+    std::string _error_pages_path;
     std::string _index;
 public:
     ServerConfig(std::ifstream &file);
@@ -31,7 +31,6 @@ public:
     std::string getPath() const { return _path; }
     Port getPortName() const;
     size_t getNumberOfLocation();
-
 
     
     //용도에 맞게 바꿨으니 이거 지우지 마시오.
@@ -77,6 +76,10 @@ public:
         }
 		throw std::runtime_error("This path doesn't match with any location");
     }
+    std::string getErrorPagesPath() const {
+        return _error_pages_path;
+    }
+
 };
 
 #endif
