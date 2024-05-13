@@ -107,7 +107,6 @@ void RequestHandle::setRequest() {
         if (iss.str().find("\r\n") != std::string::npos \
                 && _readStatus == READ_NOT_DONE) {
             std::getline(iss, line);
-            std::cout << "what ???\n";
             HttpRequest::parseRequestLine(_request, line);
             _readStatus = READ_LINE_DONE;
         }
@@ -115,7 +114,7 @@ void RequestHandle::setRequest() {
         //     RequestHandle::handleChunkedMessage(iss.str());
         // }
         size_t pos = iss.str().find("\r\n\r\n");
-        std::cout << "what ???\n";
+
         if (pos == std::string::npos &&\
             _readStatus == READ_LINE_DONE)
             return ;
@@ -131,6 +130,7 @@ void RequestHandle::setRequest() {
             if (_request._headers.find("Cookie") != _request._headers.end())
                 HttpRequest::setCookie(_request);
             _readStatus = READ_HEADER_DONE;
+
 		}
 
         // if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked") {
@@ -143,7 +143,8 @@ void RequestHandle::setRequest() {
         // }
         // else if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked")
 
-        else if (_readStatus == READ_HEADER_DONE && _request._contentLength > 0) {
+        if (_readStatus == READ_HEADER_DONE && _request._contentLength >= 0) {
+
             std::cout << "4\n";
             body = iss.str().substr(pos + 4);
             _request._currentLength += body.length();
@@ -157,6 +158,7 @@ void RequestHandle::setRequest() {
                 _responseStatus = 404;
         } else if (_readStatus == READ_BODY_DOING)
             _request._body += body;
+
         HttpRequest::isVaildRequest(_request);
         _responseStatus = 200;
     }

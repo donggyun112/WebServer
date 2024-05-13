@@ -6,27 +6,18 @@
 #include <string>
 #include "../request/Client.hpp"
 
-
-// if (getHeader("Transfer-Encoding") == "chunked") {
 void    RequestHandle::handleChunkedMessage(std::string &chunkedBody) {
     std::stringstream oss(chunkedBody);
     std::string line;
     std::string hex = "0123456789abcdef";
     int length;
 
-    // if (line.length() == 0) {
-    //     _readStatus = READ_DONE;
-    //     return ;
-    // }
-
-    // length = atoi(line.c_str()); //16진수
     while (true) {
-        // std::getline(oss, line);
+        std::getline(oss, line);
+        length = hex[atoi(line.c_str()) % 16];
         if (length == 0) _readStatus = READ_DONE;
 
-        // std::getline(oss, line);
-        _request._body += line;
-        // _readStatus = READ_CHUNKED_DOING;
+        std::getline(oss, line);
+        _request._body += line.substr(0, length);
     }
-    //  else throw 404;
 }
