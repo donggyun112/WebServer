@@ -20,5 +20,6 @@ class Client {
 		int  getReadStatus() const;
 		void generateResponse(Config Conf);
 		Port getPort() const;
+		// std::string setResponse();
 		std::string getResponse() const;
 };

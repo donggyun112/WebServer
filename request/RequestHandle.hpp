@@ -18,7 +18,6 @@
 // # include "../request/Client.hpp"
 # include <sys/time.h>
 
-class HttpRequest;
 class Config;
 class Client;
 
@@ -56,6 +55,7 @@ class RequestHandle {
         std::string     		getBody() const;
         const Request   		&getRequest() const;
         int             		getResponseStatus() const;
+        void                    handleChunkedMessage(std::string &chunkedBody);
         void            		setRequest();
         void            		setBuffer(const std::string& buffer);
         void            		clearRequest();
