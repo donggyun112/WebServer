@@ -86,20 +86,6 @@ void RequestHandle::setBuffer(const std::string& buffer) {
     setRequest();
 }
 
-void    RequestHandle::handleChunkedMessage(std::string &chunkedBody) {
-    std::stringstream oss(chunkedBody);
-    std::string line;
-    int length;
-    std::getline(oss, line);
-    length = std::atoi(line.c_str());
-    if (length == 0) _readStatus = READ_DONE;
-    else if (length > 0) {
-        std::getline(oss, line);
-        _request._body += line;
-        _readStatus = READ_BODY_DOING;
-    } else throw 404;
-}
-
 void RequestHandle::setRequest() {
     std::istringstream iss(_buffer);
 	std::string line, header, body;
@@ -110,9 +96,7 @@ void RequestHandle::setRequest() {
             HttpRequest::parseRequestLine(_request, line);
             _readStatus = READ_LINE_DONE;
         }
-        // if (_readStatus == READ_CHUNKED_DOING) {
-        //     RequestHandle::handleChunkedMessage(iss.str());
-        // }
+
         size_t pos = iss.str().find("\r\n\r\n");
 
         if (pos == std::string::npos &&\
@@ -133,17 +117,15 @@ void RequestHandle::setRequest() {
 
 		}
 
-        // if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked") {
-        //     body = iss.str().substr(pos + 4);
-        //     if (body.find("0\r\n") == std::string::npos) {
-        //         // _readStatus = READ_DONE;
-        //         return ;
-        //     }
-        //         handleChunkedMessage(body);
-        // }
-        // else if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked")
-
-        if (_readStatus == READ_HEADER_DONE && _request._contentLength >= 0) {
+        if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked") {
+            body = iss.str().substr(pos + 4);
+            if (body.find("0\r\n") == std::string::npos) {
+                return ;
+            }
+			_readStatus = READ_DONE;
+			_request._body = body;
+        }
+        else if (_readStatus == READ_HEADER_DONE && _request._contentLength >= 0) {
 
             std::cout << "4\n";
             body = iss.str().substr(pos + 4);
