@@ -1,4 +1,7 @@
 #include "ResponseHandle.hpp"
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 
 ResponseHandle::ResponseHandle() {
@@ -23,7 +26,7 @@ void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
             std::cout << "Goto GET" << std::endl;
 			break;
 		case POST:
-			// _response = handlePostRequest(Conf);
+			// _response = handlePostRequest(Req); // -> 1. Client받아서 setRespose
             std::cout << "Goto POST" << std::endl;
 			break;
 		case DELETE:
@@ -328,49 +331,56 @@ Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
 }
 
 std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
-    
-    std::string contentType = Req.parseHeader("Content-Type");
+    std::string responseData;
+
+    std::string contentType = Req.getHeader("Content-Type");
     if (contentType.find("multipart/form-data") != std::string::npos) {
         
-        const std::string part = parsePart(_body, parseBoundary(contentType));
-        const std::string bodyHeader = parseBodyHeader(part);
+        const std::string part = HttpRequest::parsePart(Req.getBody(), HttpRequest::parseBoundary(contentType));
+        const std::string bodyHeader = HttpRequest::parseBodyHeader(part);
         if (bodyHeader.empty())
-            return createErrorResponse(BadRequest_400, "Bad Request");
-        std::string fileName = parseFileName(bodyHeader);
+            return ""; // throw 숫자. catch 해서 에러메세지 출력
+            // return createErrorResponse(BadRequest_400, "Bad Request");
+        std::string fileName = HttpRequest::parseFileName(bodyHeader);
         if (fileName.empty())
-            return createErrorResponse(BadRequest_400, "Bad Request");
+            return "";
+            // return createErrorResponse(BadRequest_400, "Bad Request");
 
-        const std::string fileContent = parsefileContent(part);
+        const std::string fileContent = HttpRequest::parseFileContent(part);
         if (fileContent.empty())
-            return createErrorResponse(BadRequest_400, "Bad Request");
+            return "";
+            // return createErrorResponse(BadRequest_400, "Bad Request");
 
         const std::streamsize maxFileSize = 10 * 1024 * 1024;
         if (fileContent.size() > maxFileSize)
-            return createErrorResponse(UriTooLong_414, "Body too large");
+            return "";
+            // return createErrorResponse(UriTooLong_414, "Body too large");
 
         if (!fileContent.empty()) {
-            std::string responseData = handleFormData(_filePath);
+            responseData = handleFormData(_filePath, Req);
 
             if (responseData.empty())
-                return createErrorResponse(InternalServerError_500, "Internal Server Error");
+                return "";
+                // return createErrorResponse(InternalServerError_500, "Internal Server Error");
 
             std::ifstream file(fileName);
             if (!file.good())
-                return createErrorResponse(InternalServerError_500, "Internal Server Error");
+                return "";
+                // return createErrorResponse(InternalServerError_500, "Internal Server Error");
             file.close();
         }
     }
     else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
     {
-        std::string responseData = handleFormData(_filePath);
+        responseData = handleFormData(_filePath, Req);
 
-        if (responseData.empty()) {
-            return createErrorResponse(InternalServerError_500, "Internal Server Error");
-        }
+        if (responseData.empty())
+            return "";
+            // return createErrorResponse(InternalServerError_500, "Internal Server Error");
     }
-    else {
-        return createErrorResponse(BadRequest_400, "Bad Request");
-    }
+    else
+        return "";
+        // return createErrorResponse(BadRequest_400, "Bad Request");
     return responseData;
 }
 
@@ -387,7 +397,7 @@ std::string ResponseHandle::handleFormData(const std::string &cgiPath, const Req
     if (pid == 0) {
         setEnv(Req);
         close(cgiInput[0]);
-        dup2(cgiInput[1], STDOUT_FILENO);
+        dup2(cgiInput[1], 1);
         close(cgiInput[1]);
 
         // std::string pythonPath = "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages";
@@ -400,7 +410,7 @@ std::string ResponseHandle::handleFormData(const std::string &cgiPath, const Req
 
         if (execve(py3.c_str(), arg, NULL) == -1) {
             perror("execve failed");
-            exit(404);
+            // exit(404);
         }
     } else {
         int status;
@@ -418,6 +428,7 @@ std::string ResponseHandle::handleFormData(const std::string &cgiPath, const Req
         close(cgiInput[0]);
         return output;
     }
+    return "";
 }
 
 std::string ResponseUtils::getFormattedTime(time_t time)

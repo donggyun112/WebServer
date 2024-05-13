@@ -126,40 +126,40 @@ std::string HttpRequest::parseBodyHeader(const std::string& part) {
 }
 
 std::string HttpRequest::parseType(const std::string& body_header) {
-    size_t start = header.find("Content-Type: ");
+    size_t start = body_header.find("Content-Type: ");
     if (start == std::string::npos) {
         return "";
     }
     start += 14;
-    size_t end = header.find("\r\n", start);
-    return header.substr(start, end - start);
+    size_t end = body_header.find("\r\n", start);
+    return body_header.substr(start, end - start);
 }
 
 std::string HttpRequest::parseFileName(const std::string& body_header) {
-    size_t start = header.find("filename=\"");
+    size_t start = body_header.find("filename=\"");
     if (start != std::string::npos) {
         start += 10;
-        size_t end = header.find("\"", start);
-        return header.substr(start, end - start);
+        size_t end = body_header.find("\"", start);
+        return body_header.substr(start, end - start);
     }
     return "";
 }
 
 std::string HttpRequest::parseBoundary(const std::string& body_header) {
-    size_t start = header.find("boundary=");
+    size_t start = body_header.find("boundary=");
     if (start == std::string::npos) {
         return "";
     }
     start += 9;
-    return header.substr(start);
+    return body_header.substr(start);
 }
 
 std::string HttpRequest::parseContentType(std::string &body_header)
 {
-    size_t start = header.find("Content-Type: ");
+    size_t start = body_header.find("Content-Type: ");
     if (start == std::string::npos)
         return "";
     start += 14;
-    size_t end = header.find(";", start);
-    return header.substr(start, end - start);
+    size_t end = body_header.find(";", start);
+    return body_header.substr(start, end - start);
 }

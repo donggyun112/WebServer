@@ -86,6 +86,20 @@ void RequestHandle::setBuffer(const std::string& buffer) {
     setRequest();
 }
 
+void    RequestHandle::handleChunkedMessage(std::string &chunkedBody) {
+    std::stringstream oss(chunkedBody);
+    std::string line;
+    int length;
+    std::getline(oss, line);
+    length = std::atoi(line.c_str());
+    if (length == 0) _readStatus = READ_DONE;
+    else if (length > 0) {
+        std::getline(oss, line);
+        _request._body += line;
+        _readStatus = READ_BODY_DOING;
+    } else throw 404;
+}
+
 void RequestHandle::setRequest() {
     std::istringstream iss(_buffer);
 	std::string line, header, body;
@@ -93,19 +107,19 @@ void RequestHandle::setRequest() {
         if (iss.str().find("\r\n") != std::string::npos \
                 && _readStatus == READ_NOT_DONE) {
             std::getline(iss, line);
-            std::cout << "what ???\n";
             HttpRequest::parseRequestLine(_request, line);
             _readStatus = READ_LINE_DONE;
         }
-
+        // if (_readStatus == READ_CHUNKED_DOING) {
+        //     RequestHandle::handleChunkedMessage(iss.str());
+        // }
         size_t pos = iss.str().find("\r\n\r\n");
-        std::cout << "what ???\n";
+
         if (pos == std::string::npos &&\
-            _readStatus == READ_LINE_DONE)  
+            _readStatus == READ_LINE_DONE)
             return ;
 
-		if (pos != std::string::npos &&\
-             _readStatus == READ_LINE_DONE)
+		if (pos != std::string::npos && _readStatus == READ_LINE_DONE)
         {
             header = iss.str().substr(0, pos);
             HttpRequest::parseHeader(_request, header);
@@ -116,9 +130,21 @@ void RequestHandle::setRequest() {
             if (_request._headers.find("Cookie") != _request._headers.end())
                 HttpRequest::setCookie(_request);
             _readStatus = READ_HEADER_DONE;
+
 		}
-		if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING ) // 수정해야됨
-        {
+
+        // if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked") {
+        //     body = iss.str().substr(pos + 4);
+        //     if (body.find("0\r\n") == std::string::npos) {
+        //         // _readStatus = READ_DONE;
+        //         return ;
+        //     }
+        //         handleChunkedMessage(body);
+        // }
+        // else if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked")
+
+        if (_readStatus == READ_HEADER_DONE && _request._contentLength >= 0) {
+
             std::cout << "4\n";
             body = iss.str().substr(pos + 4);
             _request._currentLength += body.length();
@@ -126,17 +152,13 @@ void RequestHandle::setRequest() {
                 _readStatus = READ_BODY_DOING;
                 std::cout << "Not yet done | \ncontent-Length : " << _request._contentLength << "current-Length : " << _request._contentLength << std::endl;
                 return ;
-            }
-            else if (_request._currentLength == _request._contentLength)
+            } else if (_request._currentLength == _request._contentLength)
                 _readStatus = READ_DONE;
-            else if (_request._currentLength > _request._contentLength)
+              else if (_request._currentLength > _request._contentLength)
                 _responseStatus = 404;
-        }
-        else if (_request._contentLength == _request._currentLength) {
-            _readStatus = READ_DONE;
-            std::cout << "what ???1\n";
-        }
-        _request._body += body;
+        } else if (_readStatus == READ_BODY_DOING)
+            _request._body += body;
+
         HttpRequest::isVaildRequest(_request);
         _responseStatus = 200;
     }
@@ -147,7 +169,6 @@ void RequestHandle::setRequest() {
         _responseStatus = 400;
     }
 }
-
 
 void RequestHandle::clearRequest()
 {

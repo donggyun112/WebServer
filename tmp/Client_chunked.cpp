@@ -6,16 +6,18 @@
 #include <string>
 #include "../request/Client.hpp"
 
-void    Client::handleChunkedMessage(std::string &str) {
-    std::stringstream oss(str);
+void    RequestHandle::handleChunkedMessage(std::string &chunkedBody) {
+    std::stringstream oss(chunkedBody);
     std::string line;
+    std::string hex = "0123456789abcdef";
     int length;
-    std::getline(oss, line);
-    length = myToString(line);
-    if (length == 0) _readStatus = READ_DONE;
-    else if (length > 0) {
+
+    while (true) {
         std::getline(oss, line);
-        _request._body += line;
-        _readStatus = READ_BODY_DOING;
-    } else throw 404;
+        length = hex[atoi(line.c_str()) % 16];
+        if (length == 0) _readStatus = READ_DONE;
+
+        std::getline(oss, line);
+        _request._body += line.substr(0, length);
+    }
 }
