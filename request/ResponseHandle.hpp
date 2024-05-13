@@ -31,7 +31,8 @@ namespace ResponseUtils {
 
 class ResponseHandle {
 	private:
-		Response 		_response;
+		// Response 		_response;
+		std::string 	_response;
 		std::string 	_filePath;
 		std::string 	_pathInfo;
 		std::string 	_scriptName;
@@ -44,8 +45,8 @@ class ResponseHandle {
 		ResponseHandle();
 		ResponseHandle(const ResponseHandle &Copy);
 		~ResponseHandle();
-		void		generateResponse(const RequestHandle &Req, Config &Conf);
-		Response	handleGetRequest(const RequestHandle &Req);
+		std::string	generateHTTPFullString(const RequestHandle &Req, Config &Conf);
+		std::string	handleGetRequest(const RequestHandle &Req);
 		std::string handlePostRequest(const RequestHandle &Req);
 		Response	handleMethodNotAllowed();
 		std::string handleFormData(const std::string &cgiPath, const RequestHandle &Req);
@@ -54,6 +55,7 @@ class ResponseHandle {
 		Response 	handleRedirect(const LocationConfig &location);
 		void		handleAutoIndex(Response &response, const std::string &servRoot);
 		Response	handleDeleteRequest();
+		void		setResponse(const std::string &response);
 		void		clearAll();
 		void		setEnv(const RequestHandle &Req);
 		const std::string getResponse();

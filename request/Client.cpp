@@ -23,8 +23,7 @@ int Client::getReadStatus() const {
 }
 
 void Client::generateResponse(Config Conf) {
-	_responseHandle.generateResponse(_requestHandle, Conf);
-	_response = _responseHandle.getResponse();
+	_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
 	clearAll();
 }
 
