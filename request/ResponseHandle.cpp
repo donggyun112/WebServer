@@ -12,41 +12,58 @@ ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._res
 
 ResponseHandle::~ResponseHandle() {}
 
-void ResponseHandle::generateResponse(const RequestHandle &Req, Config &Conf) {
-	if (initPathFromLocation(Req, Conf) == false) {
-		return ;
-	}
+void	ResponseHandle::clearAll() {
+	_response.clear();
+	_filePath.clear();
+	_pathInfo.clear();
+	_scriptName.clear();
+	_httpUri.clear();
+	_serverRoot.clear();
+	_port = 0;
+}
+
+std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf) {
+	//
+	initPathFromLocation(Req, Conf);
+	//
 	std::cout << "Start to generate response" << std::endl;
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
     std::cout << "method number = " << method << "string = " << Req.getMethod() << "123" << std::endl;
 	switch (method)
 	{
 		case GET:
-			_response = handleGetRequest(Req);
             std::cout << "Goto GET" << std::endl;
-			break;
+			_response = handleGetRequest(Req);
+			return _response;
 		case POST:
 			// _response = handlePostRequest(Req); // -> 1. Client받아서 setRespose
             std::cout << "Goto POST" << std::endl;
 			break;
 		case DELETE:
-			_response = handleDeleteRequest();
+			// _response = handleDeleteRequest();
             std::cout << "Goto DELETE" << std::endl;
 			break;
 		default:
-			_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
+			// _response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
             std::cout << "Goto ERROR" << std::endl;
+			return handleMethodNotAllowed().getResponses();
 			break;
 	}
+	return "";
 }
 
-void ResponseHandle::clearAll() {
-	_response.clearAll();
-}
-void printAllEnv();
+
 const std::string ResponseHandle::getResponse() {
-	return _response.getResponses();
+	if (_response.empty()) {
+		throw std::invalid_argument("Response is empty");
+	}
+	return _response;
 }
+
+void ResponseHandle::setResponse(const std::string &response) {
+	_response = response;
+}
+
 
 Response ResponseHandle::createErrorResponse(int code, const std::string &message) {
 	Response response;
@@ -60,9 +77,6 @@ Response ResponseHandle::createErrorResponse(int code, const std::string &messag
 	return response;
 
 }
-
-
-
 
 Response ResponseHandle::handleMethodNotAllowed() {
     Response response;
@@ -235,8 +249,8 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 	std::cout << "Normalized URL: " << _httpUri << std::endl;
 	_serverRoot = ResponseUtils::normalizePath(Conf.getServerConfig(_port, Req.getHost()).getPath());
 	if (_serverRoot.empty()) {
-		_response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
-		return false;
+		throw 500;
+		// _response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
     }
 
 	try {
@@ -248,23 +262,24 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation("/");
 	}
 	if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
-		_response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
-		return false;
+		throw 405;
+		// _response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 	}
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
 	if (!ResponseUtils::isValidPath(_filePath)) {
-		_response = createErrorResponse(BadRequest_400, "Invalid request path.");
-		return false;
+		throw 400;
+		// _response = createErrorResponse(BadRequest_400, "Invalid request path.");
 	}
 	return true;
 }
 
-Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
+std::string ResponseHandle::handleGetRequest(const RequestHandle &Req) {
     Response response;
 	if (_loc.isCgi() == true) {
 		// CGI 처리
-		setEnv(Req);
-		printAllEnv();
+		(void)Req;
+		// setEnv(Req);
+		// printAllEnv();
 		
 		std::cout << "Start to handle CGI" << std::endl;
 		// response = handleCgi(_loc, _filePath);
@@ -275,7 +290,7 @@ Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
 	
 	Response redirectResponse = handleRedirect(_loc);
 	if (redirectResponse.getStatusCode() != OK_200) {
-		return redirectResponse;
+		return redirectResponse.getResponses();
 	}
 
     // 인덱스 파일 설정
@@ -298,7 +313,7 @@ Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
         // 파일 크기 제한 설정
         const std::streamsize maxFileSize = 10 * 1024 * 1024;
         if (fileSize > maxFileSize) {
-			return createErrorResponse(PayloadTooLarge_413, "The requested file is too large.");
+			return createErrorResponse(PayloadTooLarge_413, "The requested file is too large.").getResponses();
         }
         // 파일 내용 읽기
         std::string body = ResponseUtils::readFileContent(file, fileSize);
@@ -316,18 +331,18 @@ Response ResponseHandle::handleGetRequest(const RequestHandle &Req) {
 			if (_loc.getAutoindex() == true) {
             	handleAutoIndex(response, _filePath);
 			} else {
-				return createErrorResponse(Forbidden_403, "Directory listing not allowed.");
+				return createErrorResponse(Forbidden_403, "Directory listing not allowed.").getResponses();
 			}
         } else {
 			if (_loc.getAutoindex() == false) {
-				return createErrorResponse(NotFound_404, "The requested file was not found.");
+				return createErrorResponse(NotFound_404, "The requested file was not found.").getResponses();
 			} else {
 				handleAutoIndex(response, _filePath.substr(0, _filePath.find_last_of('/')));
 			}
 		}
     }
     response.setHeader("Server", "42Webserv");
-    return response;
+    return response.getResponses();
 }
 
 std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
