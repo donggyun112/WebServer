@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include "../utils/utils.hpp"
+#include "../utils/Error.hpp"
 #include <iostream>
 
 class Response {

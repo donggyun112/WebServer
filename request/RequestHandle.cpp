@@ -1,10 +1,6 @@
 
 #include "RequestHandle.hpp"
 
-std::map<int, std::string> Error::errors;
-
-
-
 RequestHandle::RequestHandle(Port port) : _port(port) {
     clearAll();
 }

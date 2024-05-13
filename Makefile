@@ -8,13 +8,16 @@ SRCS =	Server/EchoServer.cpp \
 		request/Request.cpp \
 		request/ResponseHandle.cpp \
 		request/Response.cpp \
+		request/NResponseUtils.cpp \
 		socket/socket.cpp \
 		Parse/Config.cpp \
 		Parse/ServerConfig.cpp \
 		Parse/LocationConfig.cpp \
 		tmp/mainTest.cpp \
 		utils/utils.cpp \
-		handleDeleteRequest/handleDeleteRequest.cpp
+		utils/Error.cpp \
+		handleDeleteRequest/handleDeleteRequest.cpp \
+
 
 OBJS = $(SRCS:.cpp=.o)
 

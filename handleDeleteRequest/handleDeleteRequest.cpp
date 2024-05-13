@@ -1,4 +1,5 @@
 #include "../request/ResponseHandle.hpp"
+#include "../request/NResponseUtils.hpp"
 
 std::string ResponseHandle::handleDeleteRequest() {
     Response tmpResponse;
