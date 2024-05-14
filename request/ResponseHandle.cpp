@@ -275,7 +275,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req) {
 	// }
 
     // 인덱스 파일 설정
-	std::cout << "Start to get file" << std::endl;
+	std::cout << "Start to get file && isDirestory : " << ResponseUtils::isDirectory(_filePath) << std::endl;
     std::string index = _loc.getIndex();
     if (ResponseUtils::isDirectory(_filePath) && !index.empty()) {
         _filePath += "/" + index;
