@@ -464,9 +464,12 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
     body << "<h1>Index of / </h1>\n";
 	body << "<hr> <pre>\n<table>\n<tr><th></th><th></th><th></th></tr>\n";
 
+	
     DIR *dir = opendir(dirPath.c_str());
-	if (dir == NULL)
+	if (dir == NULL && errno == EACCES)
         throw Forbidden_403;
+	else if (dir == NULL)
+		throw NotFound_404;
     if (dir)
     {
         std::vector<std::string> fileList;
