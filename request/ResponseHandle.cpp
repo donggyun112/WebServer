@@ -240,14 +240,8 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 		// _response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
     }
 
-	try {
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
 		std::cout << "Success to get location "<< _loc.getPath() << std::endl;
-	} catch (const std::exception &e) {
-
-		std::cout << "Failed to get location" << std::endl;
-		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation("/");
-	}
 	if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
 		throw MethodNotAllowed_405;
 		// _response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");

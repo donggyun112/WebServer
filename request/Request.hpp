@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "structRq.hpp"
 #include <sstream>
+#include "../utils/utils.hpp"
 
 class RequestHandle;
 struct Request;
@@ -14,7 +15,7 @@ struct Request;
 namespace HttpRequest {
 	void parseRequestLine(Request& req, const std::string& line);
 	void parseHeader(Request& req, const std::string& line);
-	void isVaildRequest(const Request &req);
+	void validateRequest(const Request &req);
 	void setCookie(Request &req);
 	std::string parsePart(const std::string& body, const std::string& boundary);
 	std::string parseFileContent(const std::string &body);

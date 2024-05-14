@@ -15,7 +15,12 @@ Client::~Client() {
 
 
 void Client::setBuffer(const std::string &buffer) {
-	_requestHandle.setBuffer(buffer);
+	try {
+		_requestHandle.setBuffer(buffer);
+	} catch (int num) {
+		this->_requestHandle.setReadStatus(READ_ERROR);
+		_requestHandle.setResponseStatus(num);
+	}
 }
 
 int Client::getReadStatus() const {
@@ -26,6 +31,9 @@ int Client::getReadStatus() const {
 
 void Client::generateResponse(Config Conf) {
 	try {
+		if (_requestHandle.getReadStatus() == READ_ERROR) {
+			throw _requestHandle.getResponseStatus();
+		}
 		_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
 	}
 	catch (int num) {

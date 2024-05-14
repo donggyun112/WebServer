@@ -20,7 +20,7 @@ std::string ResponseHandle::handleDeleteRequest() {
         // 파일 크기 제한 설정
         const std::streamsize maxFileSize = 10 * 1024 * 1024;
         if (fileSize > maxFileSize) {
-			throw 413;
+			throw PayloadTooLarge_413;
         }
         std::remove(_filePath.c_str());
         file.close();
@@ -31,11 +31,11 @@ std::string ResponseHandle::handleDeleteRequest() {
 			if (_loc.getAutoindex() == true) {
             	handleAutoIndex(tmpResponse, _filePath);
 			} else {
-				throw 403;
+				throw Forbidden_403;
 			}
         } else {
 			if (_loc.getAutoindex() == false) {
-                throw 404;
+                throw NotFound_404;
 			} else {
 				handleAutoIndex(tmpResponse, _filePath.substr(0, _filePath.find_last_of('/')));
 			}

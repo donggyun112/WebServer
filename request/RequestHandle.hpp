@@ -55,11 +55,13 @@ class RequestHandle {
         std::string     		getBody() const;
         const Request   		&getRequest() const;
         int             		getResponseStatus() const;
+        void                    setResponseStatus(int num) {_responseStatus = num;}
         void            		setRequest();
         void            		setBuffer(const std::string& buffer);
         void            		clearRequest();
         void            		clearAll();
         int             		getReadStatus() const {return this->_readStatus;}
+        void                    setReadStatus(int readStatus) {_readStatus = readStatus;}
 		const std::string		&getQuery() const;
 
 

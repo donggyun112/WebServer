@@ -85,67 +85,56 @@ void RequestHandle::setBuffer(const std::string& buffer) {
 void RequestHandle::setRequest() {
     std::istringstream iss(_buffer);
 	std::string line, header, body;
-	try {
-        if (iss.str().find("\r\n") != std::string::npos \
-                && _readStatus == READ_NOT_DONE) {
-            std::getline(iss, line);
-            HttpRequest::parseRequestLine(_request, line);
-            _readStatus = READ_LINE_DONE;
-        }
+    if (iss.str().find("\r\n") != std::string::npos \
+            && _readStatus == READ_NOT_DONE) {
+        std::getline(iss, line);
+        HttpRequest::parseRequestLine(_request, line);
+        _readStatus = READ_LINE_DONE;
+    }
+    size_t pos = iss.str().find("\r\n\r\n");
+    if (pos == std::string::npos &&\
+        _readStatus == READ_LINE_DONE)
+        return ;
+    if (pos != std::string::npos && _readStatus == READ_LINE_DONE)
+    {
+        header = iss.str().substr(0, pos);
+        HttpRequest::parseHeader(_request, header);
+        if (_request._headers.find("Content-Length") != _request._headers.end())
+            _request._contentLength = atoi(_request._headers["Content-Length"].c_str());
+        else
+            _request._contentLength = 0;
+        if (_request._headers.find("Cookie") != _request._headers.end())
+            HttpRequest::setCookie(_request);
+        _readStatus = READ_HEADER_DONE;
 
-        size_t pos = iss.str().find("\r\n\r\n");
+    }
 
-        if (pos == std::string::npos &&\
-            _readStatus == READ_LINE_DONE)
+    if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked") {
+        body = iss.str().substr(pos + 4);
+        if (body.find("0\r\n") == std::string::npos) {
             return ;
-
-		if (pos != std::string::npos && _readStatus == READ_LINE_DONE)
-        {
-            header = iss.str().substr(0, pos);
-            HttpRequest::parseHeader(_request, header);
-            if (_request._headers.find("Content-Length") != _request._headers.end())
-                _request._contentLength = atoi(_request._headers["Content-Length"].c_str());
-            else
-                _request._contentLength = 0;
-            if (_request._headers.find("Cookie") != _request._headers.end())
-                HttpRequest::setCookie(_request);
-            _readStatus = READ_HEADER_DONE;
-
-		}
-
-        if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked") {
-            body = iss.str().substr(pos + 4);
-            if (body.find("0\r\n") == std::string::npos) {
-                return ;
-            }
-			_readStatus = READ_DONE;
-			_request._body = body;
         }
-        else if (_readStatus == READ_HEADER_DONE && _request._contentLength >= 0) {
-
-            std::cout << "4\n";
-            body = iss.str().substr(pos + 4);
-            _request._currentLength += body.length();
-            if (_request._currentLength < _request._contentLength ) {
-                _readStatus = READ_BODY_DOING;
-                std::cout << "Not yet done | \ncontent-Length : " << _request._contentLength << "current-Length : " << _request._contentLength << std::endl;
-                return ;
-            } else if (_request._currentLength == _request._contentLength)
-                _readStatus = READ_DONE;
-              else if (_request._currentLength > _request._contentLength)
-                _responseStatus = 404;
-        } else if (_readStatus == READ_BODY_DOING)
-            _request._body += body;
-
-        HttpRequest::isVaildRequest(_request);
-        _responseStatus = 200;
+        _readStatus = READ_DONE;
+        _request._body = body;
     }
-    catch (std::invalid_argument& e) {
-        std::cout << "6\n";
-        std::cerr << "Exception caught: " << e.what() << std::endl;
-        _readStatus = READ_ERROR;
-        _responseStatus = 400;
-    }
+    else if (_readStatus == READ_HEADER_DONE && _request._contentLength >= 0) {
+
+        std::cout << "4\n";
+        body = iss.str().substr(pos + 4);
+        _request._currentLength += body.length();
+        if (_request._currentLength < _request._contentLength ) {
+            _readStatus = READ_BODY_DOING;
+            std::cout << "Not yet done | \ncontent-Length : " << _request._contentLength << "current-Length : " << _request._contentLength << std::endl;
+            return ;
+        } else if (_request._currentLength == _request._contentLength)
+            _readStatus = READ_DONE;
+            else if (_request._currentLength > _request._contentLength)
+            _responseStatus = 404;
+    } else if (_readStatus == READ_BODY_DOING)
+        _request._body += body;
+
+    HttpRequest::validateRequest(_request);
+    _responseStatus = 200;
 }
 
 void RequestHandle::clearRequest()
