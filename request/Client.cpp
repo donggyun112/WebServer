@@ -35,8 +35,9 @@ void Client::generateResponse(Config Conf) {
 			throw _requestHandle.getResponseStatus();
 		}
 		_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
-	}
-	catch (int num) {
+	} catch (int num) {
+		_response = Error::errorHandler(Conf[_port], num);
+	} catch (StatusCode num) {
 		_response = Error::errorHandler(Conf[_port], num);
 	}
 	clearAll();
