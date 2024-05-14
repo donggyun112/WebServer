@@ -56,6 +56,7 @@ class RequestHandle {
         const Request   		&getRequest() const;
         int             		getResponseStatus() const;
         void                    setResponseStatus(int num) {_responseStatus = num;}
+        void                    setChunkedBody(const std::string& body);
         void            		setRequest();
         void            		setBuffer(const std::string& buffer);
         void            		clearRequest();
