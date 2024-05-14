@@ -338,51 +338,38 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req) {
     return response.getResponses();
 }
 
-// std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
-//     std::string responseData;
+std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
+{
+    std::string responseData;
 
-//     std::string contentType = Req.getHeader("Content-Type");
-//     if (contentType.find("multipart/form-data") != std::string::npos) {
-        
-//         const std::string part = HttpRequest::parsePart(Req.getBody(), HttpRequest::parseBoundary(contentType));
-//         const std::string bodyHeader = HttpRequest::parseBodyHeader(part);
-//         if (bodyHeader.empty())
-//             throw BadRequest_400;
-//         std::string fileName = HttpRequest::parseFileName(bodyHeader);
-//         if (fileName.empty())
-//             throw BadRequest_400;
+    std::string contentType = Req.getHeader("Content-Type");
+    if ((contentType.find("multipart/form-data") != std::string::npos && contentType.find("boundary") != std::string::npos) \
+			|| contentType.find("application/x-www-form-urlencoded") != std::string::npos) {
+        if (!Req.getBody().empty()) {
 
-//         const std::string fileContent = HttpRequest::parseFileContent(part);
-//         if (fileContent.empty())
-//             throw BadRequest_400;
+            // responseData = handleFormData(_filePath, Req); //_filePath만 하면 되는거같은데..?
+//cgi_pass /cgi
+            if (responseData.empty())
+                throw InternalServerError_500;
 
-//         const std::streamsize maxFileSize = 10 * 1024 * 1024;
-//         if (fileContent.size() > maxFileSize)
-//             throw UriTooLong_414;
-
-//         if (!fileContent.empty()) {
-//             responseData = handleFormData(_filePath, Req);
-
-//             if (responseData.empty())
-//                 throw InternalServerError_500;
-
-//             std::ifstream file(fileName);
-//             if (!file.good())
-//                 throw InternalServerError_500;
-//             file.close();
-//         }
-//     }
-//     else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
-//     {
-//         responseData = handleFormData(_filePath, Req);
-
-//         if (responseData.empty())
-//             throw InternalServerError_500;
-//     }
-//     else
-//         throw InternalServerError_500;
-//     return responseData;
-// }
+            std::ifstream file(fileName);
+            if (file.is_open() && file.good()) {
+				std::streamsize fileSize = ResponseUtils::getFileSize(file);
+				const std::streamsize maxFileSize = 10 * 1024 * 1024; // server file 크기로 변경 예정
+				if (fileSize > maxFileSize)
+					throw PayloadTooLarge_413;
+				file.close();
+			}
+			else
+				throw InternalServerError_500;
+        }
+		else
+			throw BadRequest_400;
+    }
+    else
+        throw InternalServerError_500;
+    return responseData;
+}
 
 // std::string ResponseHandle::handleFormData(const std::string &cgiPath, const RequestHandle &Req) {
 //     int cgiInput[2];
