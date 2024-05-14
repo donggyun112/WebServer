@@ -9,8 +9,7 @@ void	LocationConfig::setCgi(bool cgi) {
 	_cgi = cgi;
 }
 
-LocationConfig::LocationConfig(std::ifstream &file) : _autoindex(false)
-{
+LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) : _autoindex(false), _defaultIndex(defaultIndex) {
     std::string     line;
     std::string     key, value;
 
@@ -178,7 +177,7 @@ std::string                 LocationConfig::getRoot() const {
 
 std::string                 LocationConfig::getIndex() const {
     if (_index.empty())
-        return "index.html";
+        return _defaultIndex;
     return _index;
 }
 

@@ -16,6 +16,7 @@ class LocationConfig {
     std::string                 _root;
     std::string                 _index;
     bool                        _autoindex;
+    std::string                 _defaultIndex;
     std::vector<std::string>    _allow_methods;
     std::string                 _return_code;
     std::string                 _return_url;
@@ -35,7 +36,7 @@ class LocationConfig {
     ~LocationConfig() {}
 	LocationConfig() :_cgi(false) {}
     // setter
-    LocationConfig(std::ifstream &file);
+    LocationConfig(std::ifstream &file, std::string &_defaultIndex);
     
     // getter
     std::string                 getPath() const ;

@@ -48,7 +48,7 @@ ServerConfig::ServerConfig(std::ifstream &file)
         } 
         else if (key == "location") {
             file.seekg(-(line.length() + 1), std::ios::cur);
-            LocationConfig location(file);
+            LocationConfig location(file, _index);
             this->_locations.push_back(location);
         }
     }
