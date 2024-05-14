@@ -373,52 +373,52 @@ std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
     return responseData;
 }
 
-std::string ResponseHandle::handleFormData(const std::string &cgiPath, const RequestHandle &Req) {
-    int cgiInput[2];
-    pid_t pid;
+// std::string ResponseHandle::handleFormData(const std::string &cgiPath, const RequestHandle &Req) {
+//     int cgiInput[2];
+//     pid_t pid;
 
-    if (pipe(cgiInput) < 0)
-        return "";
+//     if (pipe(cgiInput) < 0)
+//         return "";
     
-    if ((pid = fork()) < 0)
-        return "";
+//     if ((pid = fork()) < 0)
+//         return "";
 
-    if (pid == 0) {
-        setEnv(Req);
-        close(cgiInput[0]);
-        dup2(cgiInput[1], 1);
-        close(cgiInput[1]);
+//     if (pid == 0) {
+//         setEnv(Req);
+//         close(cgiInput[0]);
+//         dup2(cgiInput[1], 1);
+//         close(cgiInput[1]);
 
-        // std::string pythonPath = "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages";
-        // std::string pythonEnv = "PYTHONPATH=" + pythonPath;
-        // char* envp[] = {(char*)pythonEnv.c_str(), NULL};
-        // 혹시 몰라 일단 남겨둠 -> python 실행 해보고 필요해지면 추가 할 예정
+//         // std::string pythonPath = "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages";
+//         // std::string pythonEnv = "PYTHONPATH=" + pythonPath;
+//         // char* envp[] = {(char*)pythonEnv.c_str(), NULL};
+//         // 혹시 몰라 일단 남겨둠 -> python 실행 해보고 필요해지면 추가 할 예정
 
-        std::string py3 = "/usr/bin/python3"; //
-        char* const arg[] = {(char *)py3.c_str(), (char *)cgiPath.c_str(), NULL};
+//         std::string py3 = "/usr/bin/python3"; //
+//         char* const arg[] = {(char *)py3.c_str(), (char *)cgiPath.c_str(), NULL};
 
-        if (execve(py3.c_str(), arg, NULL) == -1) {
-            perror("execve failed");
-            // exit(404);
-        }
-    } else {
-        int status;
-        close(cgiInput[1]);
-        waitpid(pid, &status, 0);
-        // if (status == 404)
-        //     return "";
+//         if (execve(py3.c_str(), arg, NULL) == -1) {
+//             perror("execve failed");
+//             // exit(404);
+//         }
+//     } else {
+//         int status;
+//         close(cgiInput[1]);
+//         waitpid(pid, &status, 0);
+//         // if (status == 404)
+//         //     return "";
 
-        std::string output;
-        char buf[1024];
-        ssize_t bytesRead;
-        while ((bytesRead = read(cgiInput[0], buf, sizeof(buf))) > 0) {
-            output.append(buf, bytesRead);
-        } // --> nonblocking
-        close(cgiInput[0]);
-        return output;
-    }
-    return "";
-}
+//         std::string output;
+//         char buf[1024];
+//         ssize_t bytesRead;
+//         while ((bytesRead = read(cgiInput[0], buf, sizeof(buf))) > 0) {
+//             output.append(buf, bytesRead);
+//         } // --> nonblocking
+//         close(cgiInput[0]);
+//         return output;
+//     }
+//     return "";
+// }
 
 std::string ResponseUtils::getFormattedTime(time_t time)
 {
