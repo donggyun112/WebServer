@@ -95,7 +95,7 @@ void HttpRequest::setCookie(Request &req)
 	}
 }
 
-std::stinrg HttpRequest::setChunkedBody(const std::string& body)
+std::string HttpRequest::setChunkedBody(const std::string& body)
 {
     std::istringstream iss(body);
     std::string line, pureBody;
