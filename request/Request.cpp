@@ -1,15 +1,15 @@
 #include "Request.hpp"
 
-void HttpRequest::isVaildRequest(const Request &req)
+void HttpRequest::validateRequest(const Request &req)
 {
 	if (req._method == "OTHER")
-		throw std::invalid_argument("Invalid Method");
+		throw MethodNotAllowed_405;
 	if (req._uri.empty())
-		throw std::invalid_argument("Invalid URI");
+		throw BadRequest_400;
 	if (req._version != "HTTP/1.1")
-		throw std::invalid_argument("Invalid Version");
+		throw HttpVersionNotSupported_505;
 	if (req._headers.find("Host") == req._headers.end())
-		throw std::invalid_argument("Invalid Host");
+		throw BadRequest_400;
 }
 
 std::string parseMethod(const std::string& methodStr)
@@ -51,17 +51,17 @@ void HttpRequest::parseRequestLine(Request &req, const std::string& line)
 
 	iss >> token;
 	if (iss.fail())
-		throw std::invalid_argument("Invalid Request Method");
+		throw MethodNotAllowed_405;
 	req._method = parseMethod(token);
 
 	iss >> tmpUri;
 	if (iss.fail())
-		throw std::invalid_argument("Invalid Request URI");
+		throw BadRequest_400;
 	req._uri = parseUri(tmpUri, req);
 
 	iss >> req._version;
 	if (iss.fail())
-		throw std::invalid_argument("Invalid Request Version");
+		throw HttpVersionNotSupported_505;
 }
 
 void HttpRequest::parseHeader(Request &req, const std::string& header)

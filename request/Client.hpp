@@ -3,6 +3,7 @@
 #include <iostream>
 #include "RequestHandle.hpp"
 #include "ResponseHandle.hpp"
+#include "../utils/Error.hpp"
 
 class Client {
 	private:

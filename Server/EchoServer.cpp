@@ -124,12 +124,9 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 			} else {
 				std::cout << "READ | fd : " << currEvent.ident << " | buffer = " << std::endl << buffer << std::endl;
 				Client *ptr = _clientMap[currEvent.ident];
-
 				ptr->setBuffer(buffer);
 				if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
 					ptr->generateResponse(Conf);
-
-					
 					changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			 		changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}
