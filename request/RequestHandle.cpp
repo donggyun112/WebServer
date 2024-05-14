@@ -62,7 +62,6 @@ std::string RequestHandle::getHost() const {
 	if (pos != std::string::npos)
 		host = host.substr(0, pos);
 	return host;
-	// return it->second;
 }
 
 const Request &RequestHandle::getRequest() const {
@@ -110,13 +109,13 @@ void RequestHandle::setRequest() {
         _readStatus = READ_HEADER_DONE;
 
     }
-    if (_readStatus == READ_HEADER_DONE && getHeader("Transfer-Encoding") == "chunked") {
+    if (getMethod() == "POST" && getHeader("Transfer-Encoding") == "chunked" && _readStatus == READ_HEADER_DONE) {
         body = iss.str().substr(pos + 4);
         if (body.find("0\r\n") == std::string::npos) {
             return ;
         }
         _readStatus = READ_DONE;
-        _request._body = body;
+        _request._body = HttpRequest::setChunkedBody(body);
     }
     else if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING) {
         if (_request._contentLength == 0) {

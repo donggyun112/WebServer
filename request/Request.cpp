@@ -95,6 +95,24 @@ void HttpRequest::setCookie(Request &req)
 	}
 }
 
+std::stinrg HttpRequest::setChunkedBody(const std::string& body)
+{
+    std::istringstream iss(body);
+    std::string line, pureBody;
+    long chunkLength;
+
+    while (true) {
+        std::getline(iss, line);
+        chunkLength = strtol(line.c_str(), NULL, 16);
+        if (chunkLength == 0)
+            break;
+        getline(iss, line, '\r');
+        pureBody += line.substr(0, chunkLength);
+        getline(iss, line, '\n');
+    }
+    return pureBody;
+}
+
 std::string HttpRequest::parsePart(const std::string& body, const std::string& boundary) {
     size_t start = body.find(boundary);
     if (start == std::string::npos) {

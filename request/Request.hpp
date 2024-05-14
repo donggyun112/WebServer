@@ -17,6 +17,7 @@ namespace HttpRequest {
 	void parseHeader(Request& req, const std::string& line);
 	void validateRequest(const Request &req);
 	void setCookie(Request &req);
+	std::stinrg setChunkedBody(const std::string& body);
 	std::string parsePart(const std::string& body, const std::string& boundary);
 	std::string parseFileContent(const std::string &body);
 	std::string parseBodyHeader(const std::string& part);
