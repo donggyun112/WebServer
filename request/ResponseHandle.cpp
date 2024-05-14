@@ -107,12 +107,21 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 			// std::cout << "is CGI" << std::endl;
             // std::cout << "in getFilePath : " << __LINE__ << std::endl;
 			loc.setCgi(true);
-			_scriptName = httpUri.substr(0, httpUri.find_last_of('/'));
-			_pathInfo = httpUri.substr(httpUri.find_last_of('/'));
-			_httpUri = _scriptName;
-			setenv("SCRIPT_NAME", _scriptName.c_str(), 1);
-			setenv("PATH_INFO", _pathInfo.c_str(), 1);
-			filePath = serverRoot + loc.getFastcgiPass() + httpUri;
+			if (httpUri.substr(0, httpUri.find_last_of('/')).find('.') != std::string::npos) {
+				_scriptName = httpUri.substr(0, httpUri.find_last_of('/'));
+				_pathInfo = httpUri.substr(httpUri.find_last_of('/'));
+				_httpUri = _scriptName;
+				// setenv("SCRIPT_NAME", _scriptName.c_str(), 1);
+				// setenv("PATH_INFO", _pathInfo.c_str(), 1);
+				filePath = serverRoot + loc.getFastcgiPass() + httpUri;
+			} else {
+				_scriptName = httpUri;
+				_pathInfo = "";
+				_httpUri = _scriptName;
+				// setenv("SCRIPT_NAME", _scriptName.c_str(), 1);
+				// setenv("PATH_INFO", _pathInfo.c_str(), 1);
+				filePath = serverRoot + loc.getFastcgiPass() + httpUri;
+			}
 		}
     } else if (ResponseUtils::isDirectory(serverRoot + httpUri) == true) {
             // std::cout << "in getFilePath : " << __LINE__ << std::endl;
