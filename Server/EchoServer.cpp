@@ -52,7 +52,7 @@ int Server::FDIndexing(FD fd) {
 void Server::addNewClient(FD fd) {
 	int newFD;
 	newFD = _serverSocketList[FDIndexing(fd)]->accept();
-	std::cout << "hi new client. | fd : " << newFD << std::endl << std::endl;
+	// std::cout << "hi new client. | fd : " << newFD << std::endl << std::endl;
 	Socket::nonblocking(newFD);
 	Client *Ptr = new Client(_serverSocketList[FDIndexing(fd)]->getPort());
 	_clientMap[newFD] = Ptr;
@@ -64,7 +64,7 @@ void Server::addNewClient(FD fd) {
 void Server::updateControl() {
 	for (size_t i = 0; i < _closeList.size(); i++) {
 		disconnectClient(_closeList[i]);
-		std::cout << "Client closed | fd : " << _closeList[i] << std::endl;
+		// std::cout << "Client closed | fd : " << _closeList[i] << std::endl;
 	}
 	_closeList.clear();
 	_changeList.clear();
@@ -76,7 +76,7 @@ void Server::run(const Config &Conf) {
 	struct kevent eventList[10];
 	while (true) {
 		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 10, NULL);
-		std::cout << "---------Current event--------- num | " << eventNumber << std::endl;
+		// std::cout << "---------Current event--------- num | " << eventNumber << std::endl;
 		if (eventNumber == -1) {
 			std::cout << "Throw\n";
 
@@ -103,7 +103,7 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 			throw std::runtime_error("server_socket_error"); // 서버 소켓 에러.
 			//이 부분은 그냥 터트리는게 맞다 ㄹㅇ;;;
 		} else {
-			std::cout << "Err | filter: " << currEvent.filter << " | flag: " << currEvent.flags << " fflags: " << currEvent.fflags << std::endl;
+			// std::cout << "Err | filter: " << currEvent.filter << " | flag: " << currEvent.flags << " fflags: " << currEvent.fflags << std::endl;
 			_closeList.push_back(currEvent.ident);
 			changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 			changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
@@ -116,13 +116,14 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 			length = recv(currEvent.ident, buffer, 1024, 0);
 			if (length == -1) return ;
 			else if (length == 0) {
-				std::cout << "Bye bye client. | fd : "<< currEvent.ident << std::endl;
+				// std::cout << "Bye bye client. | fd : "<< currEvent.ident << std::endl;
 				changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 				changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 				_closeList.push_back(currEvent.ident);
 				_clientMap[currEvent.ident] = NULL;
 			} else {
-				std::cout << "READ | fd : " << currEvent.ident << " | buffer = " << std::endl << buffer << std::endl;
+				// std::cout << "READ | fd : " << currEvent.ident << " | buffer = " << std::endl << buffer << std::endl;
+				// std::cout << "|=============================|" << buffer << "|=============================|" << __FUNCTION__ << std::endl;
 				Client *ptr = _clientMap[currEvent.ident];
 				ptr->setBuffer(buffer);
 				if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
