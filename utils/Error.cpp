@@ -150,7 +150,8 @@ std::string Error::errorHandler(const ServerConfig &Serv, int num) {
 	Response response;
 
 	fileName = "/" + web::toString(num) + ".html";
-	testPath = Serv.getPath() + Serv.getErrorPagesPath() + fileName; 
+	testPath = Serv.getErrorPagesPath() + fileName; 
+	std::cout << testPath << std::endl;
 	std::ifstream file(testPath.c_str());
 	
 	if (file.is_open() && file.good()) {
@@ -164,11 +165,12 @@ std::string Error::errorHandler(const ServerConfig &Serv, int num) {
 		}
 		// 파일 내용 읽기
 		std::string body = ResponseUtils::readFileContent(file, fileSize);
+		std::cout << body << std::endl;
 		file.close();
 
-		response.setStatusCode(OK_200);
+		response.setStatusCode(NotFound_404);
 		response.setHeader("Date", ResponseUtils::getCurTime());
-		response.setHeader("Content-Type", ResponseUtils::getContentType("text/html; charset=utf-8"));
+		response.setHeader("Content-Type", ResponseUtils::getContentType("html"));
 		response.setBody(body);
 		response.setHeader("Content-Length", web::toString(body.length()));
 		response.setHeader("Connection", "keep-alive");

@@ -85,15 +85,17 @@ void RequestHandle::setBuffer(const std::string& buffer) {
 void RequestHandle::setRequest() {
     std::istringstream iss(_buffer);
 	std::string line, header, body;
-    if (iss.str().find("\r\n") != std::string::npos \
-            && _readStatus == READ_NOT_DONE) {
+
+    if (iss.str().find("\r\n") == std::string::npos && _readStatus == READ_NOT_DONE)
+        return ;
+    
+    if (iss.str().find("\r\n") != std::string::npos && _readStatus == READ_NOT_DONE) {
         std::getline(iss, line);
         HttpRequest::parseRequestLine(_request, line);
         _readStatus = READ_LINE_DONE;
     }
     size_t pos = iss.str().find("\r\n\r\n");
-    if (pos == std::string::npos &&\
-        _readStatus == READ_LINE_DONE)
+    if (pos == std::string::npos && _readStatus == READ_LINE_DONE)
         return ;
     if (pos != std::string::npos && _readStatus == READ_LINE_DONE)
     {
@@ -131,7 +133,7 @@ void RequestHandle::setRequest() {
             _request._body = body;
         }
             else if (_request._currentLength > _request._contentLength)
-            _responseStatus = 404;
+            throw BadRequest_400;
     }
     HttpRequest::validateRequest(_request);
     _responseStatus = 200;
