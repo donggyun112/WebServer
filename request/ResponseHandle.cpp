@@ -336,34 +336,28 @@ std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
         const std::string part = HttpRequest::parsePart(Req.getBody(), HttpRequest::parseBoundary(contentType));
         const std::string bodyHeader = HttpRequest::parseBodyHeader(part);
         if (bodyHeader.empty())
-            return ""; // throw 숫자. catch 해서 에러메세지 출력
-            // return createErrorResponse(BadRequest_400, "Bad Request");
+            throw BadRequest_400;
         std::string fileName = HttpRequest::parseFileName(bodyHeader);
         if (fileName.empty())
-            return "";
-            // return createErrorResponse(BadRequest_400, "Bad Request");
+            throw BadRequest_400;
 
         const std::string fileContent = HttpRequest::parseFileContent(part);
         if (fileContent.empty())
-            return "";
-            // return createErrorResponse(BadRequest_400, "Bad Request");
+            throw BadRequest_400;
 
         const std::streamsize maxFileSize = 10 * 1024 * 1024;
         if (fileContent.size() > maxFileSize)
-            return "";
-            // return createErrorResponse(UriTooLong_414, "Body too large");
+            throw UriTooLong_414;
 
         if (!fileContent.empty()) {
             responseData = handleFormData(_filePath, Req);
 
             if (responseData.empty())
-                return "";
-                // return createErrorResponse(InternalServerError_500, "Internal Server Error");
+                throw InternalServerError_500;
 
             std::ifstream file(fileName);
             if (!file.good())
-                return "";
-                // return createErrorResponse(InternalServerError_500, "Internal Server Error");
+                throw InternalServerError_500;
             file.close();
         }
     }
@@ -372,12 +366,10 @@ std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
         responseData = handleFormData(_filePath, Req);
 
         if (responseData.empty())
-            return "";
-            // return createErrorResponse(InternalServerError_500, "Internal Server Error");
+            throw InternalServerError_500;
     }
     else
-        return "";
-        // return createErrorResponse(BadRequest_400, "Bad Request");
+        throw InternalServerError_500;
     return responseData;
 }
 
@@ -462,15 +454,8 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 	body << "<hr> <pre>\n<table>\n<tr><th></th><th></th><th></th></tr>\n";
 
     DIR *dir = opendir(dirPath.c_str());
-	if (dir == NULL) {
-        response.setStatusCode(NotFound_404);
-        response.setHeader("Content-Type", "text/html; charset=utf-8");
-        response.setHeader("Date", ResponseUtils::getCurTime());
-        std::string errorBody = "<html><body><h1>404 Not Found</h1><p>Directory listing not allowed.</p></body></html>";
-        response.setBody(errorBody);
-        response.setHeader("Content-Length", web::toString(errorBody.length()));
-        response.setHeader("Connection", "close");
-	}
+	if (dir == NULL)
+        throw Forbidden_403;
     if (dir)
     {
         std::vector<std::string> fileList;
@@ -489,12 +474,10 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
         {
             std::string fileName = fileList[i];
             if (fileName == ".")
-                continue;
+                continue ;
             std::string filePath = dirPath + "/" + fileName;
-            if (stat(filePath.c_str(), &fileStat) == -1) {
-                response.setStatusCode(503);
-                return ;
-            }
+            if (stat(filePath.c_str(), &fileStat) == -1)
+                throw ServiceUnavailable_503;
             if (stat(filePath.c_str(), &fileStat) == 0)
             {
                 body << "<tr>" << "<td>";
@@ -506,16 +489,8 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
                 double fileSize = static_cast<double>(fileStat.st_size);
                 body << "<td>\t\t" << ResponseUtils::getFormatSize(fileSize) << "</td>" << "</tr>\n";
             }
-            else {
-                response.setStatusCode(InternalServerError_500);
-                response.setHeader("Content-Type", "text/html; charset=utf-8");
-                response.setHeader("Date", ResponseUtils::getCurTime());
-                std::string errorBody = "<html><body><h1>500 Internal Server Error</h1><p>Directory listing not allowed.</p></body></html>";
-                response.setBody(errorBody);
-                response.setHeader("Content-Length", web::toString(errorBody.length())); // C++11 버전입니다.
-                response.setHeader("Connection", "close");
-                return ;
-            }
+            else
+                throw InternalServerError_500;
         }
 		body << " </table> </pre>\n<hr>\n</body>\n</html>\n";
         response.setStatusCode(OK_200);
