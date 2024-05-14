@@ -64,7 +64,7 @@ public:
         std::string extention;
         if (isExtention(httpPath))
 			extention = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
-        std::cout << "extension string : " << extention << std::endl;
+        // std::cout << "extension string : " << extention << std::endl;
         for (size_t i = 0; i < _locations.size(); i++) {
             if (_locations[i].getPath().find('.') == std::string::npos) {
                 if (httpPath.substr(0, _locations[i].getPath().length()) == _locations[i].getPath())
