@@ -40,7 +40,7 @@ void Client::generateResponse(Config Conf) {
 		_response = Error::errorHandler(Conf[_port], num);
 	} catch (StatusCode num) {
 		_response = Error::errorHandler(Conf[_port], num);
-		std::cout << __LINE__ << "      :" << _response << std::endl;
+		// std::cout << __LINE__ << "      :" << _response << std::endl;
 	}
 	catch (std::exception &e) {
 		std::cerr << e.what() << std::endl;
