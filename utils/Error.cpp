@@ -165,7 +165,7 @@ std::string Error::errorHandler(const ServerConfig &Serv, int num) {
 		}
 		// 파일 내용 읽기
 		std::string body = ResponseUtils::readFileContent(file, fileSize);
-		std::cout << body << std::endl;
+		// std::cout << body << std::endl;
 		file.close();
 
 		response.setStatusCode(NotFound_404);

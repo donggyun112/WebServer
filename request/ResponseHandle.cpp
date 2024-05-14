@@ -230,6 +230,7 @@ std::string ResponseUtils::getContentType(const std::string &extension) {
 bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
+	std::cout << "HTTPURL" << _httpUri << std::endl;
 	// Conf.setServerName(Req.getHost());
 
 	// URL 정규화
@@ -248,6 +249,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 		// _response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 	}
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
+	std::cout << "File Path: " << _filePath << std::endl;
 	if (!ResponseUtils::isValidPath(_filePath)) {
 		throw BadRequest_400;
 		// _response = createErrorResponse(BadRequest_400, "Invalid request path.");
