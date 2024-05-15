@@ -17,6 +17,17 @@ void Socket::__init__(std::string host, Port port) {
     }
 }
 
+int Socket::getSocketOPT(const FD &socket) {
+	int flags;
+	socklen_t optlen = sizeof(flags);
+
+	if (::getsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &flags, &optlen) == FAILURE) {
+		std::cerr << "Error: Failed to get socket option. Error code: " << errno << std::endl;
+		throw std::runtime_error("Error: Failed to get socket option");
+	}
+	return flags;
+}
+
 void Socket::__init__(Port port) {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
@@ -123,7 +134,7 @@ Status Socket::close() {
 
 /* Socket 비동기 활성화 */
 Status Socket::nonblocking() {
-    int flags = fcntl(_listenSocket, F_GETFL, 0);
+    int flags = Socket::getSocketOPT(_listenSocket);
     if (flags == -1) {
         std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
         return FAILURE;
@@ -138,7 +149,7 @@ Status Socket::nonblocking() {
 }
 
 Status Socket::nonblocking(const FD &socket) {
-    int flags = fcntl(socket, F_GETFL, 0);
+    int flags = Socket::getSocketOPT(socket);
     if (flags == -1) {
         std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
         return FAILURE;

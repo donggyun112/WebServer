@@ -60,5 +60,6 @@ public:
 	std::string 	getSocketIP() const;
 	Port			getSocketPort() const;
 	std::string		getProtocolName() const;
+	static int		getSocketOPT(const FD &socket);
 };
 #endif
