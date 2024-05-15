@@ -173,7 +173,7 @@ std::string Error::errorHandler(const ServerConfig &Serv, int num) {
 		response.setHeader("Content-Type", ResponseUtils::getContentType("html"));
 		response.setBody(body);
 		response.setHeader("Content-Length", web::toString(body.length()));
-		response.setHeader("Connection", "keep-alive");
+		response.setHeader("Connection", "close");
 		return response.getResponses();
 	}
 	else 
