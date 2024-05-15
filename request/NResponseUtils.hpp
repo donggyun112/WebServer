@@ -1,6 +1,7 @@
 #ifndef NRESPONSEUTILS_HPP
 # define NRESPONSEUTILS_HPP
 # include "../Parse/Config.hpp"
+# include <sys/stat.h>
 
 namespace ResponseUtils {
 	std::string nomralizeUrl(const std::string &HTTP_uri);
