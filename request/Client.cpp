@@ -35,7 +35,12 @@ void Client::generateResponse(Config Conf) {
 		if (_requestHandle.getReadStatus() == READ_ERROR) {
 			throw _requestHandle.getResponseStatus();
 		}
-		_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
+		_responseHandle.initPathFromLocation(_requestHandle, Conf);
+		if (_responseHandle.isCGI()) {
+			
+		} else {
+			_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
+		}
 	} catch (int num) {
 		_response = Error::errorHandler(Conf[_port], num);
 	} catch (StatusCode num) {

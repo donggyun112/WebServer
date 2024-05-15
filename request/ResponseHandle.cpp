@@ -5,13 +5,17 @@
 #include "NResponseUtils.hpp"
 
 
-ResponseHandle::ResponseHandle() {
+ResponseHandle::ResponseHandle() : _isInitFromLocation(false) {
 
 }
 
 ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._response) {}
 
 ResponseHandle::~ResponseHandle() {}
+
+bool ResponseHandle::isCGI() const {
+	return _loc.isCgi();
+}
 
 void	ResponseHandle::clearAll() {
 	_response.clear();
@@ -25,7 +29,9 @@ void	ResponseHandle::clearAll() {
 
 std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf) {
 	//
-	initPathFromLocation(Req, Conf);
+	if (_isInitFromLocation == false) {
+		initPathFromLocation(Req, Conf);
+	}
 	//
 	// std::cout << "Start to generate response" << std::endl;
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
@@ -237,6 +243,7 @@ std::string ResponseUtils::getContentType(const std::string &extension) {
 }
 
 bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
+	_isInitFromLocation = true;
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
 	std::cout << "HTTPURL" << _httpUri << std::endl;
