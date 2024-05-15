@@ -576,3 +576,47 @@ void	ResponseHandle::setEnv(const RequestHandle &Req) {
 	setenv("HTTP_CONTENT_LENGTH", Req.getHeader("Content-Length").c_str(), 1);
 	setenv("BODY", Req.getBody().c_str(), 1);
 }
+
+std::string	ResponseHandle::getFilePath() const {
+	return _filePath;
+}
+
+std::string	ResponseHandle::getPathInfo() const {
+	return _pathInfo;
+}
+
+std::string	ResponseHandle::getScriptName() const {
+	return _scriptName;
+}
+
+std::string	ResponseHandle::getHttpUri() const {
+	return _httpUri;
+}
+
+std::string	ResponseHandle::getServerRoot() const {
+	return _serverRoot;
+}
+
+Port	ResponseHandle::getPort() const {
+	return _port;
+}
+
+LocationConfig	ResponseHandle::getLocation() const {
+	return _loc;
+}
+
+ResponseHandle&	ResponseHandle::operator=(const ResponseHandle &Copy) {
+	if (this == &Copy)
+		return *this;
+	_response = Copy._response;
+	_isInitFromLocation = Copy._isInitFromLocation;
+	_filePath = Copy._filePath;
+	_pathInfo = Copy._pathInfo;
+	_scriptName = Copy._scriptName;
+	_httpUri = Copy._httpUri;
+	_serverRoot = Copy._serverRoot;
+	_port = Copy._port;
+	_loc = Copy._loc;
+	return *this;
+}
+
