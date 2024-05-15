@@ -4,14 +4,13 @@
 #include <unistd.h>
 #include "NResponseUtils.hpp"
 
-
 ResponseHandle::ResponseHandle() : _isInitFromLocation(false) {
-
 }
 
 ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._response) {}
 
 ResponseHandle::~ResponseHandle() {}
+
 
 bool ResponseHandle::isCGI() const {
 	return _loc.isCgi();
@@ -27,7 +26,8 @@ void	ResponseHandle::clearAll() {
 	_port = 0;
 }
 
-std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf) {
+std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf)
+{
 	//
 	if (_isInitFromLocation == false) {
 		initPathFromLocation(Req, Conf);
@@ -35,62 +35,68 @@ std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Con
 	//
 	// std::cout << "Start to generate response" << std::endl;
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
-    // std::cout << "method number = " << method << "string = " << Req.getMethod() << "123" << std::endl;
+	// std::cout << "method number = " << method << "string = " << Req.getMethod() << "123" << std::endl;
 	switch (method)
 	{
-		case GET:
-            // std::cout << "Goto GET" << std::endl;
-			_response = handleGetRequest(Req);
-			return _response;
-		case POST:
-			// _response = handlePostRequest(Req); // -> 1. Client받아서 setRespose
-            // std::cout << "Goto POST" << std::endl;
-            std::cout << "----------------\n" << Req.getBody() << "\n----------------" << std::endl;
-			break;
-		case DELETE:
-			// _response = handleDeleteRequest();
-            std::cout << "Goto DELETE" << std::endl;
-			break;
-		default:
-			// _response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
-            std::cout << "Goto ERROR" << std::endl;
-			return handleMethodNotAllowed().getResponses();
-			break;
+	case GET:
+		// std::cout << "Goto GET" << std::endl;
+		_response = handleGetRequest(Req);
+		return _response;
+	case POST:
+		std::cout << "Goto POST" << std::endl;
+		_response = handlePostRequest(Req); // -> 1. Client받아서 setRespose
+		// std::cout << "----------------\n"
+		// 		  << Req.getBody() << "\n----------------" << std::endl;
+		break;
+	case DELETE:
+		// _response = handleDeleteRequest();
+		std::cout << "Goto DELETE" << std::endl;
+		break;
+	default:
+		// _response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
+		std::cout << "Goto ERROR" << std::endl;
+		return handleMethodNotAllowed().getResponses();
+		break;
 	}
 	return "";
 }
 
-
-const std::string ResponseHandle::getResponse() {
-	if (_response.empty()) {
+const std::string ResponseHandle::getResponse()
+{
+	if (_response.empty())
+	{
 		throw std::invalid_argument("Response is empty");
 	}
 	return _response;
 }
 
-void ResponseHandle::setResponse(const std::string &response) {
+void ResponseHandle::setResponse(const std::string &response)
+{
 	_response = response;
 }
 
-Response ResponseHandle::handleMethodNotAllowed() {
-    Response response;
-    response.setStatusCode(MethodNotAllowed_405);
-    response.setHeader("Content-Type", "text/html");
-    response.setHeader("Date", ResponseUtils::getCurTime());
+Response ResponseHandle::handleMethodNotAllowed()
+{
+	Response response;
+	response.setStatusCode(MethodNotAllowed_405);
+	response.setHeader("Content-Type", "text/html");
+	response.setHeader("Date", ResponseUtils::getCurTime());
 
-    std::string errorBody = "<html><body><h1>405 Method Not Allowed</h1><p>The requested method is not allowed.</p></body></html>";
-    response.setBody(errorBody);
-    response.setHeader("Content-Length", web::toString(errorBody.length()));
-    response.setHeader("Connection", "close");
+	std::string errorBody = "<html><body><h1>405 Method Not Allowed</h1><p>The requested method is not allowed.</p></body></html>";
+	response.setBody(errorBody);
+	response.setHeader("Content-Length", web::toString(errorBody.length()));
+	response.setHeader("Connection", "close");
 
-    return response;
+	return response;
 }
 
-bool	ResponseUtils::isExtention(std::string httpPath) { 
-    if (httpPath.find_last_of('.') == std::string::npos)
-        return false;
-    return true;
+bool ResponseUtils::isExtention(std::string httpPath)
+{
+	if (httpPath.find_last_of('.') == std::string::npos)
+		return false;
+	return true;
 }
+
 
 std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc) {
     std::string filePath;
@@ -143,83 +149,98 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
     return filePath;
 }
 
-bool ResponseUtils::isValidPath(const std::string &path) {
-    // 경로가 비어있는 경우
-    if (path.empty()) {
-        return false;
-    }
-    // 경로가 너무 긴 경우
-    if (path.length() > PATH_MAX) {
-        return false;
-    }
-    // 경로에 불법적인 문자가 포함된 경우
-    if (path.find_first_of("\0\\") != std::string::npos) {
-        return false;
-    }
-    // 경로가 상대경로인 경우
-    if (path[0] != '/') {
-        return false;
-    }
-    return true;
+bool ResponseUtils::isValidPath(const std::string &path)
+{
+	// 경로가 비어있는 경우
+	if (path.empty())
+	{
+		return false;
+	}
+	// 경로가 너무 긴 경우
+	if (path.length() > PATH_MAX)
+	{
+		return false;
+	}
+	// 경로에 불법적인 문자가 포함된 경우
+	if (path.find_first_of("\0\\") != std::string::npos)
+	{
+		return false;
+	}
+	// 경로가 상대경로인 경우
+	if (path[0] != '/')
+	{
+		return false;
+	}
+	return true;
 }
 
-Response ResponseHandle::handleRedirect(const LocationConfig &location) {
-    Response response;
-    std::string returnCode = location.getReturnCode();
-    std::string returnUrl = location.getReturnUrl();
+Response ResponseHandle::handleRedirect(const LocationConfig &location)
+{
+	Response response;
+	std::string returnCode = location.getReturnCode();
+	std::string returnUrl = location.getReturnUrl();
 
-    if (!returnCode.empty() && !returnUrl.empty()) {
+	if (!returnCode.empty() && !returnUrl.empty())
+	{
 		std::cout << "Redirected to: " << returnUrl << std::endl;
-        int statusCode = std::stoi(returnCode);
+		int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
-        response.setHeader("Connection", "close");
+		response.setHeader("Connection", "close");
 		return response;
-    }
+	}
 	response.setStatusCode(OK_200);
-    return response;
+	return response;
 }
 
-bool ResponseUtils::isDirectory(const std::string &path) {
-    struct stat st;
+bool ResponseUtils::isDirectory(const std::string &path)
+{
+	struct stat st;
 
-    if (stat(path.c_str(), &st) == 0) {
-        if (S_ISREG(st.st_mode)) {
-            return false;  // 파일인 경우 false 반환
-        }
-        return S_ISDIR(st.st_mode);
-    }
+	if (stat(path.c_str(), &st) == 0)
+	{
+		if (S_ISREG(st.st_mode))
+		{
+			return false; // 파일인 경우 false 반환
+		}
+		return S_ISDIR(st.st_mode);
+	}
 
-    return false;
+	return false;
 }
 
-std::string ResponseUtils::getFileExtension(const std::string &filePath) {
-    size_t dotPos = filePath.find_last_of('.');
-    if (dotPos != std::string::npos) {
-        return filePath.substr(dotPos + 1);
-    }
-    return "";
+std::string ResponseUtils::getFileExtension(const std::string &filePath)
+{
+	size_t dotPos = filePath.find_last_of('.');
+	if (dotPos != std::string::npos)
+	{
+		return filePath.substr(dotPos + 1);
+	}
+	return "";
 }
 
-std::streamsize ResponseUtils::getFileSize(std::ifstream &file) {
-    file.seekg(0, std::ios::end);
-    std::streamsize fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-    return fileSize;
+std::streamsize ResponseUtils::getFileSize(std::ifstream &file)
+{
+	file.seekg(0, std::ios::end);
+	std::streamsize fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+	return fileSize;
 }
 
-std::string ResponseUtils::readFileContent(std::ifstream &file, std::streamsize fileSize) {
-    std::string content(fileSize, '\0');
-    file.read(&content[0], fileSize);
-    return content;
+std::string ResponseUtils::readFileContent(std::ifstream &file, std::streamsize fileSize)
+{
+	std::string content(fileSize, '\0');
+	file.read(&content[0], fileSize);
+	return content;
 }
 
-std::string ResponseUtils::getContentType(const std::string &extension) {
-    if (extension == "html")
-        return "text/html; charset=utf-8";
-    else if (extension == "css")
-        return "text/css";
-    // 다른 확장자에 대한 Content-Type 매핑 추가
-    else if (extension == "png")
+std::string ResponseUtils::getContentType(const std::string &extension)
+{
+	if (extension == "html")
+		return "text/html; charset=utf-8";
+	else if (extension == "css")
+		return "text/css";
+	// 다른 확장자에 대한 Content-Type 매핑 추가
+	else if (extension == "png")
 		return "image/png";
 	else if (extension == "jpg")
 		return "image/jpeg";
@@ -242,8 +263,9 @@ std::string ResponseUtils::getContentType(const std::string &extension) {
 	else if (extension == "zip")
 		return "application/zip";
 	else
-        return "application/octet-stream";
+		return "application/octet-stream";
 }
+
 
 bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
 	_isInitFromLocation = true;
@@ -255,11 +277,13 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 	_httpUri = ResponseUtils::nomralizeUrl(_httpUri);
 	// std::cout << "Normalized URL: " << _httpUri << std::endl;
 	_serverRoot = ResponseUtils::normalizePath(Conf.getServerConfig(_port, Req.getHost()).getPath());
-	if (_serverRoot.empty()) {
+	if (_serverRoot.empty())
+	{
 		throw InternalServerError_500;
 		// _response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
-    }
+	}
 
+=
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
 		std::cout << "Location Path: " << _loc.getPath() << std::endl;
 		// std::cout << "Success to get location "<< _loc.getPath() << std::endl;
@@ -291,121 +315,112 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 	return true;
 }
 
-std::string ResponseHandle::handleGetRequest(const RequestHandle &Req) {
-    Response response;
-	if (_loc.isCgi() == true) {
+std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
+{
+	Response response;
+	if (_loc.isCgi() == true)
+	{
 		// CGI 처리
 		(void)Req;
 		// setEnv(Req);
 		// printAllEnv();
-		
+
 		std::cout << "Start to handle CGI" << std::endl;
 		// response = handleCgi(_loc, _filePath);
 	}
 
 	// std::cout << "Start to handle GET request" << std::endl;
 	// 리다이렉트 처리
-	
+
 	// Response redirectResponse = handleRedirect(_loc);
 	// if (redirectResponse.getStatusCode() != OK_200) {
 	// 	return redirectResponse.getResponses();
 	// }
 
-    // 인덱스 파일 설정
+	// 인덱스 파일 설정
 	// std::cout << "Start to get file && isDirestory : " << ResponseUtils::isDirectory(_filePath) << std::endl;
 
-	
 
-    // 파일 확장자 추출
+	// 파일 확장자 추출
 	// std::cout << "Start to get file extension" << std::endl;
-    std::string extension = ResponseUtils::getFileExtension(_filePath);
-    // 파일 읽기
-    std::ifstream file(_filePath.c_str(), std::ios::binary);
+	std::string extension = ResponseUtils::getFileExtension(_filePath);
+	// 파일 읽기
+	std::ifstream file(_filePath.c_str(), std::ios::binary);
 	// std::cout << "File Path: " << _filePath << std::endl;
+
     if (file.is_open() && file.good() && ResponseUtils::isDirectory(_filePath) == false) {
         // 파일 크기 확인
         std::streamsize fileSize = ResponseUtils::getFileSize(file);
 
-        // 파일 크기 제한 설정
-        const std::streamsize maxFileSize = 10 * 1024 * 1024;
-        if (fileSize > maxFileSize) {
+		// 파일 크기 제한 설정
+		const std::streamsize maxFileSize = 10 * 1024 * 1024;
+		if (fileSize > maxFileSize)
+		{
 			throw PayloadTooLarge_413;
-        }
-        // 파일 내용 읽기
-        std::string body = ResponseUtils::readFileContent(file, fileSize);
-        file.close();
+		}
+		// 파일 내용 읽기
+		std::string body = ResponseUtils::readFileContent(file, fileSize);
+		file.close();
 
-        response.setStatusCode(OK_200);
-        response.setHeader("Date", ResponseUtils::getCurTime());
-        response.setHeader("Content-Type", ResponseUtils::getContentType(extension));
-        response.setBody(body);
-        response.setHeader("Content-Length", web::toString(body.length()));
-        response.setHeader("Connection", "keep-alive");
-
-    } else {
-        if (ResponseUtils::isDirectory(_filePath)) {
-			if (_loc.getAutoindex() == true) {
-            	handleAutoIndex(response, _filePath);
-			} else {
+		response.setStatusCode(OK_200);
+		response.setHeader("Date", ResponseUtils::getCurTime());
+		response.setHeader("Content-Type", ResponseUtils::getContentType(extension));
+		response.setBody(body);
+		response.setHeader("Content-Length", web::toString(body.length()));
+		response.setHeader("Connection", "keep-alive");
+	}
+	else
+	{
+		if (ResponseUtils::isDirectory(_filePath))
+		{
+			if (_loc.getAutoindex() == true)
+			{
+				handleAutoIndex(response, _filePath);
+			}
+			else
+			{
 				throw Forbidden_403;
 			}
-        } else {
-			if (_loc.getAutoindex() == false) {
+		}
+		else
+		{
+			if (_loc.getAutoindex() == false)
+			{
 				throw NotFound_404;
-			} else {
+			}
+			else
+			{
 				handleAutoIndex(response, _filePath.substr(0, _filePath.find_last_of('/')));
 			}
 		}
-    }
-    response.setHeader("Server", "42Webserv");
-    return response.getResponses();
+	}
+	response.setHeader("Server", "42Webserv");
+	return response.getResponses();
 }
 
-// std::string ResponseHandle::handlePostRequest(const RequestHandle &Req) {
-//     std::string responseData;
+std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
+{
+	std::string responseData;
 
-//     std::string contentType = Req.getHeader("Content-Type");
-//     if (contentType.find("multipart/form-data") != std::string::npos) {
-        
-//         const std::string part = HttpRequest::parsePart(Req.getBody(), HttpRequest::parseBoundary(contentType));
-//         const std::string bodyHeader = HttpRequest::parseBodyHeader(part);
-//         if (bodyHeader.empty())
-//             throw BadRequest_400;
-//         std::string fileName = HttpRequest::parseFileName(bodyHeader);
-//         if (fileName.empty())
-//             throw BadRequest_400;
+	std::string contentType = Req.getHeader("Content-Type");
+	if ((contentType.find("multipart/form-data") != std::string::npos && contentType.find("boundary") != std::string::npos) \
+		|| contentType.find("application/x-www-form-urlencoded") != std::string::npos)
+	{
+		if (!Req.getBody().empty())
+		{
+			// responseData = handleFormData(_filePath, Req);
 
-//         const std::string fileContent = HttpRequest::parseFileContent(part);
-//         if (fileContent.empty())
-//             throw BadRequest_400;
-
-//         const std::streamsize maxFileSize = 10 * 1024 * 1024;
-//         if (fileContent.size() > maxFileSize)
-//             throw UriTooLong_414;
-
-//         if (!fileContent.empty()) {
-//             responseData = handleFormData(_filePath, Req);
-
-//             if (responseData.empty())
-//                 throw InternalServerError_500;
-
-//             std::ifstream file(fileName);
-//             if (!file.good())
-//                 throw InternalServerError_500;
-//             file.close();
-//         }
-//     }
-//     else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
-//     {
-//         responseData = handleFormData(_filePath, Req);
-
-//         if (responseData.empty())
-//             throw InternalServerError_500;
-//     }
-//     else
-//         throw InternalServerError_500;
-//     return responseData;
-// }
+			if (responseData.empty())
+				throw InternalServerError_500;
+		}
+		else {
+			throw BadRequest_400;
+		}
+	}
+	else
+		throw InternalServerError_500;
+	return responseData;
+}
 
 // std::string ResponseHandle::handleFormData(const std::string &cgiPath, const RequestHandle &Req) {
 //     int cgiInput[2];
@@ -413,7 +428,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req) {
 
 //     if (pipe(cgiInput) < 0)
 //         return "";
-    
+
 //     if ((pid = fork()) < 0)
 //         return "";
 
@@ -464,7 +479,7 @@ std::string ResponseUtils::getFormattedTime(time_t time)
 
 std::string ResponseUtils::getFormatSize(double size)
 {
-	const char *sizes[] = { "B", "KB", "MB", "GB", "TB" };
+	const char *sizes[] = {"B", "KB", "MB", "GB", "TB"};
 	int i = 0;
 	while (size > 1024)
 	{
@@ -473,74 +488,74 @@ std::string ResponseUtils::getFormatSize(double size)
 	}
 
 	std::ostringstream oss;
-	oss << std::fixed << std::setprecision(2) <<size << sizes[i];
+	oss << std::fixed << std::setprecision(2) << size << sizes[i];
 	return oss.str();
 }
 
 void ResponseHandle::handleAutoIndex(Response &response, const std::string &servRoot)
 {
-    std::string dirPath = servRoot;
+	std::string dirPath = servRoot;
 
-    struct stat fileStat;
-    std::stringstream body;
-    body << "<html>\n<head>\n<title> AutoIndex </title>\n</head>\n<body>\n";
-    body << "<h1>Index of / </h1>\n";
+	struct stat fileStat;
+	std::stringstream body;
+	body << "<html>\n<head>\n<title> AutoIndex </title>\n</head>\n<body>\n";
+	body << "<h1>Index of / </h1>\n";
 	body << "<hr> <pre>\n<table>\n<tr><th></th><th></th><th></th></tr>\n";
 
-	
-    DIR *dir = opendir(dirPath.c_str());
+	DIR *dir = opendir(dirPath.c_str());
 	if (dir == NULL && errno == EACCES)
-        throw Forbidden_403;
+		throw Forbidden_403;
 	else if (dir == NULL)
 		throw NotFound_404;
-    if (dir)
-    {
-        std::vector<std::string> fileList;
-        struct dirent *ent;
-        size_t maxFileNameLength = 0;
-        while ((ent = readdir(dir)) != NULL) {
-            fileList.push_back(ent->d_name);
-            maxFileNameLength = std::max(maxFileNameLength, strlen(ent->d_name));
-        }
-        closedir(dir);
+	if (dir)
+	{
+		std::vector<std::string> fileList;
+		struct dirent *ent;
+		size_t maxFileNameLength = 0;
+		while ((ent = readdir(dir)) != NULL)
+		{
+			fileList.push_back(ent->d_name);
+			maxFileNameLength = std::max(maxFileNameLength, strlen(ent->d_name));
+		}
+		closedir(dir);
 
-        std::sort(fileList.begin(), fileList.end());
+		std::sort(fileList.begin(), fileList.end());
 
-        int count = fileList.size();
-        for (int i = 0; i < count; i++)
-        {
-            std::string fileName = fileList[i];
-            if (fileName == ".")
-                continue ;
-            std::string filePath = dirPath + "/" + fileName;
-            if (stat(filePath.c_str(), &fileStat) == -1)
-                throw ServiceUnavailable_503;
-            if (stat(filePath.c_str(), &fileStat) == 0)
-            {
-                body << "<tr>" << "<td>";
-                if (S_ISDIR(fileStat.st_mode))
-                    body << "<a href=\"" << fileName << "/\">" << std::left << fileName + "/" << "</a>";
-                else
-                    body << std::setw(maxFileNameLength + 1) << std::left << fileName;
-                body << "</td><td>\t\t" << ResponseUtils::getFormattedTime(fileStat.st_mtime) << "</td>";
-                double fileSize = static_cast<double>(fileStat.st_size);
-                body << "<td>\t\t" << ResponseUtils::getFormatSize(fileSize) << "</td>" << "</tr>\n";
-            }
-            else
-                throw InternalServerError_500;
-        }
+		int count = fileList.size();
+		for (int i = 0; i < count; i++)
+		{
+			std::string fileName = fileList[i];
+			if (fileName == ".")
+				continue;
+			std::string filePath = dirPath + "/" + fileName;
+			if (stat(filePath.c_str(), &fileStat) == -1)
+				throw ServiceUnavailable_503;
+			if (stat(filePath.c_str(), &fileStat) == 0)
+			{
+				body << "<tr>" << "<td>";
+				if (S_ISDIR(fileStat.st_mode))
+					body << "<a href=\"" << fileName << "/\">" << std::left << fileName + "/" << "</a>";
+				else
+					body << std::setw(maxFileNameLength + 1) << std::left << fileName;
+				body << "</td><td>\t\t" << ResponseUtils::getFormattedTime(fileStat.st_mtime) << "</td>";
+				double fileSize = static_cast<double>(fileStat.st_size);
+				body << "<td>\t\t" << ResponseUtils::getFormatSize(fileSize) << "</td>" << "</tr>\n";
+			}
+			else
+				throw InternalServerError_500;
+		}
 		body << " </table> </pre>\n<hr>\n</body>\n</html>\n";
-        response.setStatusCode(OK_200);
-        response.setHeader("Date", ResponseUtils::getCurTime());
-        response.setHeader("Content-Type", "text/html");
-        response.setBody(body.str());
-        response.setHeader("Content-Length", web::toString(body.str().length())); // C++11 버전입니다.
-        response.setHeader("Connection", "close");
-    }
+		response.setStatusCode(OK_200);
+		response.setHeader("Date", ResponseUtils::getCurTime());
+		response.setHeader("Content-Type", "text/html");
+		response.setBody(body.str());
+		response.setHeader("Content-Length", web::toString(body.str().length())); // C++11 버전입니다.
+		response.setHeader("Connection", "close");
+	}
 }
 
-
-void printAllEnv() {
+void printAllEnv()
+{
 	std::cout << "REQUEST_METHOD: " << getenv("REQUEST_METHOD") << std::endl;
 	std::cout << "REQUEST_URI: " << getenv("REQUEST_URI") << std::endl;
 	std::cout << "QUERY_STRING: " << getenv("QUERY_STRING") << std::endl;
@@ -557,10 +572,10 @@ void printAllEnv() {
 	std::cout << "HTTP_KEEP_ALIVE: " << getenv("HTTP_KEEP_ALIVE") << std::endl;
 	std::cout << "HTTP_CONTENT_TYPE: " << getenv("HTTP_CONTENT_TYPE") << std::endl;
 	std::cout << "HTTP_CONTENT_LENGTH: " << getenv("HTTP_CONTENT_LENGTH") << std::endl;
-
 }
 
-void	ResponseHandle::setEnv(const RequestHandle &Req) {
+void ResponseHandle::setEnv(const RequestHandle &Req)
+{
 	std::string host = Req.getHost();
 	std::string uri = _httpUri;
 	std::string scriptName = _scriptName;
