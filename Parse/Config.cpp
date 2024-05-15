@@ -47,9 +47,14 @@ Config::~Config() {}
 
 ServerConfig Config::operator[](Port port) const {
     for (size_t i = 0; i < _servers.size(); ++i) {
-        if (_servers[i].getPortName() == port)
+        if (_servers[i].getPortName() == port && _servers[i].getServerName().empty())
             return _servers[i];
     }
+
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		if (_servers[i].getPortName() == port)
+			return _servers[i];
+	}
     throw std::runtime_error("This port doesn't match with any server");
 	// return _servers[0];
 }
