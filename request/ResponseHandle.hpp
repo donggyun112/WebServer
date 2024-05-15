@@ -8,6 +8,7 @@
 #include "Response.hpp"
 #include "../utils/Error.hpp"
 #include <iostream>
+#include <regex>
 
 class Response;
 
