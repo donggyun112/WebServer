@@ -4,16 +4,19 @@
 #include <unistd.h>
 #include "NResponseUtils.hpp"
 
-ResponseHandle::ResponseHandle()
-{
+ResponseHandle::ResponseHandle() : _isInitFromLocation(false) {
 }
 
 ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._response) {}
 
 ResponseHandle::~ResponseHandle() {}
 
-void ResponseHandle::clearAll()
-{
+
+bool ResponseHandle::isCGI() const {
+	return _loc.isCgi();
+}
+
+void	ResponseHandle::clearAll() {
 	_response.clear();
 	_filePath.clear();
 	_pathInfo.clear();
@@ -26,7 +29,9 @@ void ResponseHandle::clearAll()
 std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf)
 {
 	//
-	initPathFromLocation(Req, Conf);
+	if (_isInitFromLocation == false) {
+		initPathFromLocation(Req, Conf);
+	}
 	//
 	// std::cout << "Start to generate response" << std::endl;
 	int method = ResponseUtils::getMethodNumber(Req.getMethod());
@@ -92,67 +97,56 @@ bool ResponseUtils::isExtention(std::string httpPath)
 	return true;
 }
 
-std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc)
-{
-	std::string filePath;
-	std::string alias = loc.getAlias();
-	// std::cout << "in getFilePath : ServerRoot = " << serverRoot << std::endl;
-	// std::cout << "in getFilePath : httpUri = " << httpUri << std::endl;
-	// std::cout << "loc.getRoot : " << loc.getRoot() << std::endl;
-	if (!alias.empty() && httpUri.find(alias) == 0)
-	{
-		filePath = alias + httpUri.substr(alias.length());
-		std::cout << "1" << std::endl;
+
+std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc) {
+    std::string filePath;
+    std::string alias = loc.getAlias();
+
+
+    if (!alias.empty() && httpUri.find(alias) == 0) {
+        filePath = alias + httpUri.substr(alias.length());
+        std::cout << "1" << std::endl;
+    }
+
+	if (loc.isCgi()) {
+		if (httpUri.substr(0, httpUri.find_last_of('/')).find('.') != std::string::npos) {
+			_scriptName = httpUri.substr(0, httpUri.find_last_of('/'));
+			_pathInfo = httpUri.substr(httpUri.find_last_of('/'));
+			_httpUri = _scriptName;
+		} else {
+			_scriptName = httpUri;
+			_pathInfo = "";
+			_httpUri = _scriptName;
+		}
 	}
-	else if (ResponseUtils::isExtention(httpUri) == true)
-	{
-		// std::cout << "2" << std::endl;
-		if (loc.getFastcgiPass().empty() && loc.getPath().find('.') != std::string::npos)
-		{
-			// std::cout << "in getFilePath : " << __LINE__ << std::endl;
+	// else
+
+
+	if (httpUri.find(loc.getPath()) == std::string::npos || loc.getPath().find('.') != std::string::npos) {
+		std::cout << "1" << std::endl;
+		std::cout << "loc.getPath() : " << loc.getPath() << std::endl;
+		if (loc.isCgi() == true) {
+			filePath = serverRoot + loc.getFastcgiPass() + httpUri;
+		} else if (loc.getPath().find('.') != std::string::npos) {
+			// 상대경로 제거
+			filePath = serverRoot + loc.getRoot() + httpUri.substr(httpUri.find_last_of('/'));
+		}else {
 			filePath = serverRoot + loc.getRoot() + httpUri;
 		}
-		else if (loc.getFastcgiPass().empty() && loc.getPath().find('.') == std::string::npos)
-		{
-			filePath = serverRoot + httpUri;
-		}
-		else
-		{
-			// std::cout << "is CGI" << std::endl;
-			// std::cout << "in getFilePath : " << __LINE__ << std::endl;
-			loc.setCgi(true);
-			if (httpUri.substr(0, httpUri.find_last_of('/')).find('.') != std::string::npos)
-			{
-				_scriptName = httpUri.substr(0, httpUri.find_last_of('/'));
-				_pathInfo = httpUri.substr(httpUri.find_last_of('/'));
-				_httpUri = _scriptName;
-				// setenv("SCRIPT_NAME", _scriptName.c_str(), 1);
-				// setenv("PATH_INFO", _pathInfo.c_str(), 1);
-				filePath = serverRoot + loc.getFastcgiPass() + httpUri;
-			}
-			else
-			{
-				_scriptName = httpUri;
-				_pathInfo = "";
-				_httpUri = _scriptName;
-				// setenv("SCRIPT_NAME", _scriptName.c_str(), 1);
-				// setenv("PATH_INFO", _pathInfo.c_str(), 1);
-				filePath = serverRoot + loc.getFastcgiPass() + httpUri;
-			}
+	} else {
+		std::cout << "2" << std::endl;
+		if (loc.isCgi() == true) {
+			filePath = serverRoot + loc.getFastcgiPass() + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
+		} else {
+			std::cout << "HTTP URI : " << httpUri << std::endl;
+			std::cout << httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length()) << std::endl;
+			std::cout << "ROOT : " << loc.getPath() << std::endl;
+			filePath = serverRoot + loc.getRoot() + "/" + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
 		}
 	}
-	else if (ResponseUtils::isDirectory(serverRoot + httpUri) == true)
-	{
-		// std::cout << "in getFilePath : " << __LINE__ << std::endl;
-		filePath = serverRoot + httpUri;
-	}
-	else
-	{
-		std::cout << "4" << std::endl;
-		filePath = serverRoot + loc.getRoot() + httpUri.substr(loc.getRoot().length(), httpUri.length() - loc.getRoot().length());
-	}
-
-	return filePath;
+	filePath = ResponseUtils::normalizePath(filePath);
+	
+    return filePath;
 }
 
 bool ResponseUtils::isValidPath(const std::string &path)
@@ -272,11 +266,11 @@ std::string ResponseUtils::getContentType(const std::string &extension)
 		return "application/octet-stream";
 }
 
-bool ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf)
-{
+
+bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
+	_isInitFromLocation = true;
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
-	std::cout << "HTTPURL" << _httpUri << std::endl;
 	// Conf.setServerName(Req.getHost());
 
 	// URL 정규화
@@ -289,20 +283,35 @@ bool ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 		// _response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
 	}
 
-	_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
-	// std::cout << "Success to get location "<< _loc.getPath() << std::endl;
-	if (ResponseUtils::isMethodPossible(GET, _loc) == false)
-	{
+=
+		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
+		std::cout << "Location Path: " << _loc.getPath() << std::endl;
+		// std::cout << "Success to get location "<< _loc.getPath() << std::endl;
+	if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
 		throw MethodNotAllowed_405;
 		// _response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 	}
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
-	std::cout << "File Path: " << _filePath << std::endl;
-	if (!ResponseUtils::isValidPath(_filePath))
-	{
+	if (!ResponseUtils::isValidPath(_filePath)) {
 		throw BadRequest_400;
 		// _response = createErrorResponse(BadRequest_400, "Invalid request path.");
 	}
+
+	if (_filePath.length() > 1 && _filePath[_filePath.length() - 1] == '/') {
+		if (ResponseUtils::isDirectory(_filePath) == true) {
+			std::string tmpPath = _filePath + _loc.getIndex();
+			if (ResponseUtils::isExist(_filePath) == true) {
+				_filePath = tmpPath;
+			}
+		} else {
+			throw NotFound_404;
+		}
+	} else {
+		if (ResponseUtils::isExist(_filePath) == false) {
+			_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
+		}
+	}
+	std::cout << "File Path: " << _filePath << std::endl;
 	return true;
 }
 
@@ -330,11 +339,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 
 	// 인덱스 파일 설정
 	// std::cout << "Start to get file && isDirestory : " << ResponseUtils::isDirectory(_filePath) << std::endl;
-	std::string index = _loc.getIndex();
-	if (ResponseUtils::isDirectory(_filePath) && !index.empty())
-	{
-		_filePath += "/" + index;
-	}
+
 
 	// 파일 확장자 추출
 	// std::cout << "Start to get file extension" << std::endl;
@@ -342,10 +347,10 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 	// 파일 읽기
 	std::ifstream file(_filePath.c_str(), std::ios::binary);
 	// std::cout << "File Path: " << _filePath << std::endl;
-	if (file.is_open() && file.good())
-	{
-		// 파일 크기 확인
-		std::streamsize fileSize = ResponseUtils::getFileSize(file);
+
+    if (file.is_open() && file.good() && ResponseUtils::isDirectory(_filePath) == false) {
+        // 파일 크기 확인
+        std::streamsize fileSize = ResponseUtils::getFileSize(file);
 
 		// 파일 크기 제한 설정
 		const std::streamsize maxFileSize = 10 * 1024 * 1024;
@@ -602,3 +607,47 @@ void ResponseHandle::setEnv(const RequestHandle &Req)
 	setenv("HTTP_CONTENT_LENGTH", Req.getHeader("Content-Length").c_str(), 1);
 	setenv("BODY", Req.getBody().c_str(), 1);
 }
+
+std::string	ResponseHandle::getFilePath() const {
+	return _filePath;
+}
+
+std::string	ResponseHandle::getPathInfo() const {
+	return _pathInfo;
+}
+
+std::string	ResponseHandle::getScriptName() const {
+	return _scriptName;
+}
+
+std::string	ResponseHandle::getHttpUri() const {
+	return _httpUri;
+}
+
+std::string	ResponseHandle::getServerRoot() const {
+	return _serverRoot;
+}
+
+Port	ResponseHandle::getPort() const {
+	return _port;
+}
+
+LocationConfig	ResponseHandle::getLocation() const {
+	return _loc;
+}
+
+ResponseHandle&	ResponseHandle::operator=(const ResponseHandle &Copy) {
+	if (this == &Copy)
+		return *this;
+	_response = Copy._response;
+	_isInitFromLocation = Copy._isInitFromLocation;
+	_filePath = Copy._filePath;
+	_pathInfo = Copy._pathInfo;
+	_scriptName = Copy._scriptName;
+	_httpUri = Copy._httpUri;
+	_serverRoot = Copy._serverRoot;
+	_port = Copy._port;
+	_loc = Copy._loc;
+	return *this;
+}
+

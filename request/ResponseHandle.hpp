@@ -14,6 +14,7 @@ class Response;
 class ResponseHandle {
 	private:
 		// Response 		_response;
+		bool			_isInitFromLocation;
 		std::string 	_response;
 		std::string 	_filePath;
 		std::string 	_pathInfo;
@@ -22,8 +23,8 @@ class ResponseHandle {
 		std::string 	_serverRoot;
 		Port			_port;
 		LocationConfig	_loc;
-		bool 			initPathFromLocation(const RequestHandle &Req, Config &Conf);
 	public:
+		bool 			initPathFromLocation(const RequestHandle &Req, Config &Conf);
 		ResponseHandle();
 		ResponseHandle(const ResponseHandle &Copy);
 		~ResponseHandle();
@@ -41,5 +42,14 @@ class ResponseHandle {
 		void		clearAll();
 		void		setEnv(const RequestHandle &Req);
 		const std::string getResponse();
+		bool		isCGI() const;
+		std::string	getFilePath() const;
+		std::string	getPathInfo() const;
+		std::string	getScriptName() const;
+		std::string	getHttpUri() const;
+		std::string	getServerRoot() const;
+		Port		getPort() const;
+		LocationConfig	getLocation() const;
+		ResponseHandle& operator=(const ResponseHandle &Copy);
 };
 
