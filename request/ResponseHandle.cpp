@@ -347,19 +347,14 @@ std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
 			|| contentType.find("application/x-www-form-urlencoded") != std::string::npos) {
         if (!Req.getBody().empty()) {
 
-            // responseData = handleFormData(_filePath, Req); //_filePath만 하면 되는거같은데..?
-//cgi_pass /cgi
+            // responseData = handleFormData(_filePath, Req);
+
             if (responseData.empty())
                 throw InternalServerError_500;
 
             std::ifstream file(fileName);
-            if (file.is_open() && file.good()) {
-				std::streamsize fileSize = ResponseUtils::getFileSize(file);
-				const std::streamsize maxFileSize = 10 * 1024 * 1024; // server file 크기로 변경 예정
-				if (fileSize > maxFileSize)
-					throw PayloadTooLarge_413;
+            if (file.is_open() && file.good())
 				file.close();
-			}
 			else
 				throw InternalServerError_500;
         }
