@@ -583,40 +583,6 @@ void printAllEnv()
 	std::cout << "HTTP_CONTENT_LENGTH: " << getenv("HTTP_CONTENT_LENGTH") << std::endl;
 }
 
-void ResponseHandle::setEnv(const RequestHandle &Req)
-{
-	std::string host = Req.getHost();
-	std::string uri = _httpUri;
-	std::string scriptName = _scriptName;
-	std::string query = Req.getQuery();
-	std::string queryString = "";
-	std::string requestUri = Req.getUri();
-	std::string requestMethod = Req.getMethod();
-	std::string serverName = host;
-	std::string serverPort = web::toString(_port);
-	setenv("REQUEST_METHOD", requestMethod.c_str(), 1);
-	setenv("REQUEST_URI", requestUri.c_str(), 1);
-	setenv("QUERY_STRING", query.c_str(), 1);
-	setenv("SCRIPT_NAME", scriptName.c_str(), 1);
-	setenv("PATH_INFO", _pathInfo.c_str(), 1);
-	setenv("QUERY_STRING", query.c_str(), 1);
-	setenv("SERVER_NAME", serverName.c_str(), 1);
-	setenv("SERVER_PORT", serverPort.c_str(), 1);
-	setenv("HTTP_HOST", host.c_str(), 1);
-	setenv("HTTP_USER_AGENT", Req.getHeader("User-Agent").c_str(), 1);
-	setenv("HTTP_ACCEPT", Req.getHeader("Accept").c_str(), 1);
-	setenv("HTTP_ACCEPT_LANGUAGE", Req.getHeader("Accept-Language").c_str(), 1);
-	setenv("HTTP_ACCEPT_ENCODING", Req.getHeader("Accept-Encoding").c_str(), 1);
-	setenv("HTTP_ACCEPT_CHARSET", Req.getHeader("Accept-Charset").c_str(), 1);
-	setenv("HTTP_KEEP_ALIVE", Req.getHeader("Keep-Alive").c_str(), 1);
-	setenv("HTTP_CONNECTION", Req.getHeader("Connection").c_str(), 1);
-	setenv("HTTP_REFERER", Req.getHeader("Referer").c_str(), 1);
-	setenv("HTTP_COOKIE", Req.getHeader("Cookie").c_str(), 1);
-	setenv("HTTP_CONTENT_TYPE", Req.getHeader("Content-Type").c_str(), 1);
-	setenv("HTTP_CONTENT_LENGTH", Req.getHeader("Content-Length").c_str(), 1);
-	setenv("BODY", Req.getBody().c_str(), 1);
-}
-
 std::string	ResponseHandle::getFilePath() const {
 	return _filePath;
 }
