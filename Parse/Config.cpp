@@ -20,12 +20,17 @@ void    Config::parseConfig(const std::string filename)
         if (line.empty())
             continue;
         std::istringstream iss(line);
-        if (line.find("server") != std::string::npos && line[0] != '#')
+        std::string key;
+        std::string value;
+        iss >> key;
+        iss >> value;
+        if (key == "server"  && value == "{" && line[0] != '#')
         {
             file.seekg(-(line.length() + 1), std::ios::cur);
             ServerConfig server(file);
             // std::cout << "sec" << server.getServerName() << std::endl;
-            _servers.push_back(server);
+            if (server.isValid())
+                _servers.push_back(server);
         }
     }
     file.close();
