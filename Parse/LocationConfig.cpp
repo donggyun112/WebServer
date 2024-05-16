@@ -40,8 +40,6 @@ LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) :
             }
             if (path.empty())
                 continue;
-            else if (path[0] == '\\')
-                this->_path = path.substr(1, path.size() - 2);
             else
                 this->_path = path;
         } else if (key == "alias") {

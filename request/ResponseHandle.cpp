@@ -98,6 +98,7 @@ bool ResponseUtils::isExtention(std::string httpPath)
 }
 
 
+
 std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc) {
     std::string filePath;
     std::string alias = loc.getAlias();
@@ -125,10 +126,10 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 	if (httpUri.find(loc.getPath()) == std::string::npos || loc.getPath().find('.') != std::string::npos) {
 		std::cout << "1" << std::endl;
 		std::cout << "loc.getPath() : " << loc.getPath() << std::endl;
+		std::cout << "httpUri : " << httpUri << std::endl;
 		if (loc.isCgi() == true) {
-			filePath = serverRoot + loc.getFastcgiPass() + httpUri;
+			filePath = serverRoot + loc.getFastcgiPass() + httpUri.substr(httpUri.find_last_of('/'));
 		} else if (loc.getPath().find('.') != std::string::npos) {
-			// 상대경로 제거
 			filePath = serverRoot + loc.getRoot() + httpUri.substr(httpUri.find_last_of('/'));
 		}else {
 			filePath = serverRoot + loc.getRoot() + httpUri;
@@ -145,6 +146,9 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 		}
 	}
 	filePath = ResponseUtils::normalizePath(filePath);
+	if (ResponseUtils::isDirectory(filePath) && filePath[filePath.length() - 1] != '/') {
+		filePath += "/";
+	}
 	
     return filePath;
 }
@@ -283,7 +287,6 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 		// _response = createErrorResponse(InternalServerError_500, "Server configuration error: root directory not set.");
 	}
 
-=
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
 		std::cout << "Location Path: " << _loc.getPath() << std::endl;
 		// std::cout << "Success to get location "<< _loc.getPath() << std::endl;

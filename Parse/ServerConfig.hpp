@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include "LocationConfig.hpp"
 #include "../utils/utils.hpp"
+#include <regex>
 
 class ServerConfig
 {
@@ -62,6 +63,11 @@ public:
 	}
 	// LocationConfig에서 이걸 처리하는게 맞는지 모르겠음 보통이런건 request에서 처리하는게 맞는거 같은데
 
+	bool isConfPattern(const std::string& str) {
+    	// ~ \\.extension$ 확인
+    	std::regex pattern("^\\s*\\\\\\.\\w+\\$$");
+		return std::regex_match(str, pattern);
+	}
 
 	std::vector<std::string> getHttpUriToken(std::string httpPath) {
 		std::vector<std::string> tokens;
@@ -75,18 +81,31 @@ public:
 
     LocationConfig getLocation(std::string httpPath) {
         std::string extention;
+		
+		
         if (isExtention(httpPath))
 		{
+		
 			extention = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
-			for (size_t i = 0; i < _locations.size(); ++i) {
-				std::cout << "location path : " << _locations[i].getPath() << std::endl;
-				std::cout << "extention : " << extention << std::endl;
-				if (_locations[i].getPath().find('.') != std::string::npos && _locations[i].getPath() == extention.substr(0, _locations[i].getPath().length()))
-				{
+			extention = extention.substr(0, extention.find_first_of('/'));
+			// 정규식으로 만들기
+			extention = "\\" + extention + "$";
+			std::cout << "extention : " << extention << std::endl;
+			if (isConfPattern(extention)) {
+
+				for (size_t i = 0; i < _locations.size(); ++i) {
 					std::cout << "location path : " << _locations[i].getPath() << std::endl;
-					return _locations[i];
+					std::cout << "extention : " << extention << std::endl;
+					if (_locations[i].getPath() == extention)
+					{
+						std::cout << "location path : " << _locations[i].getPath() << std::endl;
+						return _locations[i];
+					}
 				}
+			} else {
+				std::cout << "sibal" << std::endl;
 			}
+			
 		}
         // std::cout << "extension string : " << extention << std::endl;
 		std::vector<std::string> tokens = getHttpUriToken(httpPath);
