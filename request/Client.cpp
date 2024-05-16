@@ -1,6 +1,7 @@
 #include "Client.hpp"
 
-Client::Client(Port port) : _port(port), _requestHandle(port) {};
+Client::Client(Port port) : _port(port), _requestHandle (port), _procPtr(NULL)
+{};
 
 Client::Client(const Client &Copy) : _port(Copy._port), _requestHandle(Copy._requestHandle) {};
 
@@ -10,7 +11,6 @@ void Client::clearAll() {
 }
 
 Client::~Client() {
-	delete _procPtr;
 	clearAll();
 }
 
