@@ -38,7 +38,7 @@ class Server
 		void updateControl();
 		int FDIndexing(FD fd);
 		void changeEvents(std::vector<struct kevent> &changeList, uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
-
+		int nonblocking();
 	public:
 		Server();
 		~Server();

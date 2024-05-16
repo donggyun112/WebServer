@@ -40,7 +40,6 @@ class ResponseHandle {
 		std::string	handleDeleteRequest();
 		void		setResponse(const std::string &response);
 		void		clearAll();
-		void		setEnv(const RequestHandle &Req);
 		const std::string getResponse();
 		bool		isCGI() const;
 		std::string	getFilePath() const;

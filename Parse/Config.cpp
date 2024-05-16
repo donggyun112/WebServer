@@ -28,6 +28,7 @@ void    Config::parseConfig(const std::string filename)
             _servers.push_back(server);
         }
     }
+    file.close();
 }
 
 void	Config::setServerName(std::string serverName)

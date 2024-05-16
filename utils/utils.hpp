@@ -10,6 +10,7 @@ typedef int FD;
 typedef unsigned int Port;
 typedef int Status;
 
+
 enum STATE { SUCCESS=0, FAILURE=-1 };
 
 namespace web {
@@ -104,6 +105,8 @@ enum Method {
 //  SmartPointer<Socket> tt(new Socket(), gc);
 //  Socket *sock = tt.get(); or tt->socket();
 //  FD fd = tt->socket();
+
+
 
 template <typename T>
 class SmartPointer {
