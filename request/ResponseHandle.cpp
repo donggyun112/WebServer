@@ -338,9 +338,12 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 	// 리다이렉트 처리
 
 	Response redirectResponse = handleRedirect(_loc);
+	std::cout << "RE\n";
 	if (redirectResponse.getStatusCode() != OK_200) {
 		std::cout << "what the fuck" << std::endl;
 		return redirectResponse.getResponses();
+	} else {
+		std::cout << "no Redirect" << std::endl;
 	}
 
 	// 인덱스 파일 설정
