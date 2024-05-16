@@ -187,9 +187,11 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 	if (!returnCode.empty() && !returnUrl.empty())
 	{
 		std::cout << "Redirected to: " << returnUrl << std::endl;
+		std::cout << "Status code : " << returnCode << std::endl;
 		int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
-		response.setHeader("Connection", "close");
+		response.setHeader("Connection", "Keep-Alive");
+		std::cout << response.getResponses() << std::endl;
 		return response;
 	}
 	response.setStatusCode(OK_200);
@@ -335,10 +337,11 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 	// std::cout << "Start to handle GET request" << std::endl;
 	// 리다이렉트 처리
 
-	// Response redirectResponse = handleRedirect(_loc);
-	// if (redirectResponse.getStatusCode() != OK_200) {
-	// 	return redirectResponse.getResponses();
-	// }
+	Response redirectResponse = handleRedirect(_loc);
+	if (redirectResponse.getStatusCode() != OK_200) {
+		std::cout << "what the fuck" << std::endl;
+		return redirectResponse.getResponses();
+	}
 
 	// 인덱스 파일 설정
 	// std::cout << "Start to get file && isDirestory : " << ResponseUtils::isDirectory(_filePath) << std::endl;
