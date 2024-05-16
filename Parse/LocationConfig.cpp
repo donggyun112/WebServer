@@ -9,7 +9,7 @@ void	LocationConfig::setCgi(bool cgi) {
 	_cgi = cgi;
 }
 
-LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) : _autoindex(false), _defaultIndex(defaultIndex) {
+LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) : _autoindex(false), _defaultIndex(defaultIndex), _cgi(false) {
     std::string     line;
     std::string     key, value;
 
@@ -40,8 +40,6 @@ LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) :
             }
             if (path.empty())
                 continue;
-            else if (path[0] == '\\')
-                this->_path = path.substr(1, path.size() - 2);
             else
                 this->_path = path;
         } else if (key == "alias") {
@@ -77,21 +75,19 @@ LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) :
             while (iss >> allow_methods) {
                 this->_allow_methods.push_back(allow_methods);
             }
-        } else if (key == "return_code") {
-            std::string return_code;
-            iss >> return_code;
-            if (return_code.empty())
-                continue;
-            else
-                this->_return_code = return_code;
-        } else if (key == "return_url") {
+        }
+        else if (key == "return") {
             std::string return_url;
+			std::string return_code;
+			iss >> return_code;
             iss >> return_url;
             if (return_url.empty())
                 continue;
             else
                 this->_return_url = return_url;
+				this->_return_code = return_code;
         } else if (key == "cgi_pass") {
+			setCgi(true);
             std::string fastcgi_pass;
             iss >> fastcgi_pass;
             if (fastcgi_pass.empty())
@@ -169,10 +165,22 @@ std::string                 LocationConfig::getPath() const { return this->_path
 
 std::string                 LocationConfig::getAlias() const { return _alias; }
 
-std::string                 LocationConfig::getRoot() const {
-    // if (_root.empty())
-    //     return ".";
-    return _root;
+std::string LocationConfig::getRoot() const {
+    std::string root = _root;
+    
+    // 경로 정규화
+    std::replace(root.begin(), root.end(), '\\', '/');
+    std::string::size_type pos = 0;
+    while ((pos = root.find("//", pos)) != std::string::npos) {
+        root.erase(pos, 1);
+    }
+    
+    // 마지막 슬래시 제거
+    if (!root.empty() && root.back() == '/') {
+        root.pop_back();
+    }
+    
+    return root;
 }
 
 std::string                 LocationConfig::getIndex() const {

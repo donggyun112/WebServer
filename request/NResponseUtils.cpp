@@ -40,9 +40,10 @@ std::string ResponseUtils::nomralizeUrl(const std::string &HTTP_uri) {
 	// //제거
 	std::string::size_type pos = 0;
 	while ((pos = normalizedUrl.find("//", pos)) != std::string::npos) {
+		std::cout << "pos: " << pos << std::endl;
 		normalizedUrl.erase(pos, 1);
 	}
-	return normalizedUrl;	
+	return normalizedUrl;
 }
 
 std::string ResponseUtils::normalizePath(const std::string &path) {
@@ -54,10 +55,10 @@ std::string ResponseUtils::normalizePath(const std::string &path) {
         normalizedPath.erase(pos, 1);
     }
     
-    // 경로의 마지막 문자가 '/'인 경우 제거
-    if (!normalizedPath.empty() && normalizedPath[normalizedPath.length() - 1] == '/') {
-        normalizedPath.erase(normalizedPath.length() - 1);
-    }
+    // // 경로의 마지막 문자가 '/'인 경우 제거
+    // if (!normalizedPath.empty() && normalizedPath[normalizedPath.length() - 1] == '/') {
+    //     normalizedPath.erase(normalizedPath.length() - 1);
+    // }
     
     // 상대경로 요소 제거
     while ((pos = normalizedPath.find("/../")) != std::string::npos) {
@@ -76,5 +77,14 @@ std::string ResponseUtils::normalizePath(const std::string &path) {
         normalizedPath.erase(pos, 2);
     }
     
+	std::cout << "normalizedPath: " << normalizedPath << std::endl;
     return normalizedPath;
+}
+
+bool ResponseUtils::isExist(const std::string &path) {
+	struct stat buf;
+	if (stat(path.c_str(), &buf) == 0) {
+		return true;
+	}
+	return false;
 }
