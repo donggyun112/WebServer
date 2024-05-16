@@ -190,7 +190,14 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 		std::cout << "Status code : " << returnCode << std::endl;
 		int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
-		response.setHeader("Connection", "Keep-Alive");
+		
+		// 캐쉬 무효화
+		response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+		response.setHeader("Pragma", "no-cache");
+		response.setHeader("Expires", "0");
+
+		response.setHeader("Connection", "close");
+		response.setBody("42Webserv Redirected");
 		std::cout << response.getResponses() << std::endl;
 		return response;
 	}
