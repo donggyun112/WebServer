@@ -77,7 +77,7 @@ std::string ResponseUtils::normalizePath(const std::string &path) {
         normalizedPath.erase(pos, 2);
     }
     
-	std::cout << "normalizedPath: " << normalizedPath << std::endl;
+	// std::cout << "normalizedPath: " << normalizedPath << std::endl;
     return normalizedPath;
 }
 
