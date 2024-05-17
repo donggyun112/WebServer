@@ -196,6 +196,7 @@ void Socket::autoActivate(int domain, int type, int protocol) {
     nonblocking();
     std::cout << "Socket non-blocking set" << std::endl;
     listen(10);
+
     std::cout << "Socket listening" << std::endl;
 	std::cout << "Host: " << _host << "Host IP: " << getSocketIP() << "Port: " << getPort() << "Protocol: " << getProtocolName() << std::endl;
 }

@@ -21,6 +21,7 @@ void Server::activateSocket(const Config &Conf) {
 
 int Server::nonblocking() {
     int flags = fcntl(_kq, F_GETFL, 0);
+
     if (flags == -1) {
         std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
         return FAILURE;
@@ -155,7 +156,6 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 				ptr->clearAll();
 				changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 				changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
-				disconnectClient(currEvent.ident);
 			}
 		}
 	}
