@@ -189,7 +189,14 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 		std::cout << "Status code : " << returnCode << std::endl;
 		int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
-		response.setHeader("Connection", "Keep-Alive");
+		
+		// 캐쉬 무효화
+		response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+		response.setHeader("Pragma", "no-cache");
+		response.setHeader("Expires", "0");
+
+		response.setHeader("Connection", "close");
+		response.setBody("42Webserv Redirected");
 		std::cout << response.getResponses() << std::endl;
 		return response;
 	}
@@ -506,7 +513,14 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 
 	struct stat fileStat;
 	std::stringstream body;
-	body << "<html>\n<head>\n<title> AutoIndex </title>\n</head>\n<body>\n";
+	body << "<html>\n<head>\n<title> AutoIndex </title>\n";
+	body << "<style>\n"
+		<< "th, td {\n"
+		<< "    padding-left: 10px;\n"
+		<< "    padding-right: 50px;\n"
+		<< "}\n"
+		<< "</style>\n"
+		<< "</head>\n<body>\n";
 	body << "<h1>Index of / </h1>\n";
 	body << "<hr> <pre>\n<table>\n<tr><th></th><th></th><th></th></tr>\n";
 
@@ -519,12 +533,8 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 	{
 		std::vector<std::string> fileList;
 		struct dirent *ent;
-		size_t maxFileNameLength = 0;
 		while ((ent = readdir(dir)) != NULL)
-		{
 			fileList.push_back(ent->d_name);
-			maxFileNameLength = std::max(maxFileNameLength, strlen(ent->d_name));
-		}
 		closedir(dir);
 
 		std::sort(fileList.begin(), fileList.end());
@@ -542,9 +552,9 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 			{
 				body << "<tr>" << "<td>";
 				if (S_ISDIR(fileStat.st_mode))
-					body << "<a href=\"" << fileName << "/\">" << std::left << fileName + "/" << "</a>";
+					body << "<a href=\"" << fileName << "/\">" << fileName + "/" << "</a>";
 				else
-					body << std::setw(maxFileNameLength + 1) << std::left << fileName;
+					body << fileName;
 				body << "</td><td>\t\t" << ResponseUtils::getFormattedTime(fileStat.st_mtime) << "</td>";
 				double fileSize = static_cast<double>(fileStat.st_size);
 				body << "<td>\t\t" << ResponseUtils::getFormatSize(fileSize) << "</td>" << "</tr>\n";
@@ -557,7 +567,7 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 		response.setHeader("Date", ResponseUtils::getCurTime());
 		response.setHeader("Content-Type", "text/html");
 		response.setBody(body.str());
-		response.setHeader("Content-Length", web::toString(body.str().length())); // C++11 버전입니다.
+		response.setHeader("Content-Length", web::toString(body.str().length()));
 		response.setHeader("Connection", "close");
 	}
 }

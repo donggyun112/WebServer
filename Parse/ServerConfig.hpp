@@ -94,8 +94,6 @@ public:
 			if (isConfPattern(extention)) {
 
 				for (size_t i = 0; i < _locations.size(); ++i) {
-					std::cout << "location path : " << _locations[i].getPath() << std::endl;
-					std::cout << "extention : " << extention << std::endl;
 					if (_locations[i].getPath() == extention)
 					{
 						std::cout << "location path : " << _locations[i].getPath() << std::endl;
