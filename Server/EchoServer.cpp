@@ -67,8 +67,9 @@ int Server::FDIndexing(FD fd) {
 //새로운 client를 만드는 프로세스이다. accept로 새로운 fd 할당, non-blocking 설정, client 클래스추가, 해당 fd 에 대한 읽기 쓰기 이벤트 만들기가 순차적으로 진행된다.
 void Server::addNewClient(FD fd) {
 	int newFD;
-	newFD = _serverSocketList[FDIndexing(fd)]->accept();
-	std::cout << "hi new client. | fd : " << newFD << std::endl << std::endl;
+	newFD = accept(fd, NULL, NULL);
+	// newFD = _serverSocketList[FDIndexing(fd)]->accept();
+	std::cout << "hi new client. | fd : " << newFD << std::endl;
 	Socket::nonblocking(newFD);
 	Client *Ptr = new Client(_serverSocketList[FDIndexing(fd)]->getPort());
 	_clientMap[newFD] = Ptr;
@@ -78,9 +79,9 @@ void Server::addNewClient(FD fd) {
 
 //kevent 를 통해서 이벤트를 죽이고 나서 해당 fd소켓을 닫아야 에러 이벤트가 발생하지 않는다. 그래서 kevent 를 실행하고 나서 해야하는 update를 한번에 관리하는 함수를 추가.
 void Server::updateControl() {
-	for (size_t i = 0; i < _closeList.size(); i++)
-		disconnectClient(_closeList[i]);
-	_closeList.clear();
+	// for (size_t i = 0; i < _closeList.size(); i++)
+	// 	disconnectClient(_closeList[i]);
+	// _closeList.clear();
 	_changeList.clear();
 }
 
@@ -90,12 +91,14 @@ void Server::run(const Config &Conf) {
 	struct kevent eventList[100];
 	while (true) {
 		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 100, NULL);
-		std::cerr << "---------Current event--------- num | " << eventNumber << std::endl;
+		// std::cerr << "---------Current event--------- num | " << eventNumber << std::endl;
+		updateControl();
 		if (eventNumber == -1)
 			throw std::runtime_error("asdf");
-		updateControl();
-		for (int i = 0; i < eventNumber; ++i)
+		for (int i = 0; i < eventNumber; ++i) {
+			std::cout << "Event occurred: " << eventList[i].ident << ": " << eventList[i].filter << std::endl;
 			eventHandling(eventList[i], Conf);
+		}
 	}
 }
 
@@ -106,26 +109,24 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 	ssize_t length;
 	
 	Conf.getNumberOfServer(); // -Wall -Extra -Error 플래그때문에 그냥 넣어놨음---------------
-
 	if (currEvent.flags & EV_ERROR) {
-		if (FDIndexing(currEvent.ident) >= 0) {
-			throw std::runtime_error("server_socket_error");
-		} else {
-			// _closeList.push_back(currEvent.ident);
-			changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
-			changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
-		}
+		std::cout << "Error Here" << std::endl;
+		return ;
 	} else if (currEvent.filter == EVFILT_READ) {
 		if (FDIndexing(currEvent.ident) >= 0) {
 			addNewClient(currEvent.ident);
 			return ;
 		}
 		length = recv(currEvent.ident, buffer.data(), buffer.size(), 0);
-		if (length < 0) return ;
+		if (length < 0) {
+			return ; 
+		}
 		else if (length == 0) {
-			changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
-			changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
-			_closeList.push_back(currEvent.ident);
+			std::cout << "Disconnect Client: " << currEvent.ident << std::endl;
+			// changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+			// changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+			disconnectClient(currEvent.ident);
+			// close(currEvent.ident);
 		} else {
 			Client *ptr = _clientMap[currEvent.ident];
 			ptr->setBuffer(buffer.data());
@@ -143,14 +144,11 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 		}
 	} else if (currEvent.filter == EVFILT_WRITE) {
 		Client *ptr = _clientMap[currEvent.ident];
-		int length = send(currEvent.ident, ptr->getResponse().c_str(), ptr->getResponse().length(), 0);
-		if (length < 0) {
-			changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-			changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-		} else if (length == 0) {
-			ptr->clearAll();
+		length = send(currEvent.ident, ptr->getResponse().c_str(), ptr->getResponse().length(), 0);
+		if (length <= 0) {
 			changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-			changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
+			changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+			disconnectClient(currEvent.ident);
 		} else {
 			ptr->cutResponse(length);
 			if (ptr->getResponse().length() == 0) {

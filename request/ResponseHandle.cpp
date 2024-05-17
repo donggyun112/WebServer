@@ -22,8 +22,7 @@ void	ResponseHandle::clearAll() {
 	_pathInfo.clear();
 	_scriptName.clear();
 	_httpUri.clear();
-	_serverRoot.clear();
-	_port = 0;
+	// _serverRoot.clear();
 }
 
 std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf)
@@ -135,13 +134,13 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 			filePath = serverRoot + loc.getRoot() + httpUri;
 		}
 	} else {
-		std::cout << "2" << std::endl;
+		// std::cout << "2" << std::endl;
 		if (loc.isCgi() == true) {
 			filePath = serverRoot + loc.getFastcgiPass() + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
 		} else {
-			std::cout << "HTTP URI : " << httpUri << std::endl;
+			// std::cout << "HTTP URI : " << httpUri << std::endl;
 			std::cout << httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length()) << std::endl;
-			std::cout << "ROOT : " << loc.getPath() << std::endl;
+			// std::cout << "ROOT : " << loc.getPath() << std::endl;
 			filePath = serverRoot + loc.getRoot() + "/" + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
 		}
 	}
@@ -297,7 +296,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 	}
 
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
-		std::cout << "Location Path: " << _loc.getPath() << std::endl;
+		// std::cout << "Location Path: " << _loc.getPath() << std::endl;
 		// std::cout << "Success to get location "<< _loc.getPath() << std::endl;
 	if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
 		throw MethodNotAllowed_405;
@@ -323,7 +322,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 			_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
 		}
 	}
-	std::cout << "File Path: " << _filePath << std::endl;
+	// std::cout << "File Path: " << _filePath << std::endl;
 	return true;
 }
 
@@ -345,12 +344,12 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 	// 리다이렉트 처리
 
 	Response redirectResponse = handleRedirect(_loc);
-	std::cout << "RE\n";
+	// std::cout << "RE\n";
 	if (redirectResponse.getStatusCode() != OK_200) {
 		std::cout << "what the fuck" << std::endl;
 		return redirectResponse.getResponses();
 	} else {
-		std::cout << "no Redirect" << std::endl;
+		// std::cout << "no Redirect" << std::endl;
 	}
 
 	// 인덱스 파일 설정
