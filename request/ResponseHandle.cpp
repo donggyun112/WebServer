@@ -22,8 +22,7 @@ void	ResponseHandle::clearAll() {
 	_pathInfo.clear();
 	_scriptName.clear();
 	_httpUri.clear();
-	_serverRoot.clear();
-	_port = 0;
+	// _serverRoot.clear();
 }
 
 std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf)
@@ -135,13 +134,13 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 			filePath = serverRoot + loc.getRoot() + httpUri;
 		}
 	} else {
-		std::cout << "2" << std::endl;
+		// std::cout << "2" << std::endl;
 		if (loc.isCgi() == true) {
 			filePath = serverRoot + loc.getFastcgiPass() + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
 		} else {
-			std::cout << "HTTP URI : " << httpUri << std::endl;
+			// std::cout << "HTTP URI : " << httpUri << std::endl;
 			std::cout << httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length()) << std::endl;
-			std::cout << "ROOT : " << loc.getPath() << std::endl;
+			// std::cout << "ROOT : " << loc.getPath() << std::endl;
 			filePath = serverRoot + loc.getRoot() + "/" + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
 		}
 	}
@@ -187,9 +186,18 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 	if (!returnCode.empty() && !returnUrl.empty())
 	{
 		std::cout << "Redirected to: " << returnUrl << std::endl;
+		std::cout << "Status code : " << returnCode << std::endl;
 		int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
+		
+		// 캐쉬 무효화
+		response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+		response.setHeader("Pragma", "no-cache");
+		response.setHeader("Expires", "0");
+
 		response.setHeader("Connection", "close");
+		response.setBody("42Webserv Redirected");
+		std::cout << response.getResponses() << std::endl;
 		return response;
 	}
 	response.setStatusCode(OK_200);
@@ -288,7 +296,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 	}
 
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
-		std::cout << "Location Path: " << _loc.getPath() << std::endl;
+		// std::cout << "Location Path: " << _loc.getPath() << std::endl;
 		// std::cout << "Success to get location "<< _loc.getPath() << std::endl;
 	if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
 		throw MethodNotAllowed_405;
@@ -314,7 +322,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 			_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
 		}
 	}
-	std::cout << "File Path: " << _filePath << std::endl;
+	// std::cout << "File Path: " << _filePath << std::endl;
 	return true;
 }
 
@@ -335,10 +343,14 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 	// std::cout << "Start to handle GET request" << std::endl;
 	// 리다이렉트 처리
 
-	// Response redirectResponse = handleRedirect(_loc);
-	// if (redirectResponse.getStatusCode() != OK_200) {
-	// 	return redirectResponse.getResponses();
-	// }
+	Response redirectResponse = handleRedirect(_loc);
+	// std::cout << "RE\n";
+	if (redirectResponse.getStatusCode() != OK_200) {
+		std::cout << "what the fuck" << std::endl;
+		return redirectResponse.getResponses();
+	} else {
+		// std::cout << "no Redirect" << std::endl;
+	}
 
 	// 인덱스 파일 설정
 	// std::cout << "Start to get file && isDirestory : " << ResponseUtils::isDirectory(_filePath) << std::endl;
@@ -368,9 +380,8 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 		response.setStatusCode(OK_200);
 		response.setHeader("Date", ResponseUtils::getCurTime());
 		response.setHeader("Content-Type", ResponseUtils::getContentType(extension));
-		response.setBody(body);
 		response.setHeader("Content-Length", web::toString(body.length()));
-		response.setHeader("Connection", "keep-alive");
+		response.setHeader("Connection", "Keep-Alive");
 	}
 	else
 	{
@@ -501,7 +512,14 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 
 	struct stat fileStat;
 	std::stringstream body;
-	body << "<html>\n<head>\n<title> AutoIndex </title>\n</head>\n<body>\n";
+	body << "<html>\n<head>\n<title> AutoIndex </title>\n";
+	body << "<style>\n"
+		<< "th, td {\n"
+		<< "    padding-left: 10px;\n"
+		<< "    padding-right: 50px;\n"
+		<< "}\n"
+		<< "</style>\n"
+		<< "</head>\n<body>\n";
 	body << "<h1>Index of / </h1>\n";
 	body << "<hr> <pre>\n<table>\n<tr><th></th><th></th><th></th></tr>\n";
 
@@ -514,12 +532,8 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 	{
 		std::vector<std::string> fileList;
 		struct dirent *ent;
-		size_t maxFileNameLength = 0;
 		while ((ent = readdir(dir)) != NULL)
-		{
 			fileList.push_back(ent->d_name);
-			maxFileNameLength = std::max(maxFileNameLength, strlen(ent->d_name));
-		}
 		closedir(dir);
 
 		std::sort(fileList.begin(), fileList.end());
@@ -537,9 +551,9 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 			{
 				body << "<tr>" << "<td>";
 				if (S_ISDIR(fileStat.st_mode))
-					body << "<a href=\"" << fileName << "/\">" << std::left << fileName + "/" << "</a>";
+					body << "<a href=\"" << fileName << "/\">" << fileName + "/" << "</a>";
 				else
-					body << std::setw(maxFileNameLength + 1) << std::left << fileName;
+					body << fileName;
 				body << "</td><td>\t\t" << ResponseUtils::getFormattedTime(fileStat.st_mtime) << "</td>";
 				double fileSize = static_cast<double>(fileStat.st_size);
 				body << "<td>\t\t" << ResponseUtils::getFormatSize(fileSize) << "</td>" << "</tr>\n";
@@ -552,7 +566,7 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 		response.setHeader("Date", ResponseUtils::getCurTime());
 		response.setHeader("Content-Type", "text/html");
 		response.setBody(body.str());
-		response.setHeader("Content-Length", web::toString(body.str().length())); // C++11 버전입니다.
+		response.setHeader("Content-Length", web::toString(body.str().length()));
 		response.setHeader("Connection", "close");
 	}
 }
@@ -575,40 +589,6 @@ void printAllEnv()
 	std::cout << "HTTP_KEEP_ALIVE: " << getenv("HTTP_KEEP_ALIVE") << std::endl;
 	std::cout << "HTTP_CONTENT_TYPE: " << getenv("HTTP_CONTENT_TYPE") << std::endl;
 	std::cout << "HTTP_CONTENT_LENGTH: " << getenv("HTTP_CONTENT_LENGTH") << std::endl;
-}
-
-void ResponseHandle::setEnv(const RequestHandle &Req)
-{
-	std::string host = Req.getHost();
-	std::string uri = _httpUri;
-	std::string scriptName = _scriptName;
-	std::string query = Req.getQuery();
-	std::string queryString = "";
-	std::string requestUri = Req.getUri();
-	std::string requestMethod = Req.getMethod();
-	std::string serverName = host;
-	std::string serverPort = web::toString(_port);
-	setenv("REQUEST_METHOD", requestMethod.c_str(), 1);
-	setenv("REQUEST_URI", requestUri.c_str(), 1);
-	setenv("QUERY_STRING", query.c_str(), 1);
-	setenv("SCRIPT_NAME", scriptName.c_str(), 1);
-	setenv("PATH_INFO", _pathInfo.c_str(), 1);
-	setenv("QUERY_STRING", query.c_str(), 1);
-	setenv("SERVER_NAME", serverName.c_str(), 1);
-	setenv("SERVER_PORT", serverPort.c_str(), 1);
-	setenv("HTTP_HOST", host.c_str(), 1);
-	setenv("HTTP_USER_AGENT", Req.getHeader("User-Agent").c_str(), 1);
-	setenv("HTTP_ACCEPT", Req.getHeader("Accept").c_str(), 1);
-	setenv("HTTP_ACCEPT_LANGUAGE", Req.getHeader("Accept-Language").c_str(), 1);
-	setenv("HTTP_ACCEPT_ENCODING", Req.getHeader("Accept-Encoding").c_str(), 1);
-	setenv("HTTP_ACCEPT_CHARSET", Req.getHeader("Accept-Charset").c_str(), 1);
-	setenv("HTTP_KEEP_ALIVE", Req.getHeader("Keep-Alive").c_str(), 1);
-	setenv("HTTP_CONNECTION", Req.getHeader("Connection").c_str(), 1);
-	setenv("HTTP_REFERER", Req.getHeader("Referer").c_str(), 1);
-	setenv("HTTP_COOKIE", Req.getHeader("Cookie").c_str(), 1);
-	setenv("HTTP_CONTENT_TYPE", Req.getHeader("Content-Type").c_str(), 1);
-	setenv("HTTP_CONTENT_LENGTH", Req.getHeader("Content-Length").c_str(), 1);
-	setenv("BODY", Req.getBody().c_str(), 1);
 }
 
 std::string	ResponseHandle::getFilePath() const {

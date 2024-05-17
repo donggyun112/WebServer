@@ -77,7 +77,7 @@ std::string ResponseUtils::normalizePath(const std::string &path) {
         normalizedPath.erase(pos, 2);
     }
     
-	std::cout << "normalizedPath: " << normalizedPath << std::endl;
+	// std::cout << "normalizedPath: " << normalizedPath << std::endl;
     return normalizedPath;
 }
 
@@ -87,4 +87,28 @@ bool ResponseUtils::isExist(const std::string &path) {
 		return true;
 	}
 	return false;
+}
+
+
+std::string ResponseUtils::generateETag(const std::string& content) {
+        unsigned long hash = 5381;
+        int c;
+        for (size_t i = 0; i < content.length(); ++i) {
+            c = content[i];
+            hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+        }
+        std::ostringstream oss;
+        oss << "\"" << hash << "\"";
+        return oss.str();
+}
+
+std::string ResponseUtils::getLastModified(const std::string& filePath)
+{
+	struct stat fileInfo;
+	if (stat(filePath.c_str(), &fileInfo) == 0) {
+		char buffer[80];
+		strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&fileInfo.st_mtime));
+		return std::string(buffer);
+    }
+    return "";
 }

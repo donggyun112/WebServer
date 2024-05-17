@@ -106,7 +106,8 @@ FD Socket::accept() const {
     if (Client_Socket == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // 클라이언트 연결 요청이 없는 경우, 다른 작업을 수행하거나 잠시 대기할 수 있습니다.
-            return Client_Socket;
+            // return Client_Socket;
+            throw std::runtime_error("Error: Failed to accept socket");
         } else {
             // 실제 에러 발생 시 예외 처리합니다.
             std::cerr << "Error: Failed to accept socket. Error code: " << errno << std::endl;
@@ -134,13 +135,15 @@ Status Socket::close() {
 
 /* Socket 비동기 활성화 */
 Status Socket::nonblocking() {
-    int flags = Socket::getSocketOPT(_listenSocket);
-    if (flags == -1) {
-        std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
-        return FAILURE;
-    }
+    // int flags = Socket::getSocketOPT(_listenSocket);
+    // if (flags == -1) {
+    //     std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
+    //     return FAILURE;
+    // }
+    int flags = fcntl(_listenSocket, F_GETFL, 0);
 
     flags |= O_NONBLOCK;
+    flags |= O_CLOEXEC;
     if (fcntl(_listenSocket, F_SETFL, flags) == -1) {
         std::cerr << "Error: Failed to set socket flags. Error code: " << errno << std::endl;
         return FAILURE;
@@ -149,13 +152,15 @@ Status Socket::nonblocking() {
 }
 
 Status Socket::nonblocking(const FD &socket) {
-    int flags = Socket::getSocketOPT(socket);
-    if (flags == -1) {
-        std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
-        return FAILURE;
-    }
+    // int flags = Socket::getSocketOPT(socket);
+    // if (flags == -1) {
+    //     std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
+    //     return FAILURE;
+    // }
+    int flags = fcntl(socket, F_GETFL, 0);
 
     flags |= O_NONBLOCK;
+    flags |= O_CLOEXEC;
     if (fcntl(socket, F_SETFL, flags) == -1) {
         std::cerr << "Error: Failed to set socket flags. Error code: " << errno << std::endl;
         return FAILURE;
@@ -174,9 +179,10 @@ void Socket::setSocketOption(int level, int option_name, int opt) {
 }
 
 void Socket::__init__SocketoptAuto(int opt) {
+    (void)opt;
     setSocketOption(SOL_SOCKET, SO_REUSEADDR, opt);
-    setSocketOption(SOL_SOCKET, SO_REUSEPORT, opt);
-    setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt);
+    // setSocketOption(SOL_SOCKET, SO_REUSEPORT, opt);
+    // setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt);
 }
 
 /* Socket 자동 활성화 */
@@ -185,11 +191,11 @@ void Socket::autoActivate(int domain, int type, int protocol) {
     std::cout << "Socket activated" << std::endl;
     __init__SocketoptAuto(1);
     std::cout << "Socket options set" << std::endl;
-    nonblocking();
-    std::cout << "Socket non-blocking set" << std::endl;
     bind();
     std::cout << "Socket bound" << std::endl;
-    listen(5);
+    nonblocking();
+    std::cout << "Socket non-blocking set" << std::endl;
+    listen(10);
     std::cout << "Socket listening" << std::endl;
 	std::cout << "Host: " << _host << "Host IP: " << getSocketIP() << "Port: " << getPort() << "Protocol: " << getProtocolName() << std::endl;
 }

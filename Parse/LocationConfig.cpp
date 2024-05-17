@@ -75,20 +75,17 @@ LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) :
             while (iss >> allow_methods) {
                 this->_allow_methods.push_back(allow_methods);
             }
-        } else if (key == "return_code") {
-            std::string return_code;
-            iss >> return_code;
-            if (return_code.empty())
-                continue;
-            else
-                this->_return_code = return_code;
-        } else if (key == "return_url") {
+        }
+        else if (key == "return") {
             std::string return_url;
+			std::string return_code;
+			iss >> return_code;
             iss >> return_url;
             if (return_url.empty())
                 continue;
             else
                 this->_return_url = return_url;
+				this->_return_code = return_code;
         } else if (key == "cgi_pass") {
 			setCgi(true);
             std::string fastcgi_pass;
