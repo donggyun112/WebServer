@@ -55,6 +55,14 @@ void Server::disconnectClient(int fd) {
 	_clientMap[fd] = NULL;
 }
 
+time_t Server::setConnectTime(int sec) {
+	struct timespec timeout;
+
+	timeout.tv_sec = sec; // 60초 타임아웃 설정
+	timeout.tv_nsec = 0;	
+	return timeout.tv_sec;
+}
+
 //Socket class 는 벡터로 관리되고 있기 때문에, fd 를 입력했을 때 해당 fd 를 가진 class 의 인덱스를 반환하는 함수를 만들었음.
 int Server::FDIndexing(FD fd) {
 	for (size_t i = 0; i < _serverSocketList.size(); ++i) {
@@ -75,13 +83,11 @@ void Server::addNewClient(FD fd) {
 	_clientMap[newFD] = Ptr;
 	changeEvents(_changeList, newFD, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	changeEvents(_changeList, newFD, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, NULL);
+	// changeEvents(_changeList, newFD, EVFILT_TIMER, EV_ADD | EV_ONESHOT, NOTE_SECONDS, setConnectTime(5), NULL);
 }
 
 //kevent 를 통해서 이벤트를 죽이고 나서 해당 fd소켓을 닫아야 에러 이벤트가 발생하지 않는다. 그래서 kevent 를 실행하고 나서 해야하는 update를 한번에 관리하는 함수를 추가.
 void Server::updateControl() {
-	// for (size_t i = 0; i < _closeList.size(); i++)
-	// 	disconnectClient(_closeList[i]);
-	// _closeList.clear();
 	_changeList.clear();
 }
 
@@ -110,23 +116,21 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 	
 	Conf.getNumberOfServer(); // -Wall -Extra -Error 플래그때문에 그냥 넣어놨음---------------
 	if (currEvent.flags & EV_ERROR) {
-		std::cout << "Error Here" << std::endl;
 		return ;
-	} else if (currEvent.filter == EVFILT_READ) {
+	}
+	if (currEvent.filter == EVFILT_TIMER)
+		disconnectClient(currEvent.ident);
+	else if (currEvent.filter == EVFILT_READ) {
 		if (FDIndexing(currEvent.ident) >= 0) {
 			addNewClient(currEvent.ident);
 			return ;
 		}
-		length = recv(currEvent.ident, buffer.data(), buffer.size(), 0);
-		if (length < 0) {
+		length = read(currEvent.ident, buffer.data(), buffer.size());
+		if (length < 0)
 			return ; 
-		}
-		else if (length == 0) {
+		if (length == 0) {
 			std::cout << "Disconnect Client: " << currEvent.ident << std::endl;
-			// changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-			// changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			disconnectClient(currEvent.ident);
-			// close(currEvent.ident);
 		} else {
 			Client *ptr = _clientMap[currEvent.ident];
 			ptr->setBuffer(buffer.data());
@@ -146,15 +150,20 @@ void Server::eventHandling(struct kevent &currEvent, const Config &Conf) {
 		Client *ptr = _clientMap[currEvent.ident];
 		length = send(currEvent.ident, ptr->getResponse().c_str(), ptr->getResponse().length(), 0);
 		if (length <= 0) {
-			changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-			changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 			disconnectClient(currEvent.ident);
 		} else {
 			ptr->cutResponse(length);
 			if (ptr->getResponse().length() == 0) {
-				ptr->clearAll();
-				changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-				changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
+				if (ptr->getIsKeepAlive() == false) {
+					std::cout << "=============================================== close" << std::endl;
+					disconnectClient(currEvent.ident);
+				} else {
+					ptr->clearAll();
+					changeEvents(_changeList, currEvent.ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+					changeEvents(_changeList, currEvent.ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
+					changeEvents(_changeList, currEvent.ident, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL);
+					changeEvents(_changeList, currEvent.ident, EVFILT_TIMER, EV_ADD | EV_ONESHOT, NOTE_SECONDS, setConnectTime(5), NULL);
+				}
 			}
 		}
 	}
