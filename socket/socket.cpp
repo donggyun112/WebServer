@@ -142,9 +142,7 @@ Status Socket::nonblocking() {
     // }
     int flags = fcntl(_listenSocket, F_GETFL, 0);
 
-    flags |= O_NONBLOCK;
-    flags |= O_CLOEXEC;
-    if (fcntl(_listenSocket, F_SETFL, flags) == -1) {
+    if (fcntl(_listenSocket, F_SETFL, flags | O_NONBLOCK) == -1) {
         std::cerr << "Error: Failed to set socket flags. Error code: " << errno << std::endl;
         return FAILURE;
     }
@@ -159,9 +157,7 @@ Status Socket::nonblocking(const FD &socket) {
     // }
     int flags = fcntl(socket, F_GETFL, 0);
 
-    flags |= O_NONBLOCK;
-    flags |= O_CLOEXEC;
-    if (fcntl(socket, F_SETFL, flags) == -1) {
+    if (fcntl(socket, F_SETFL, flags | O_NONBLOCK) == -1) {
         std::cerr << "Error: Failed to set socket flags. Error code: " << errno << std::endl;
         return FAILURE;
     }
