@@ -21,5 +21,7 @@ namespace ResponseUtils {
 	std::string	getFileExtension(const std::string &filePath);
 	std::string getFormattedTime(time_t time);
 	std::string getFormatSize(double size);
+	std::string getLastModified(const std::string& filePath);
+    std::string generateETag(const std::string& content);
 }
 #endif

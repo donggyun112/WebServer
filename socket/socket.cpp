@@ -181,8 +181,8 @@ void Socket::setSocketOption(int level, int option_name, int opt) {
 void Socket::__init__SocketoptAuto(int opt) {
     (void)opt;
     setSocketOption(SOL_SOCKET, SO_REUSEADDR, opt);
-    setSocketOption(SOL_SOCKET, SO_REUSEPORT, opt);
-    setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt);
+    // setSocketOption(SOL_SOCKET, SO_REUSEPORT, opt);
+    // setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt);
 }
 
 /* Socket 자동 활성화 */
@@ -191,11 +191,12 @@ void Socket::autoActivate(int domain, int type, int protocol) {
     std::cout << "Socket activated" << std::endl;
     __init__SocketoptAuto(1);
     std::cout << "Socket options set" << std::endl;
-    nonblocking();
-    std::cout << "Socket non-blocking set" << std::endl;
     bind();
     std::cout << "Socket bound" << std::endl;
-    listen(1000);
+    nonblocking();
+    std::cout << "Socket non-blocking set" << std::endl;
+    listen(10);
+
     std::cout << "Socket listening" << std::endl;
 	std::cout << "Host: " << _host << "Host IP: " << getSocketIP() << "Port: " << getPort() << "Protocol: " << getProtocolName() << std::endl;
 }

@@ -1,0 +1,246 @@
+** SIEGE 4.1.6
+** Preparing 25 concurrent users for battle.
+The server is now under siege...
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] unable to write to socket sock.c:733: Broken pipe
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: read error Connection reset by peer sock.c:635: Connection reset by peer
+[[1;33merror[0m] socket: unable to connect sock.c:282: Connection reset by peer
+
+Lifting the server siege...
+Transactions:		       16216 hits
+Availability:		       98.61 %
+Elapsed time:		       19.66 secs
+Data transferred:	        0.00 MB
+Response time:		        0.01 secs
+Transaction rate:	      824.82 trans/sec
+Throughput:		        0.00 MB/sec
+Concurrency:		        9.69
+Successful transactions:       16216
+Failed transactions:	         228
+Longest transaction:	        6.71
+Shortest transaction:	        0.00
+ 

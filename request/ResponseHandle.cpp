@@ -380,9 +380,8 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 		response.setStatusCode(OK_200);
 		response.setHeader("Date", ResponseUtils::getCurTime());
 		response.setHeader("Content-Type", ResponseUtils::getContentType(extension));
-		response.setBody(body);
 		response.setHeader("Content-Length", web::toString(body.length()));
-		response.setHeader("Connection", "keep-alive");
+		response.setHeader("Connection", "Keep-Alive");
 	}
 	else
 	{
