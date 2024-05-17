@@ -10,7 +10,8 @@ RequestHandle::RequestHandle(const RequestHandle &Copy) :
     _request(Copy.getRequest()),
     _port(Copy.getPort()),
     _readStatus(Copy._readStatus),
-    _responseStatus(Copy._responseStatus) {}
+    _responseStatus(Copy._responseStatus),
+    _isKeepAlive(Copy._isKeepAlive) {}
 
 RequestHandle::~RequestHandle() {}
 
@@ -43,6 +44,10 @@ std::string RequestHandle::getHeader(const std::string& key) const {
 
 std::string RequestHandle::getBody() const {
     return _request._body;
+}
+
+bool RequestHandle::getIsKeepAlive() const {
+    return _isKeepAlive;
 }
 
 std::string RequestHandle::getCookie(const std::string& key) const {
@@ -106,6 +111,8 @@ void RequestHandle::setRequest() {
             _request._contentLength = 0;
         if (_request._headers.find("Cookie") != _request._headers.end())
             HttpRequest::setCookie(_request);
+        if (_request._headers["Connection"] == "close")
+            _isKeepAlive = false;
         _readStatus = READ_HEADER_DONE;
 
     }
@@ -156,6 +163,7 @@ void RequestHandle::clearAll()
     clearRequest();
     _buffer.clear();
     _readStatus = READ_NOT_DONE;
+    _isKeepAlive = true;
     _responseStatus = 0;
 
     //for test
@@ -168,6 +176,3 @@ void RequestHandle::printAllHeaders() const{
         std::cout << it->first << ": " << it->second << std::endl;
     }
 }
-
-
-

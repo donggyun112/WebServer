@@ -37,6 +37,7 @@ class RequestHandle {
         Port         _port;
         int         _readStatus;
         int         _responseStatus;
+        bool        _isKeepAlive;
         std::string _tempResult;
         RequestHandle();
     public:
@@ -53,6 +54,7 @@ class RequestHandle {
         std::string     		getHeader(const std::string& key) const;
         std::string     		getCookie(const std::string& key) const;
         std::string     		getBody() const;
+        bool               		getIsKeepAlive() const;   
         const Request   		&getRequest() const;
         int             		getResponseStatus() const;
         void                    setResponseStatus(int num) {_responseStatus = num;}

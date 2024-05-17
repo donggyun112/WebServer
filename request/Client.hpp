@@ -32,6 +32,7 @@ class Client {
 		void clearAll();
 		void setBuffer(const std::string &buffer);
 		int  getReadStatus() const;
+		bool getIsKeepAlive() const;
 		void generateResponse(Config Conf);
 		void handleCGI();
 		void setEnv(const RequestHandle &Req);

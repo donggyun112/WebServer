@@ -42,6 +42,10 @@ int Client::getReadStatus() const {
 	return _requestHandle.getReadStatus();
 }
 
+bool Client::getIsKeepAlive() const {
+	return _requestHandle.getIsKeepAlive();
+}
+
 
 void	Client::setEnv(const RequestHandle &Req) {
 	std::string host = Req.getHost();
