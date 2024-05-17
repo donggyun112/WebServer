@@ -20,7 +20,8 @@ void Server::activateSocket(const Config &Conf) {
 }
 
 int Server::nonblocking() {
-    int flags = Socket::getSocketOPT(_kq);
+    int flags = fcntl(_kq, F_GETFL, 0);
+
     if (flags == -1) {
         std::cerr << "Error: Failed to get socket flags. Error code: " << errno << std::endl;
         return FAILURE;
