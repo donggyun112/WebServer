@@ -30,7 +30,7 @@ class ResponseHandle {
 		ResponseHandle(const ResponseHandle &Copy);
 		~ResponseHandle();
 		std::string	generateHTTPFullString(const RequestHandle &Req, Config &Conf);
-		std::string	handleGetRequest(const RequestHandle &Req);
+		std::string	handleGetRequest(const RequestHandle &Req, int maxBodySize);
 		std::string handlePostRequest(const RequestHandle &Req);
 		Response	handleMethodNotAllowed();
 		std::string handleFormData(const std::string &cgiPath, const RequestHandle &Req);
