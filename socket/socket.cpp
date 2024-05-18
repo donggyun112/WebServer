@@ -99,15 +99,15 @@ Status Socket::listen(size_t backlog) {
     return SUCCESS;
 }
 
-FD Socket::accept() const {
+FD Socket::accept(FD _listenSocket) {
     FD Client_Socket = -1;
 
     Client_Socket = ::accept(_listenSocket, NULL, NULL);
     if (Client_Socket == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // 클라이언트 연결 요청이 없는 경우, 다른 작업을 수행하거나 잠시 대기할 수 있습니다.
-            // return Client_Socket;
-            throw std::runtime_error("Error: Failed to accept socket");
+            return Client_Socket;
+            // throw std::runtime_error("Error: Failed to accept socket");
         } else {
             // 실제 에러 발생 시 예외 처리합니다.
             std::cerr << "Error: Failed to accept socket. Error code: " << errno << std::endl;
@@ -174,11 +174,20 @@ void Socket::setSocketOption(int level, int option_name, int opt) {
     }
 }
 
+int setReceiveBufferSize(FD _fd, int size) {
+	if (setsockopt(_fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size)) == -1) {
+		std::cerr << "Error setting socket receive buffer size: " << strerror(errno) << std::endl;
+		return -1;
+	}
+	return 0;
+}
+
 void Socket::__init__SocketoptAuto(int opt) {
     (void)opt;
     setSocketOption(SOL_SOCKET, SO_REUSEADDR, opt);
+    setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt);
+	setReceiveBufferSize(_listenSocket, 1024);
     // setSocketOption(SOL_SOCKET, SO_REUSEPORT, opt);
-    // setSocketOption(SOL_SOCKET, SO_KEEPALIVE, opt);
 }
 
 /* Socket 자동 활성화 */
@@ -191,7 +200,7 @@ void Socket::autoActivate(int domain, int type, int protocol) {
     std::cout << "Socket bound" << std::endl;
     nonblocking();
     std::cout << "Socket non-blocking set" << std::endl;
-    listen(10);
+    listen(1024);
 
     std::cout << "Socket listening" << std::endl;
 	std::cout << "Host: " << _host << "Host IP: " << getSocketIP() << "Port: " << getPort() << "Protocol: " << getProtocolName() << std::endl;

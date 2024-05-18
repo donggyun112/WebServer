@@ -39,7 +39,7 @@ std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Con
 	{
 	case GET:
 		// std::cout << "Goto GET" << std::endl;
-		_response = handleGetRequest(Req, Conf.getServerConfig(_port, Req.getHost()).getClientMaxBodySize());
+		_response = handleGetRequest(Req);
 		return _response;
 	case POST:
 		std::cout << "Goto POST" << std::endl;
@@ -326,7 +326,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 	return true;
 }
 
-std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, int maxBodySize)
+std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 {
 	Response response;
 	if (_loc.isCgi() == true)
@@ -368,8 +368,8 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, int maxBo
         std::streamsize fileSize = ResponseUtils::getFileSize(file);
 
 		// 파일 크기 제한 설정
-		// const std::streamsize maxFileSize = 10 * 1024 * 1024;
-		if (fileSize > maxBodySize)
+		const std::streamsize maxFileSize = 10 * 1024 * 1024;
+		if (fileSize > maxFileSize)
 		{
 			throw PayloadTooLarge_413;
 		}
@@ -380,7 +380,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, int maxBo
 		response.setStatusCode(OK_200);
 		response.setHeader("Date", ResponseUtils::getCurTime());
 		response.setHeader("Content-Type", ResponseUtils::getContentType(extension));
-		response.setBody(" hi ");
+		response.setBody(body);
 		response.setHeader("Content-Length", web::toString(body.length()));
 		// response.setHeader("Connection", "keep-alive");
 		response.setHeader("Connection", "close");
@@ -569,7 +569,7 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 		response.setHeader("Content-Type", "text/html");
 		response.setBody(body.str());
 		response.setHeader("Content-Length", web::toString(body.str().length()));
-		response.setHeader("Connection", "close");
+		response.setHeader("Connection", "keep-alive");
 	}
 }
 

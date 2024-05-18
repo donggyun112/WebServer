@@ -38,7 +38,7 @@ public:
 	Status bind();
 	Status listen(size_t backlog);
 	Status close();
-	FD accept() const;
+	static	FD accept(FD _listenSocket);
 
 	void			__init__SocketoptAuto(int opt);
 
