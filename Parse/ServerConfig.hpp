@@ -28,6 +28,7 @@ public:
     ServerConfig(std::ifstream &file);
     ~ServerConfig();
     std::unordered_map<int, std::string> parseErrorPages(std::istringstream &iss);
+	int getClientMaxBodySize() const;
     std::string getServerName() const;
     std::string getPath() const { 
 		return _path;
