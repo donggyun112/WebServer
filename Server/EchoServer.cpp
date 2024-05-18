@@ -162,7 +162,8 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
         if (length < 0) {
 			// 오류 발생 시 클라이언트 연결 종료
 			std::cerr << "Error reading from client: " << clientFd << std::endl;
-			disconnectClient(clientFd);
+			delayResponse(0.0002f);
+			// disconnectClient(clientFd);
 			// 잠시 대기
 			return;
         } else if (length == 0) {
@@ -216,7 +217,7 @@ void Server::run(const Config &Conf) {
             
             if (eventList[i].flags & EV_ERROR) {
                 std::cout << "Event error occurred" << std::endl;
-				disconnectClient(eventList[i].ident);
+				// disconnectClient(eventList[i].ident);
                 break;
             }
             
@@ -265,8 +266,6 @@ void Server::handleClientWrite(FD clientFd, const Config &Conf) {
     
     if (ptr->getResponse().length() == 0) {
         if (!ptr->getIsKeepAlive()) {
-            changeEvents(_changeList, clientFd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-            changeEvents(_changeList, clientFd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
             std::cout << "=============================================== close" << std::endl;
             disconnectClient(clientFd);
         } else {

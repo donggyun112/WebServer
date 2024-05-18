@@ -326,9 +326,47 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 	return true;
 }
 
+std::string ResponseUtils::lastModify(const std::string& filePath) {
+    struct stat fileStat;
+    if (stat(filePath.c_str(), &fileStat) == 0) {
+        std::time_t lastModifiedTime = fileStat.st_mtime;
+        std::stringstream ss;
+        ss << std::put_time(std::gmtime(&lastModifiedTime), "%a, %d %b %Y %H:%M:%S GMT");
+        return ss.str();
+    }
+    return "";
+}
+
+std::string ResponseUtils::getExpirationTime(int seconds) {
+	std::time_t now = std::time(0) + seconds;
+	std::stringstream ss;
+	ss << std::put_time(std::gmtime(&now), "%a, %d %b %Y %H:%M:%S GMT");
+	return ss.str();
+}
+
+std::string ResponseUtils::etag(const std::string& filePath) {
+	struct stat fileStat;
+	if (stat(filePath.c_str(), &fileStat) == 0) {
+		std::string etag = std::to_string(fileStat.st_ino) + std::to_string(fileStat.st_size) + std::to_string(fileStat.st_mtime);
+		return generateETag(etag);
+	}
+	return "";
+}
+
 std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 {
 	Response response;
+	if (Req.getHeader("If-Modified-Since") == ResponseUtils::lastModify(_filePath) || Req.getHeader("If-None-Match") == ResponseUtils::etag(_filePath))
+	{
+		std::cerr << "Not Modified" << std::endl;
+		response.setStatusCode(NotModified_304);
+		response.setHeader("Content-Length", "0");
+		response.setHeader("Date", ResponseUtils::getCurTime());
+		response.setHeader("Server", "42Webserv");
+		response.setHeader("Connection", "close");
+
+		return response.getResponses();
+	}
 	if (_loc.isCgi() == true)
 	{
 		// CGI 처리
@@ -339,6 +377,10 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 		std::cout << "Start to handle CGI" << std::endl;
 		// response = handleCgi(_loc, _filePath);
 	}
+
+
+	// Req.getHeader("")
+	std::cout << Req.getBuffer() << std::endl;
 
 	// std::cout << "Start to handle GET request" << std::endl;
 	// 리다이렉트 처리
@@ -382,8 +424,28 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 		response.setHeader("Content-Type", ResponseUtils::getContentType(extension));
 		response.setBody(body);
 		response.setHeader("Content-Length", web::toString(body.length()));
-		// response.setHeader("Connection", "keep-alive");
-		response.setHeader("Connection", "close");
+		std::string User = Req.getHeader("User-Agent");
+		if (User.find("Chrome") != std::string::npos)
+		{
+			response.setHeader("Last-Modified", ResponseUtils::lastModify(_filePath));
+			response.setHeader("ETag", ResponseUtils::etag(_filePath));
+			response.setHeader("Cache-Control", "max-age=3600, public, must-revalidate, no-cache");
+			response.setHeader("Expires", ResponseUtils::getExpirationTime(3600)); // 1시간 후 만료
+			// Safari 브라우저 캐쉬 무효화
+			
+			std::cout << "Safari" << std::endl;
+		} else {
+			response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+			response.setHeader("Pragma", "no-cache");
+			response.setHeader("Expires", "0");
+		}		
+		std::cout << "Response " << response.getHeaderValue("Content-Type") << std::endl;
+		std::cout << "Response " << response.getHeaderValue("Content-Length") << std::endl;
+		std::cout << "Response " << response.getHeaderValue("Last-Modified") << std::endl;
+		std::cout << "Response " << response.getHeaderValue("ETag") << std::endl;
+		std::cout << "Response " << response.getHeaderValue("Cache-Control") << std::endl;
+		std::cout << "Response " << response.getHeaderValue("Expires") << std::endl;
+
 	}
 	else
 	{

@@ -9,6 +9,12 @@
 #include "../utils/Error.hpp"
 #include <iostream>
 #include <regex>
+#include <iomanip>
+#include <functional>
+#include <fstream>
+#include <sstream>
+
+
 
 class Response;
 
