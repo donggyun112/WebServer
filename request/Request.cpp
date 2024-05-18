@@ -44,8 +44,11 @@ std::string parseUri(const std::string& uri, Request &req)
 	return path;
 }
 
-void HttpRequest::parseRequestLine(Request &req, const std::string& line)
+void HttpRequest::parseRequestLine(Request &req, const std::string& buf, std::string::size_type& pos)
 {
+    std::string::size_type end = buf.find("\r\n", pos);
+    std::string line = buf.substr(pos, end - pos);
+
     std::istringstream iss(line);
 	std::string token, tmpUri;
 
@@ -62,6 +65,7 @@ void HttpRequest::parseRequestLine(Request &req, const std::string& line)
 	iss >> req._version;
 	if (iss.fail())
 		throw HttpVersionNotSupported_505;
+    pos = end + 2;
 }
 
 void HttpRequest::parseHeader(Request &req, const std::string& header)

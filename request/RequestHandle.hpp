@@ -60,12 +60,23 @@ class RequestHandle {
         void                    setResponseStatus(int num) {_responseStatus = num;}
         void                    setChunkedBody(const std::string& body);
         void            		setRequest();
+        std::string             parseMethod(const std::string& methodStr);
+        void                    parseUri(const std::string& uri);
+        void                    parseRequestLine(const std::string& buf);
+        void                    parseHeader(const std::string& buffer);
+        void                    ParseRegularBody(const std::string& body);
+        void                    parseChunkedBody(const std::string& body);
+        void                    setCookie();
+        void                    validateRequest();
+
+
         void            		setBuffer(const std::string& buffer);
         void            		clearRequest();
         void            		clearAll();
         int             		getReadStatus() const {return this->_readStatus;}
         void                    setReadStatus(int readStatus) {_readStatus = readStatus;}
 		const std::string		&getQuery() const;
+        
 
 
         void printAllHeaders() const;

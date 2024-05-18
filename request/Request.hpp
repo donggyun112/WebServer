@@ -13,7 +13,7 @@ class RequestHandle;
 struct Request;
 
 namespace HttpRequest {
-	void parseRequestLine(Request& req, const std::string& line);
+	void parseRequestLine(Request& req, const std::string& line, std::string::size_type& pos);
 	void parseHeader(Request& req, const std::string& line);
 	void validateRequest(const Request &req);
 	void setCookie(Request &req);
