@@ -144,7 +144,7 @@ void Server::delayResponse(double seconds) {
 }
 
 
-void Server::handleClientRead(FD clientFd, const Config &Conf) {
+void Server::handleClientRead(FD clientFd, const Config &Conf, char **env) {
     std::vector<char> buffer(1024);
     ssize_t length;
     
@@ -169,12 +169,12 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
     
     if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
         std::cout << "Read Done" << std::endl;
+        ptr->generateResponse(Conf, env);
         if (ptr->getResponseHandle().isCGI()) {
             ptr->getProcInfo()->ClientFd = clientFd;
             changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         } else {
-            ptr->generateResponse(Conf);
             changeEvents(_changeList, clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         }
@@ -183,7 +183,7 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
 }
 
 //main에서 기본 세팅이 끝나면, 이걸 실행해야 한다.
-void Server::run(const Config &Conf) {
+void Server::run(const Config &Conf, char **env) {
     int eventNumber;
     struct kevent eventList[1024];
     
@@ -218,7 +218,7 @@ void Server::run(const Config &Conf) {
                 if (FDIndexing(eventList[i].ident) >= 0) {
                     addNewClient(eventList[i].ident);
                 } else {
-                    handleClientRead(eventList[i].ident, Conf);
+                    handleClientRead(eventList[i].ident, Conf, env);
                 }
             } else if (eventList[i].filter == EVFILT_WRITE) {
 				const float fixedDelaySeconds = 0.0018f;

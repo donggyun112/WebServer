@@ -7,6 +7,7 @@
 #include "../utils/Error.hpp"
 #include "../utils/utils.hpp"
 #include "../Manager/Manager.hpp"
+#include "../socket/socket.hpp"
 
 #define READ 0
 #define WRITE 1
@@ -34,8 +35,8 @@ class Client {
 		void setBuffer(const std::string &buffer);
 		int  getReadStatus() const;
 		bool getIsKeepAlive() const;
-		void generateResponse(Config Conf);
-		void handleCGI();
+		void generateResponse(Config Conf, char **env);
+		void handleCGI(char **env);
 		void setEnv(const RequestHandle &Req);
 		void setBufferFromChild(int data);
 		procInfo *getProcInfo() const;

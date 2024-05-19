@@ -5,7 +5,7 @@
 
 using namespace std;
 
-int main(int ac, char **av)
+int main(int ac, char **av, char **env)
 {
 	// signal(SIGPIPE, SIG_IGN);
 	Error::initializeError();
@@ -13,5 +13,5 @@ int main(int ac, char **av)
 	Server Server;
 	Server.makeServerSocket(Conf);
 	Server.queueInit(Conf);
-	Server.run(Conf);
+	Server.run(Conf, env);
 }

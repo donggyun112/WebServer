@@ -49,8 +49,8 @@ class Server
 		
 		void makeServerSocket(Config &Conf);
 		void queueInit(const Config &Conf);
-		void run(const Config &Conf);
-		void handleClientRead(FD clientFD, const Config &Conf);
+		void run(const Config &Conf, char **env);
+		void handleClientRead(FD clientFD, const Config &Conf, char **env);
 		void handleClientWrite(FD clientFD, const Config &Conf);
 		void delayResponse(double seconds);
 };

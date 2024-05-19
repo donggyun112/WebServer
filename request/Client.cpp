@@ -100,63 +100,67 @@ void	Client::setEnv(const RequestHandle &Req) {
     }
 }
 
-void Client::handleCGI() {
-	// FD pipeParentToChild[2];
-	// FD pipeChildToParent[2];
-	// int processPid;
-	// std::vector<char *> commands;
-	// std::string command = ResponseUtils::getFileExtension(_responseHandle.getFilePath());
-	// commands.push_back(const_cast<char*>(command.c_str()));
-	// commands.push_back(const_cast<char*>(_responseHandle.getFilePath().c_str()));
-	// commands.push_back(NULL);
+void Client::handleCGI(char **env) {
+	FD pipeParentToChild[2];
+	FD pipeChildToParent[2];
+	if (Socket::nonblocking(pipeChildToParent[READ]) == FAILURE)
+		throw InternalServerError_500;
+	if (Socket::nonblocking(pipeChildToParent[WRITE]) == FAILURE)
+		throw InternalServerError_500;
+	if (Socket::nonblocking(pipeParentToChild[READ]) == FAILURE)
+		throw InternalServerError_500;
+	if (Socket::nonblocking(pipeParentToChild[WRITE]) == FAILURE)
+		throw InternalServerError_500;
+	int processPid;
+	std::vector<char *> commands;
+	std::string command = Manager::responseUtils.getFileExtension(_responseHandle.getFilePath());
+	commands.push_back(const_cast<char*>(command.c_str()));
+	commands.push_back(const_cast<char*>(_responseHandle.getFilePath().c_str()));
+	commands.push_back(NULL);
 
-	// if (pipe(pipeParentToChild) == -1) throw InternalServerError_500;
-	// if (pipe(pipeChildToParent) == -1) {
-	// 	close(pipeParentToChild[READ]);
-	// 	close(pipeParentToChild[WRITE]);
-	// 	throw InternalServerError_500;
-	// };
-	// processPid = fork();
-	// if (processPid == 0) {
-
-	// 	extern char **envp;
-
-	// 	setEnv(_requestHandle);
-	// 	dup2(pipeChildToParent[WRITE], STDOUT_FILENO);
-	// 	dup2(pipeParentToChild[READ], STDIN_FILENO);
-	// 	close(pipeChildToParent[READ]);
-	// 	close(pipeParentToChild[WRITE]);
-	// 	if (execve(commands[0], commands.data(), envp) == -1) {
-	// 		exit(InternalServerError_500);
-	// 	}
-	// } else if (processPid > 0) {
-	// 	close(pipeParentToChild[READ]);
-	// 	close(pipeChildToParent[WRITE]);
-	// 	write(pipeParentToChild[WRITE], _requestHandle.getBody().c_str(), _requestHandle.getBody().length());
-	// 	close(pipeParentToChild[WRITE]);
-	// 	this->_procPtr = new procInfo();
-	// 	_procPtr->pid = processPid;
-	// 	_procPtr->pipeFd = pipeChildToParent[READ];
-	// 	return ;
-	// } else {
-	// 	close(pipeChildToParent[READ]);
-	// 	close(pipeChildToParent[WRITE]);
-	// 	close(pipeParentToChild[READ]);
-	// 	close(pipeParentToChild[WRITE]);
-	// 	throw InternalServerError_500;
-	// }
+	if (pipe(pipeParentToChild) == -1) throw InternalServerError_500;
+	if (pipe(pipeChildToParent) == -1) {
+		close(pipeParentToChild[READ]);
+		close(pipeParentToChild[WRITE]);
+		throw InternalServerError_500;
+	};
+	processPid = fork();
+	if (processPid == 0) {
+		setEnv(_requestHandle);
+		dup2(pipeChildToParent[WRITE], STDOUT_FILENO);
+		dup2(pipeParentToChild[READ], STDIN_FILENO);
+		close(pipeChildToParent[READ]);
+		close(pipeParentToChild[WRITE]);
+		if (execve(commands[0], commands.data(), env) == -1) {
+			exit(InternalServerError_500);
+		}
+	} else if (processPid > 0) {
+		close(pipeParentToChild[READ]);
+		close(pipeChildToParent[WRITE]);
+		write(pipeParentToChild[WRITE], _requestHandle.getBody().c_str(), _requestHandle.getBody().length());
+		close(pipeParentToChild[WRITE]);
+		this->_procPtr = new procInfo();
+		_procPtr->pid = processPid;
+		_procPtr->pipeFd = pipeChildToParent[READ];
+		return ;
+	} else {
+		close(pipeChildToParent[READ]);
+		close(pipeChildToParent[WRITE]);
+		close(pipeParentToChild[READ]);
+		close(pipeParentToChild[WRITE]);
+		exit(InternalServerError_500);
+	}
 }
 
 
-
-void Client::generateResponse(Config Conf) {
+void Client::generateResponse(Config Conf, char **env) {
 	try {
 		if (_requestHandle.getReadStatus() == READ_ERROR) {
 			throw _requestHandle.getResponseStatus();
 		}
 		_responseHandle.initPathFromLocation(_requestHandle, Conf);
 		if (_responseHandle.isCGI()) {
-			handleCGI();
+			handleCGI(env);
 			return ;		
 		} else {
 			_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
