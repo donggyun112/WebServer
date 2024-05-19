@@ -81,19 +81,10 @@ void Server::addNewClient(FD fd) {
 	int newFD;
 	int opt = 1;
 	
-	if (_fdPool.empty()) {
-		newFD = Socket::accept(fd);
-		if (newFD == -1) {
-			std::cerr << "Error accepting new client" << std::endl;
-			return;
-		}
-		_fdPool.push_back(newFD);
-	} else {
-        
-		std::cout << "fd pool is not empty" << std::endl;
-		newFD = _fdPool.back();
-		_fdPool.pop_back();
-	
+	newFD = Socket::accept(fd);
+	if (newFD == -1) {
+		std::cerr << "Error accepting new client" << std::endl;
+		return;
 	}
 
 

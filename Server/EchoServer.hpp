@@ -31,7 +31,6 @@ class Server
 		std::vector<Socket *> _serverSocketList;
 		std::map<FD, Client *> _clientMap;
 		std::vector<FD> _closeList;
-		std::vector<FD> _fdPool;
 		FD _kq;
 	protected:
         
