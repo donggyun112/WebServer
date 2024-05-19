@@ -42,7 +42,7 @@ class Client {
 		void setEnv(const RequestHandle &Req);
 		void setBufferFromChild(int data);
 		procInfo *getProcInfo() const;
-		ResponseHandle getResponseHandle() const;
+		const ResponseHandle& getResponseHandle() const;
 		void makeTempFileNameForCgi(std::string &filename);
 
 

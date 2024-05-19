@@ -14,7 +14,7 @@ Client::~Client() {
 	clearAll();
 }
 
-ResponseHandle Client::getResponseHandle() const{
+const ResponseHandle& Client::getResponseHandle() const{
 	return _responseHandle;
 }
 
