@@ -229,7 +229,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 {
 	Response response;
-	if (Req.getHeader("If-Modified-Since") == Manager::responseUtils.lastModify(_filePath) || Req.getHeader("If-None-Match") == Manager::responseUtils.etag(_filePath))
+	if (_loc.isEtag() == true && (Req.getHeader("If-Modified-Since") == Manager::responseUtils.lastModify(_filePath) || Req.getHeader("If-None-Match") == Manager::responseUtils.etag(_filePath)))
 	{
 		std::cerr << "Not Modified" << std::endl;
 		response.setStatusCode(NotModified_304);
@@ -263,8 +263,6 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 	if (redirectResponse.getStatusCode() != OK_200) {
 		std::cout << "what the fuck" << std::endl;
 		return redirectResponse.getResponses();
-	} else {
-		// std::cout << "no Redirect" << std::endl;
 	}
 
 	// 인덱스 파일 설정
@@ -297,16 +295,13 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 		response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
 		response.setBody(body);
 		response.setHeader("Content-Length", Manager::utils.toString(body.length()));
-		std::string User = Req.getHeader("User-Agent");
-		if (User.find("Chrome") != std::string::npos)
+		if (_loc.isEtag() == true)
 		{
+			std::cerr << "ETAG" << std::endl;
 			response.setHeader("Last-Modified", Manager::responseUtils.lastModify(_filePath));
 			response.setHeader("ETag", Manager::responseUtils.etag(_filePath));
 			response.setHeader("Cache-Control", "max-age=3600, public, must-revalidate, no-cache");
 			response.setHeader("Expires", Manager::responseUtils.getExpirationTime(3600)); // 1시간 후 만료
-			// Safari 브라우저 캐쉬 무효화
-			
-			std::cout << "Safari" << std::endl;
 		} else {
 			response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 			response.setHeader("Pragma", "no-cache");
