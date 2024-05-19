@@ -22,11 +22,16 @@ procInfo *Client::getProcInfo() const {
 	return _procPtr;
 }
 
-void Client::setBufferFromChild(int data) {
-	char buffer[INT_MAX];
-	(void)data;
-	read(_procPtr->pipeFd, buffer, INT_MAX);
-	_response = buffer;
+void Client::setResponse(const std::string &param) {
+	_response = param;
+}
+
+void Client::appendResponse(const char *param) {
+	_response += param;
+}
+
+Port Client::getPort() const {
+	return _port;
 }
 
 void Client::setBuffer(const std::string &buffer) {
@@ -100,60 +105,57 @@ void	Client::setEnv(const RequestHandle &Req) {
     }
 }
 
+void Client::makeTempFileNameForCgi(std::string &filePath) {
+	std::srand(std::time(NULL));
+
+	filePath = "/tmp/";
+	filePath += "webserv-";
+	filePath += Manager::utils.toString(std::rand());
+}
+
 void Client::handleCGI(char **env) {
 	FD pipeParentToChild[2];
-	FD pipeChildToParent[2];
-	if (Socket::nonblocking(pipeChildToParent[READ]) == FAILURE)
-		throw InternalServerError_500;
-	if (Socket::nonblocking(pipeChildToParent[WRITE]) == FAILURE)
-		throw InternalServerError_500;
-	if (Socket::nonblocking(pipeParentToChild[READ]) == FAILURE)
-		throw InternalServerError_500;
-	if (Socket::nonblocking(pipeParentToChild[WRITE]) == FAILURE)
-		throw InternalServerError_500;
 	int processPid;
 	std::vector<char *> commands;
 	std::string command = Manager::responseUtils.getFileExtension(_responseHandle.getFilePath());
+	int tempFileFd;
+	std::string filePath;
+	makeTempFileNameForCgi(filePath);
 	commands.push_back(const_cast<char*>(command.c_str()));
 	commands.push_back(const_cast<char*>(_responseHandle.getFilePath().c_str()));
 	commands.push_back(NULL);
-
-	if (pipe(pipeParentToChild) == -1) throw InternalServerError_500;
-	if (pipe(pipeChildToParent) == -1) {
-		close(pipeParentToChild[READ]);
-		close(pipeParentToChild[WRITE]);
+	if (pipe(pipeParentToChild) == -1) {
 		throw InternalServerError_500;
-	};
+	} 
 	processPid = fork();
 	if (processPid == 0) {
 		setEnv(_requestHandle);
-		dup2(pipeChildToParent[WRITE], STDOUT_FILENO);
 		dup2(pipeParentToChild[READ], STDIN_FILENO);
-		close(pipeChildToParent[READ]);
 		close(pipeParentToChild[WRITE]);
+		tempFileFd = open(filePath.c_str(), O_RDWR | O_CREAT | O_TRUNC);
+		if (tempFileFd == -1)
+			exit(InternalServerError_500);
+		dup2(tempFileFd, STDOUT_FILENO);
 		if (execve(commands[0], commands.data(), env) == -1) {
 			exit(InternalServerError_500);
 		}
 	} else if (processPid > 0) {
 		close(pipeParentToChild[READ]);
-		close(pipeChildToParent[WRITE]);
 		write(pipeParentToChild[WRITE], _requestHandle.getBody().c_str(), _requestHandle.getBody().length());
 		close(pipeParentToChild[WRITE]);
 		this->_procPtr = new procInfo();
 		_procPtr->pid = processPid;
-		_procPtr->pipeFd = pipeChildToParent[READ];
+		_procPtr->tempFilePath = filePath;
 		return ;
 	} else {
-		close(pipeChildToParent[READ]);
-		close(pipeChildToParent[WRITE]);
 		close(pipeParentToChild[READ]);
 		close(pipeParentToChild[WRITE]);
-		exit(InternalServerError_500);
+		throw InternalServerError_500;
 	}
 }
 
 
-void Client::generateResponse(Config Conf, char **env) {
+void Client::generateResponse(const Config &Conf, char **env) {
 	try {
 		if (_requestHandle.getReadStatus() == READ_ERROR) {
 			throw _requestHandle.getResponseStatus();
@@ -168,8 +170,9 @@ void Client::generateResponse(Config Conf, char **env) {
 	} catch (int num) {
 		_response = Error::errorHandler(Conf[_port], num);
 	} catch (StatusCode num) {
+		_requestHandle.setReadStatus(READ_ERROR);
+		// _responseHandle.getLocation().setCgi(false);
 		_response = Error::errorHandler(Conf[_port], num);
-		// std::cout << __LINE__ << "      :" << _response << std::endl;
 	}
 	catch (std::exception &e) {
 		std::cerr << e.what() << std::endl;

@@ -26,7 +26,7 @@ void	ResponseHandle::clearAll() {
 	// _serverRoot.clear();
 }
 
-std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf)
+std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, const Config &Conf)
 {
 	//
 	if (_isInitFromLocation == false) {
@@ -177,7 +177,7 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 	return response;
 }
 
-bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
+bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config &Conf) {
 	_isInitFromLocation = true;
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
