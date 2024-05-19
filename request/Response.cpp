@@ -64,7 +64,7 @@ void Response::setBody(const std::string& body) {
 }
 
 const std::string Response::getResponses() {
-	std::string response = _version + " " +  web::toString(_status) + " " + Error::errors[_status] + "\r\n";
+	std::string response = _version + " " +  Manager::utils.toString(_status) + " " + Error::errors[_status] + "\r\n";
 	for (std::multimap<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it) {
 		response += it->first + ": " + it->second + "\r\n";
 	}

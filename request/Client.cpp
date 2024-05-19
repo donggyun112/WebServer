@@ -56,7 +56,7 @@ void	Client::setEnv(const RequestHandle &Req) {
 	std::string requestMethod = Req.getMethod();
 	std::string serverName = host;
 	std::string cgiPath = _responseHandle.getFilePath();
-	std::string serverPort = web::toString(_port);
+	std::string serverPort = Manager::utils.toString(_port);
     if (Req.getMethod() == "GET" || Req.getMethod() == "POST") {
         setenv("SERVER_SOFTWARE", "webserv", 1);
     	setenv("SERVER_NAME", serverName.c_str(), 1);

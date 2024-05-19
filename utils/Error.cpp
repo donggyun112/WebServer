@@ -128,10 +128,10 @@ std::string Error::createErrorResponse(int code) {
 	Response response;
 	response.setStatusCode(code);
 	response.setHeader("Content-Type", "text/html; charset=utf-8");
-	response.setHeader("Date", ResponseUtils::getCurTime());
-	std::string errorBody = "<html><body><h1>" + web::toString(code) + " " + errors[code] + "</h1><p>" + Error::errorResponseBodyStrings[code] + "</p></body></html>";
+	response.setHeader("Date", Manager::responseUtils.getCurTime());
+	std::string errorBody = "<html><body><h1>" + Manager::utils.toString(code) + " " + errors[code] + "</h1><p>" + Error::errorResponseBodyStrings[code] + "</p></body></html>";
 	response.setBody(errorBody);
-	response.setHeader("Content-Length", web::toString(errorBody.length()));
+	response.setHeader("Content-Length", Manager::utils.toString(errorBody.length()));
 	response.setHeader("Connection", "close");
 	return response.getResponses();
 }
@@ -149,14 +149,14 @@ std::string Error::errorHandler(const ServerConfig &Serv, int num) {
 	std::string testPath;
 	Response response;
 
-	fileName = "/" + web::toString(num) + ".html";
+	fileName = "/" + Manager::utils.toString(num) + ".html";
 	testPath = Serv.getErrorPagesPath() + fileName; 
 	std::cout << testPath << std::endl;
 	std::ifstream file(testPath.c_str());
 	
 	if (file.is_open() && file.good()) {
 		// 파일 크기 확인
-		std::streamsize fileSize = ResponseUtils::getFileSize(file);
+		std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
 
 		// 파일 크기 제한 설정
 		const std::streamsize maxFileSize = 10 * 1024 * 1024;
@@ -164,15 +164,15 @@ std::string Error::errorHandler(const ServerConfig &Serv, int num) {
 			return createErrorResponse(PayloadTooLarge_413);
 		}
 		// 파일 내용 읽기
-		std::string body = ResponseUtils::readFileContent(file, fileSize);
+		std::string body = Manager::responseUtils.readFileContent(file, fileSize);
 		// std::cout << body << std::endl;
 		file.close();
 
 		response.setStatusCode(NotFound_404);
-		response.setHeader("Date", ResponseUtils::getCurTime());
-		response.setHeader("Content-Type", ResponseUtils::getContentType("html"));
+		response.setHeader("Date", Manager::responseUtils.getCurTime());
+		response.setHeader("Content-Type", Manager::responseUtils.getContentType("html"));
 		response.setBody(body);
-		response.setHeader("Content-Length", web::toString(body.length()));
+		response.setHeader("Content-Length", Manager::utils.toString(body.length()));
 		response.setHeader("Connection", "close");
 		return response.getResponses();
 	}
