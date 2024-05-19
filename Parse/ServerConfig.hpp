@@ -64,9 +64,32 @@ public:
 	// LocationConfig에서 이걸 처리하는게 맞는지 모르겠음 보통이런건 request에서 처리하는게 맞는거 같은데
 
 	bool isConfPattern(const std::string& str) {
-    	// ~ \\.extension$ 확인
-    	std::regex pattern("^\\s*\\\\\\.\\w+\\$$");
-		return std::regex_match(str, pattern);
+		std::stringstream ss(str);
+		std::string token;
+		
+		while (std::getline(ss, token, '$')) {}
+		if (token != "") {
+			return false;
+		}
+		
+		ss.clear();
+		ss.seekg(0);
+		
+		if (!std::getline(ss, token, '\\') || token != "") {
+			return false;
+		}
+		
+		if (!std::getline(ss, token, '$') || token[0] != '.') {
+			return false;
+		}
+		
+		for (size_t i = 1; i < token.length(); i++) {
+			if (!isalnum(token[i]) && token[i] != '.') {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 
 	std::vector<std::string> getHttpUriToken(std::string httpPath) {
