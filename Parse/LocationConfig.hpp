@@ -31,6 +31,7 @@ class LocationConfig {
     std::vector<int>            _upload_cleanup;
 	std::vector<std::string>    _try_files;
 	bool 					  	_cgi;
+    bool                        _etag;
     
     public:
     ~LocationConfig() {}
@@ -58,6 +59,7 @@ class LocationConfig {
     std::vector<std::string>    getTryFiles() const ;
 	bool						isCgi() const;
 	void						setCgi(bool cgi);
+    bool                        isEtag() const;
     // // 추가적인 필요한 변수들
     std::string                 getAllowedMethod(size_t i) const;
     
