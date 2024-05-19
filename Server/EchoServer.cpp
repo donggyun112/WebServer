@@ -89,6 +89,7 @@ void Server::addNewClient(FD fd) {
 		}
 		_fdPool.push_back(newFD);
 	} else {
+        
 		std::cout << "fd pool is not empty" << std::endl;
 		newFD = _fdPool.back();
 		_fdPool.pop_back();
@@ -156,39 +157,38 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
     std::vector<char> buffer(1024);
     ssize_t length;
     
-    // while (true) {
-        length = recv(clientFd, buffer.data(), buffer.size(), 0);
-        
-        if (length < 0) {
-			// 오류 발생 시 클라이언트 연결 종료
-			std::cerr << "Error reading from client: " << clientFd << std::endl;
-			delayResponse(0.0002f);
-			// disconnectClient(clientFd);
-			// 잠시 대기
-			return;
-        } else if (length == 0) {
-            // 클라이언트가 연결을 종료한 경우
-            std::cout << "Client disconnected: " << clientFd << std::endl;
-            disconnectClient(clientFd);
-            return;
+    length = recv(clientFd, buffer.data(), buffer.size(), 0);
+    
+    if (length < 0) {
+        // 오류 발생 시 클라이언트 연결 종료
+        std::cerr << "Error reading from client: " << clientFd << std::endl;
+        delayResponse(0.0002f);
+        // disconnectClient(clientFd);
+        // 잠시 대기
+        return;
+    } else if (length == 0) {
+        // 클라이언트가 연결을 종료한 경우
+        std::cout << "Client disconnected: " << clientFd << std::endl;
+        disconnectClient(clientFd);
+        return;
+    }
+    
+    Client *ptr = _clientMap[clientFd];
+    ptr->setBuffer(buffer.data());
+    
+    if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
+        std::cout << "Read Done" << std::endl;
+        if (ptr->getResponseHandle().isCGI()) {
+            ptr->getProcInfo()->ClientFd = clientFd;
+            changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
+            changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+        } else {
+            ptr->generateResponse(Conf);
+            changeEvents(_changeList, clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+            changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         }
-        
-        Client *ptr = _clientMap[clientFd];
-        ptr->setBuffer(buffer.data());
-        
-        if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
-            std::cout << "Read Done" << std::endl;
-            if (ptr->getResponseHandle().isCGI()) {
-                ptr->getProcInfo()->ClientFd = clientFd;
-                changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
-                changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-            } else {
-                ptr->generateResponse(Conf);
-                changeEvents(_changeList, clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
-                changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-            }
-            return ;
-        }
+        return ;
+    }
 }
 
 //main에서 기본 세팅이 끝나면, 이걸 실행해야 한다.

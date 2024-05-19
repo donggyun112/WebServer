@@ -1,11 +1,12 @@
-#pragma once
-
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 #include <iostream>
 #include <unistd.h>
 #include "RequestHandle.hpp"
 #include "ResponseHandle.hpp"
 #include "../utils/Error.hpp"
 #include "../utils/utils.hpp"
+#include "../Manager/Manager.hpp"
 
 #define READ 0
 #define WRITE 1
@@ -46,3 +47,4 @@ class Client {
 		std::string getResponse() const;
 		void		cutResponse(int length);
 };
+#endif
