@@ -9,11 +9,6 @@ Port ServerConfig::getPortName() const {return _port;}
 
 size_t ServerConfig::getNumberOfLocation() {return _locations.size();}
 
-int ServerConfig::getClientMaxBodySize() const
-{
-    return _client_max_body_size;
-}
-
 ServerConfig::ServerConfig(std::ifstream &file)
 {
     std::string     line;

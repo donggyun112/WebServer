@@ -23,5 +23,8 @@ namespace ResponseUtils {
 	std::string getFormatSize(double size);
 	std::string getLastModified(const std::string& filePath);
     std::string generateETag(const std::string& content);
+	std::string etag(const std::string& filePath);
+	std::string lastModify(const std::string& filePath);
+	std::string getExpirationTime(int seconds);
 }
 #endif
