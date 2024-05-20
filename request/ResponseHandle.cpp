@@ -3,6 +3,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "NResponseUtils.hpp"
+#include "../Manager/Manager.hpp"
 
 ResponseHandle::ResponseHandle() : _isInitFromLocation(false) {
 }
@@ -25,7 +26,7 @@ void	ResponseHandle::clearAll() {
 	// _serverRoot.clear();
 }
 
-std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Config &Conf)
+std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, const Config &Conf)
 {
 	//
 	if (_isInitFromLocation == false) {
@@ -33,13 +34,13 @@ std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, Con
 	}
 	//
 	// std::cout << "Start to generate response" << std::endl;
-	int method = ResponseUtils::getMethodNumber(Req.getMethod());
+	int method = Manager::responseUtils.getMethodNumber(Req.getMethod());
 	// std::cout << "method number = " << method << "string = " << Req.getMethod() << "123" << std::endl;
 	switch (method)
 	{
 	case GET:
 		// std::cout << "Goto GET" << std::endl;
-		_response = handleGetRequest(Req, Conf.getServerConfig(_port, Req.getHost()).getClientMaxBodySize());
+		_response = handleGetRequest(Req);
 		return _response;
 	case POST:
 		std::cout << "Goto POST" << std::endl;
@@ -79,22 +80,17 @@ Response ResponseHandle::handleMethodNotAllowed()
 	Response response;
 	response.setStatusCode(MethodNotAllowed_405);
 	response.setHeader("Content-Type", "text/html");
-	response.setHeader("Date", ResponseUtils::getCurTime());
+	response.setHeader("Date", Manager::responseUtils.getCurTime());
 
 	std::string errorBody = "<html><body><h1>405 Method Not Allowed</h1><p>The requested method is not allowed.</p></body></html>";
 	response.setBody(errorBody);
-	response.setHeader("Content-Length", web::toString(errorBody.length()));
+	response.setHeader("Content-Length", Manager::utils.toString(errorBody.length()));
 	response.setHeader("Connection", "close");
 
 	return response;
 }
 
-bool ResponseUtils::isExtention(std::string httpPath)
-{
-	if (httpPath.find_last_of('.') == std::string::npos)
-		return false;
-	return true;
-}
+
 
 
 
@@ -144,38 +140,15 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 			filePath = serverRoot + loc.getRoot() + "/" + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
 		}
 	}
-	filePath = ResponseUtils::normalizePath(filePath);
-	if (ResponseUtils::isDirectory(filePath) && filePath[filePath.length() - 1] != '/') {
+	filePath = Manager::responseUtils.normalizePath(filePath);
+	if (Manager::responseUtils.isDirectory(filePath) && filePath[filePath.length() - 1] != '/') {
 		filePath += "/";
 	}
 	
     return filePath;
 }
 
-bool ResponseUtils::isValidPath(const std::string &path)
-{
-	// 경로가 비어있는 경우
-	if (path.empty())
-	{
-		return false;
-	}
-	// 경로가 너무 긴 경우
-	if (path.length() > PATH_MAX)
-	{
-		return false;
-	}
-	// 경로에 불법적인 문자가 포함된 경우
-	if (path.find_first_of("\0\\") != std::string::npos)
-	{
-		return false;
-	}
-	// 경로가 상대경로인 경우
-	if (path[0] != '/')
-	{
-		return false;
-	}
-	return true;
-}
+
 
 Response ResponseHandle::handleRedirect(const LocationConfig &location)
 {
@@ -204,91 +177,16 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 	return response;
 }
 
-bool ResponseUtils::isDirectory(const std::string &path)
-{
-	struct stat st;
-
-	if (stat(path.c_str(), &st) == 0)
-	{
-		if (S_ISREG(st.st_mode))
-		{
-			return false; // 파일인 경우 false 반환
-		}
-		return S_ISDIR(st.st_mode);
-	}
-
-	return false;
-}
-
-std::string ResponseUtils::getFileExtension(const std::string &filePath)
-{
-	size_t dotPos = filePath.find_last_of('.');
-	if (dotPos != std::string::npos)
-	{
-		return filePath.substr(dotPos + 1);
-	}
-	return "";
-}
-
-std::streamsize ResponseUtils::getFileSize(std::ifstream &file)
-{
-	file.seekg(0, std::ios::end);
-	std::streamsize fileSize = file.tellg();
-	file.seekg(0, std::ios::beg);
-	return fileSize;
-}
-
-std::string ResponseUtils::readFileContent(std::ifstream &file, std::streamsize fileSize)
-{
-	std::string content(fileSize, '\0');
-	file.read(&content[0], fileSize);
-	return content;
-}
-
-std::string ResponseUtils::getContentType(const std::string &extension)
-{
-	if (extension == "html")
-		return "text/html; charset=utf-8";
-	else if (extension == "css")
-		return "text/css";
-	// 다른 확장자에 대한 Content-Type 매핑 추가
-	else if (extension == "png")
-		return "image/png";
-	else if (extension == "jpg")
-		return "image/jpeg";
-	else if (extension == "jpeg")
-		return "image/jpeg";
-	else if (extension == "gif")
-		return "image/gif";
-	else if (extension == "bmp")
-		return "image/bmp";
-	else if (extension == "ico")
-		return "image/x-icon";
-	else if (extension == "svg")
-		return "image/svg+xml";
-	else if (extension == "js")
-		return "application/javascript";
-	else if (extension == "json")
-		return "application/json";
-	else if (extension == "pdf")
-		return "application/pdf";
-	else if (extension == "zip")
-		return "application/zip";
-	else
-		return "application/octet-stream";
-}
-
-
-bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf) {
+bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config &Conf) {
 	_isInitFromLocation = true;
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
 	// Conf.setServerName(Req.getHost());
 
 	// URL 정규화
-	_httpUri = ResponseUtils::nomralizeUrl(_httpUri);
+	_httpUri = Manager::responseUtils.nomralizeUrl(_httpUri);
 	// std::cout << "Normalized URL: " << _httpUri << std::endl;
-	_serverRoot = ResponseUtils::normalizePath(Conf.getServerConfig(_port, Req.getHost()).getPath());
+	_serverRoot = Manager::responseUtils.normalizePath(Conf.getServerConfig(_port, Req.getHost()).getPath());
 	if (_serverRoot.empty())
 	{
 		throw InternalServerError_500;
@@ -298,27 +196,27 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
 		// std::cout << "Location Path: " << _loc.getPath() << std::endl;
 		// std::cout << "Success to get location "<< _loc.getPath() << std::endl;
-	if (ResponseUtils::isMethodPossible(GET, _loc) == false) {
+	if (Manager::responseUtils.isMethodPossible(GET, _loc) == false) {
 		throw MethodNotAllowed_405;
 		// _response = createErrorResponse(MethodNotAllowed_405, "The requested method is not allowed.");
 	}
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
-	if (!ResponseUtils::isValidPath(_filePath)) {
+	if (!Manager::responseUtils.isValidPath(_filePath)) {
 		throw BadRequest_400;
 		// _response = createErrorResponse(BadRequest_400, "Invalid request path.");
 	}
 
 	if (_filePath.length() > 1 && _filePath[_filePath.length() - 1] == '/') {
-		if (ResponseUtils::isDirectory(_filePath) == true) {
+		if (Manager::responseUtils.isDirectory(_filePath) == true) {
 			std::string tmpPath = _filePath + _loc.getIndex();
-			if (ResponseUtils::isExist(_filePath) == true) {
+			if (Manager::responseUtils.isExist(_filePath) == true) {
 				_filePath = tmpPath;
 			}
 		} else {
 			throw NotFound_404;
 		}
 	} else {
-		if (ResponseUtils::isExist(_filePath) == false) {
+		if (Manager::responseUtils.isExist(_filePath) == false) {
 			_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
 		}
 	}
@@ -326,9 +224,22 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, Config &Conf
 	return true;
 }
 
-std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, int maxBodySize)
+
+
+std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 {
 	Response response;
+	if (_loc.isEtag() == true && (Req.getHeader("If-Modified-Since") == Manager::responseUtils.lastModify(_filePath) || Req.getHeader("If-None-Match") == Manager::responseUtils.etag(_filePath)))
+	{
+		std::cerr << "Not Modified" << std::endl;
+		response.setStatusCode(NotModified_304);
+		response.setHeader("Content-Length", "0");
+		response.setHeader("Date", Manager::responseUtils.getCurTime());
+		response.setHeader("Server", "42Webserv");
+		response.setHeader("Connection", "close");
+
+		return response.getResponses();
+	}
 	if (_loc.isCgi() == true)
 	{
 		// CGI 처리
@@ -340,6 +251,10 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, int maxBo
 		// response = handleCgi(_loc, _filePath);
 	}
 
+
+	// Req.getHeader("")
+	std::cout << Req.getBuffer() << std::endl;
+
 	// std::cout << "Start to handle GET request" << std::endl;
 	// 리다이렉트 처리
 
@@ -348,46 +263,55 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, int maxBo
 	if (redirectResponse.getStatusCode() != OK_200) {
 		std::cout << "what the fuck" << std::endl;
 		return redirectResponse.getResponses();
-	} else {
-		// std::cout << "no Redirect" << std::endl;
 	}
 
 	// 인덱스 파일 설정
-	// std::cout << "Start to get file && isDirestory : " << ResponseUtils::isDirectory(_filePath) << std::endl;
+	// std::cout << "Start to get file && isDirestory : " << Manager::responseUtils.isDirectory(_filePath) << std::endl;
 
 
 	// 파일 확장자 추출
 	// std::cout << "Start to get file extension" << std::endl;
-	std::string extension = ResponseUtils::getFileExtension(_filePath);
+	std::string extension = Manager::responseUtils.getFileExtension(_filePath);
 	// 파일 읽기
 	std::ifstream file(_filePath.c_str(), std::ios::binary);
 	// std::cout << "File Path: " << _filePath << std::endl;
 
-    if (file.is_open() && file.good() && ResponseUtils::isDirectory(_filePath) == false) {
+    if (file.is_open() && file.good() && Manager::responseUtils.isDirectory(_filePath) == false) {
         // 파일 크기 확인
-        std::streamsize fileSize = ResponseUtils::getFileSize(file);
+        std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
 
 		// 파일 크기 제한 설정
-		// const std::streamsize maxFileSize = 10 * 1024 * 1024;
-		if (fileSize > maxBodySize)
+		const std::streamsize maxFileSize = 10 * 1024 * 1024;
+		if (fileSize > maxFileSize)
 		{
 			throw PayloadTooLarge_413;
 		}
 		// 파일 내용 읽기
-		std::string body = ResponseUtils::readFileContent(file, fileSize);
+		std::string body = Manager::responseUtils.readFileContent(file, fileSize);
 		file.close();
 
 		response.setStatusCode(OK_200);
-		response.setHeader("Date", ResponseUtils::getCurTime());
-		response.setHeader("Content-Type", ResponseUtils::getContentType(extension));
-		response.setBody(" hi ");
-		response.setHeader("Content-Length", web::toString(body.length()));
-		// response.setHeader("Connection", "keep-alive");
-		response.setHeader("Connection", "close");
+		response.setHeader("Date", Manager::responseUtils.getCurTime());
+		response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
+		response.setBody(body);
+		response.setHeader("Content-Length", Manager::utils.toString(body.length()));
+		if (_loc.isEtag() == true)
+		{
+			std::cerr << "ETAG" << std::endl;
+			response.setHeader("Last-Modified", Manager::responseUtils.lastModify(_filePath));
+			response.setHeader("ETag", Manager::responseUtils.etag(_filePath));
+			response.setHeader("Cache-Control", "max-age=3600, public, must-revalidate, no-cache");
+			response.setHeader("Expires", Manager::responseUtils.getExpirationTime(3600)); // 1시간 후 만료
+		} else {
+			response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+			response.setHeader("Pragma", "no-cache");
+			response.setHeader("Expires", "0");
+		}
+
 	}
 	else
 	{
-		if (ResponseUtils::isDirectory(_filePath))
+		if (Manager::responseUtils.isDirectory(_filePath))
 		{
 			if (_loc.getAutoindex() == true)
 			{
@@ -485,28 +409,7 @@ std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
 //     return "";
 // }
 
-std::string ResponseUtils::getFormattedTime(time_t time)
-{
-	char buffer[80];
-	struct tm *timeinfo = localtime(&time);
-	strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", timeinfo);
-	return std::string(buffer);
-}
 
-std::string ResponseUtils::getFormatSize(double size)
-{
-	const char *sizes[] = {"B", "KB", "MB", "GB", "TB"};
-	int i = 0;
-	while (size > 1024)
-	{
-		size /= 1024;
-		i++;
-	}
-
-	std::ostringstream oss;
-	oss << std::fixed << std::setprecision(2) << size << sizes[i];
-	return oss.str();
-}
 
 void ResponseHandle::handleAutoIndex(Response &response, const std::string &servRoot)
 {
@@ -556,20 +459,20 @@ void ResponseHandle::handleAutoIndex(Response &response, const std::string &serv
 					body << "<a href=\"" << fileName << "/\">" << fileName + "/" << "</a>";
 				else
 					body << fileName;
-				body << "</td><td>\t\t" << ResponseUtils::getFormattedTime(fileStat.st_mtime) << "</td>";
+				body << "</td><td>\t\t" << Manager::responseUtils.getFormattedTime(fileStat.st_mtime) << "</td>";
 				double fileSize = static_cast<double>(fileStat.st_size);
-				body << "<td>\t\t" << ResponseUtils::getFormatSize(fileSize) << "</td>" << "</tr>\n";
+				body << "<td>\t\t" << Manager::responseUtils.getFormatSize(fileSize) << "</td>" << "</tr>\n";
 			}
 			else
 				throw InternalServerError_500;
 		}
 		body << " </table> </pre>\n<hr>\n</body>\n</html>\n";
 		response.setStatusCode(OK_200);
-		response.setHeader("Date", ResponseUtils::getCurTime());
+		response.setHeader("Date", Manager::responseUtils.getCurTime());
 		response.setHeader("Content-Type", "text/html");
 		response.setBody(body.str());
-		response.setHeader("Content-Length", web::toString(body.str().length()));
-		response.setHeader("Connection", "close");
+		response.setHeader("Content-Length", Manager::utils.toString(body.str().length()));
+		response.setHeader("Connection", "keep-alive");
 	}
 }
 

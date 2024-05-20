@@ -5,6 +5,7 @@
 #include <string>
 #include <sys/time.h>
 #include <sstream>
+// #include "../Manager/Manager.hpp"
 
 typedef int FD;
 typedef unsigned int Port;
@@ -13,9 +14,12 @@ typedef int Status;
 
 enum STATE { SUCCESS=0, FAILURE=-1 };
 
-namespace web {
+class Utils {
+public:
+	Utils();
+	~Utils();
     std::string toString(int num);
-}
+};
 
 enum StatusCode {
   // Information responses

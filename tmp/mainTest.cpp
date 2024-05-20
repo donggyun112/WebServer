@@ -3,8 +3,6 @@
 #include "../utils/Error.hpp"
 #include <signal.h>
 
-using namespace std;
-
 int main(int ac, char **av)
 {
 	// signal(SIGPIPE, SIG_IGN);

@@ -8,6 +8,8 @@
 # include <algorithm>
 # include <fstream>
 # include <sstream>
+#include <ctime>
+
 
 # include <sys/time.h>
 # include <sys/event.h>
@@ -18,6 +20,7 @@
 # include "../utils/utils.hpp"
 # include "../request/Client.hpp"
 # include "../request/Request.hpp"
+# include "../utils/Error.hpp"
 
 # define READ 0
 # define WRITE 1
@@ -25,12 +28,13 @@
 class Server
 {
 	private:
-		std::vector<FD> _closeList;
 		std::vector<struct kevent> _changeList;
 		std::vector<Socket *> _serverSocketList;
 		std::map<FD, Client *> _clientMap;
+		std::vector<FD> _closeList;
 		FD _kq;
 	protected:
+        
 		void activateSocket(const Config &Conf);
 		void eventHandling(struct kevent &currEvent, const Config &Conf);
 		void disconnectClient(int fd);
@@ -43,9 +47,13 @@ class Server
 	public:
 		Server();
 		~Server();
-
+		
 		void makeServerSocket(Config &Conf);
 		void queueInit(const Config &Conf);
 		void run(const Config &Conf);
+		void handleClientRead(FD clientFD, const Config &Conf);
+		void handleClientWrite(FD clientFD, const Config &Conf);
+		void handleClientCgi(struct kevent &currEvent, const Config &conf);
+		void delayResponse(double seconds);
 };
 #endif

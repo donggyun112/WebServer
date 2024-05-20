@@ -157,6 +157,13 @@ LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) :
                 continue;
             else
                 this->_try_files.push_back(try_files);
+        } else if (key == "etag") {
+            std::string etag;
+            iss >> etag;
+            if (etag == "on")
+                this->_etag = true;
+            else if (etag == "off")
+                this->_etag = false;
         }
     }
 }
@@ -256,4 +263,8 @@ std::vector<int>            LocationConfig::getUploadCleanup() const {
 
 std::vector<std::string>    LocationConfig::getTryFiles() const {
     return _try_files;
+}
+
+bool                        LocationConfig::isEtag() const {
+    return _etag;
 }

@@ -178,17 +178,6 @@ std::string RequestHandle::parseMethod(const std::string& methodStr)
 		return "OTHER";
 }
 
-void RequestHandle::parseUri(const std::string& uri)
-{
-    size_t pos = uri.find('?');
-	if (pos != std::string::npos) {
-        _request._uri = uri.substr(0, pos);
-        _request._query = uri.substr(pos + 1);
-	}
-	else 
-		_request._uri = uri;
-}
-
 void RequestHandle::parseRequestLine(const std::string& buf)
 {
     std::istringstream iss(buf);
@@ -243,13 +232,6 @@ void RequestHandle::parseHeader(const std::string& buffer)
         _responseStatus = 200;
         return;
     }
-    // if (_request._headers.find("Content-Length") != _request._headers.end())
-    //     _request._contentLength = atoi(_request._headers["Content-Length"].c_str());
-    // else 
-    //     _request._contentLength = 0;
-    // if (_request._headers.find("Cookie") != _request._headers.end())
-    //     HttpRequest::setCookie(_request);
-    // _isKeepAlive = (_request._headers.find("Connection") == _request._headers.end() || _request._headers["Connection"] != "close");
 }
 
 void RequestHandle::parseChunkedBody(const std::string& body)
@@ -333,4 +315,133 @@ void RequestHandle::printAllHeaders() const{
     for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it) {
         std::cout << it->first << ": " << it->second << std::endl;
     }
+}
+
+void RequestHandle::validateRequest()
+{
+	if (_request._method == "OTHER")
+		throw MethodNotAllowed_405;
+	if (_request._uri.empty())
+		throw BadRequest_400;
+	if (_request._version != "HTTP/1.1")
+		throw HttpVersionNotSupported_505;
+	if (_request._headers.find("Host") == _request._headers.end())
+		throw BadRequest_400;
+}
+
+void RequestHandle::parseHeader(const std::string& header)
+{
+	std::istringstream iss(header);
+	std::string line;
+
+	while (std::getline(iss, line))
+	{
+		std::string::size_type pos = line.find(":");
+		if (pos != std::string::npos) {
+			std::string key = line.substr(0, pos);
+			std::string value = line.substr(pos + 2);
+			_request._headers[key] = value;
+		}
+	}
+}
+
+void RequestHandle::setCookie()
+{
+	std::istringstream iss(_request._headers["Cookie"]);
+	std::string line;
+
+	while (std::getline(iss, line, ';')) {
+		std::string::size_type pos = line.find("=");
+		if (pos != std::string::npos) {
+			std::string key = line.substr(0, pos);
+			std::string value = line.substr(pos + 1);
+			_request._cookie[key] = value;
+		}
+	}
+}
+
+void RequestHandle::parseChunkedBody(const std::string& body)
+{
+    std::istringstream iss(body);
+    std::string line;
+    long chunkLength;
+
+    while (true) {
+        std::getline(iss, line);
+        chunkLength = strtol(line.c_str(), NULL, 16);
+        if (chunkLength == 0)
+            break;
+        getline(iss, line, '\r');
+        _request._body += line.substr(0, chunkLength);
+        getline(iss, line, '\n');
+    }
+}
+
+std::string RequestHandle::parsePart(const std::string& body, const std::string& boundary) {
+    size_t start = body.find(boundary);
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += boundary.length();
+    size_t end = body.find(boundary, start);
+    if (end == std::string::npos) {
+        return "";
+    }
+    return body.substr(start, end - start);
+}
+
+std::string RequestHandle::parseFileContent(const std::string &body) {
+    size_t start = body.find("\r\n\r\n");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 4;
+    return body.substr(start);
+}
+
+std::string RequestHandle::parseBodyHeader(const std::string& part) {
+    size_t end = part.find("\r\n\r\n");
+    if (end == std::string::npos) {
+        return "";
+    }
+    return part.substr(0, end);
+}
+
+std::string RequestHandle::parseType(const std::string& body_header) {
+    size_t start = body_header.find("Content-Type: ");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 14;
+    size_t end = body_header.find("\r\n", start);
+    return body_header.substr(start, end - start);
+}
+
+std::string RequestHandle::parseFileName(const std::string& body_header) {
+    size_t start = body_header.find("filename=\"");
+    if (start != std::string::npos) {
+        start += 10;
+        size_t end = body_header.find("\"", start);
+        return body_header.substr(start, end - start);
+    }
+    return "";
+}
+
+std::string RequestHandle::parseBoundary(const std::string& body_header) {
+    size_t start = body_header.find("boundary=");
+    if (start == std::string::npos) {
+        return "";
+    }
+    start += 9;
+    return body_header.substr(start);
+}
+
+std::string RequestHandle::parseContentType(std::string &body_header)
+{
+    size_t start = body_header.find("Content-Type: ");
+    if (start == std::string::npos)
+        return "";
+    start += 14;
+    size_t end = body_header.find(";", start);
+    return body_header.substr(start, end - start);
 }

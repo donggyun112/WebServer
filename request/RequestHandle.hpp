@@ -12,10 +12,9 @@
 # include <iomanip>
 # include <dirent.h> // DIR을 위함.
 # include "structRq.hpp"
-# include "Request.hpp"
+# include "../Manager/Manager.hpp"
 # include "../utils/utils.hpp"
 # include "../Parse/Config.hpp"
-// # include "../request/Client.hpp"
 # include <sys/time.h>
 
 class Config;
@@ -55,6 +54,7 @@ class RequestHandle {
 		std::string parseBoundary(const std::string& body_header);
 		std::string parseContentType(std::string &body_header);
         RequestHandle();
+
     public:
         RequestHandle(Port port);
         RequestHandle(const RequestHandle &Copy);
@@ -73,7 +73,6 @@ class RequestHandle {
         const Request   		&getRequest() const;
         int             		getResponseStatus() const;
         void                    setResponseStatus(int num) {_responseStatus = num;}
-        void                    setChunkedBody(const std::string& body);
         void            		setRequest();
         void            		setBuffer(unsigned char *buffer, int length);
         void            		clearRequest();

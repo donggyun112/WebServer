@@ -12,10 +12,9 @@ std::string ResponseHandle::handleDeleteRequest() {
 
     // 파일 읽기
     std::ifstream file(_filePath.c_str(), std::ios::binary);
-	// std::cout << "File Path: " << _filePath << std::endl;
     if (file.is_open() && file.good()) {
         // 파일 크기 확인
-        std::streamsize fileSize = ResponseUtils::getFileSize(file);
+        std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
 
         // 파일 크기 제한 설정
         const std::streamsize maxFileSize = 10 * 1024 * 1024;
@@ -27,7 +26,7 @@ std::string ResponseHandle::handleDeleteRequest() {
 
         tmpResponse.setStatusCode(204);
     } else {
-        if (ResponseUtils::isDirectory(_filePath)) {
+        if (Manager::responseUtils.isDirectory(_filePath)) {
 			if (_loc.getAutoindex() == true) {
             	handleAutoIndex(tmpResponse, _filePath);
 			} else {

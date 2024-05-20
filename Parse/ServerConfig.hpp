@@ -28,7 +28,6 @@ public:
     ServerConfig(std::ifstream &file);
     ~ServerConfig();
     std::unordered_map<int, std::string> parseErrorPages(std::istringstream &iss);
-	int getClientMaxBodySize() const;
     std::string getServerName() const;
     std::string getPath() const { 
 		return _path;
@@ -59,15 +58,37 @@ public:
 		else if (httpPath.find('/') != std::string::npos) {
 			setenv("PATH_INFO", httpPath.substr(httpPath.find('/')).c_str(), 1);
 			httpPath = httpPath.substr(0, httpPath.find('/'));
-			std::cout << "PATH_INFO: " << getenv("PATH_INFO") << std::endl;
 		}
 	}
 	// LocationConfig에서 이걸 처리하는게 맞는지 모르겠음 보통이런건 request에서 처리하는게 맞는거 같은데
 
 	bool isConfPattern(const std::string& str) {
-    	// ~ \\.extension$ 확인
-    	std::regex pattern("^\\s*\\\\\\.\\w+\\$$");
-		return std::regex_match(str, pattern);
+		std::stringstream ss(str);
+		std::string token;
+		
+		while (std::getline(ss, token, '$')) {}
+		if (token != "") {
+			return false;
+		}
+		
+		ss.clear();
+		ss.seekg(0);
+		
+		if (!std::getline(ss, token, '\\') || token != "") {
+			return false;
+		}
+		
+		if (!std::getline(ss, token, '$') || token[0] != '.') {
+			return false;
+		}
+		
+		for (size_t i = 1; i < token.length(); i++) {
+			if (!isalnum(token[i]) && token[i] != '.') {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 
 	std::vector<std::string> getHttpUriToken(std::string httpPath) {
@@ -91,20 +112,15 @@ public:
 			extention = extention.substr(0, extention.find_first_of('/'));
 			// 정규식으로 만들기
 			extention = "\\" + extention + "$";
-			std::cout << "extention : " << extention << std::endl;
 			if (isConfPattern(extention)) {
 
 				for (size_t i = 0; i < _locations.size(); ++i) {
 					if (_locations[i].getPath() == extention)
 					{
-						std::cout << "location path : " << _locations[i].getPath() << std::endl;
 						return _locations[i];
 					}
 				}
-			} else {
-				std::cout << "sibal" << std::endl;
-			}
-			
+			} else throw std::runtime_error("error at LocationFonfig::getLocation");
 		}
         // std::cout << "extension string : " << extention << std::endl;
 		std::vector<std::string> tokens = getHttpUriToken(httpPath);

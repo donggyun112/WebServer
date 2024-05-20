@@ -3,6 +3,7 @@ CFLAGS = -Wall -Wextra -Werror -std=c++98 #-fsanitize=address -g
 NAME = webserv
 
 SRCS =	Server/EchoServer.cpp \
+		Manager/Manager.cpp \
 		request/Client.cpp \
 		request/RequestHandle.cpp \
 		request/Request.cpp \
@@ -16,8 +17,7 @@ SRCS =	Server/EchoServer.cpp \
 		tmp/mainTest.cpp \
 		utils/utils.cpp \
 		utils/Error.cpp \
-		handleDeleteRequest/handleDeleteRequest.cpp \
-
+		handleDeleteRequest/handleDeleteRequest.cpp 
 
 OBJS = $(SRCS:.cpp=.o)
 

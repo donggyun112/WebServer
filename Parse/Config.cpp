@@ -24,7 +24,6 @@ void    Config::parseConfig(const std::string filename)
         {
             file.seekg(-(line.length() + 1), std::ios::cur);
             ServerConfig server(file);
-            // std::cout << "sec" << server.getServerName() << std::endl;
             _servers.push_back(server);
         }
     }

@@ -1,19 +1,23 @@
-#pragma once
-
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 #include <iostream>
 #include <unistd.h>
 #include "RequestHandle.hpp"
 #include "ResponseHandle.hpp"
 #include "../utils/Error.hpp"
 #include "../utils/utils.hpp"
+#include "../Manager/Manager.hpp"
+#include "../socket/socket.hpp"
+#include "../Manager/Manager.hpp"
+#include <cstdlib>
 
 #define READ 0
 #define WRITE 1
 
 typedef struct s_procInfo {
     pid_t pid;
-    int pipeFd;
-    int ClientFd;
+    int clientFd;
+	std::string tempFilePath;
 } procInfo;
 
 class Client {
@@ -38,11 +42,16 @@ class Client {
 		void setEnv(const RequestHandle &Req);
 		void setBufferFromChild(int data);
 		procInfo *getProcInfo() const;
-		ResponseHandle getResponseHandle() const;
+		// ResponseHandle getResponseHandle() const;
 
+		const ResponseHandle& getResponseHandle() const;
 
+		Port		getPort() const;
 
 		// std::string setResponse();
 		std::string getResponse() const;
+		void		setResponse(const std::string &param);
+		void		appendResponse(const char *param);
 		void		cutResponse(int length);
 };
+#endif
