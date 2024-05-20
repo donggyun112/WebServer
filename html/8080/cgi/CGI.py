@@ -87,9 +87,6 @@ def main():
 
 if __name__ == '__main__':
 	
-	with open('error.log', 'a') as f:
-		for name in os.environ.keys():
-			print(f"{name} = {os.environ[name]}", file=f)
 	main()
 
 
