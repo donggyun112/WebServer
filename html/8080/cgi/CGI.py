@@ -5,10 +5,10 @@ from list import FileControl
 from calculator import Calculator
 import sys
 import os
+import logging
 cgitb.enable(display=0, logdir="/logs")
 
 form = cgi.FieldStorage()
-
 
 def responseForm(status, content, contentType, contentLength, location=None):
 	print(f"Content-Type: {contentType}\r")
@@ -35,9 +35,7 @@ def HTMLForm(message):
 
 def handleGet():
 	path_info = os.environ.get('PATH_INFO')
-	print(f"Path: {path_info}")
 	if path_info == "/calculator":
-		print("Calculator")
 		cal = Calculator(form)
 		cal.display()
 	elif path_info == "/listing":
@@ -63,7 +61,6 @@ def handlePost():
 
 def handleMethod():
 	method = os.environ.get('REQUEST_METHOD')
-	print(f"Method: {method}")
 	if method == 'GET':
 		handleGet()
 	elif method == 'POST':
@@ -82,7 +79,6 @@ def checkProtocol():
 
 def main():
 	
-	# print(form)
 	if not checkProtocol():
 		html = HTMLForm("Bad Request")
 		responseForm(400, html, "text/html", len(html))
@@ -91,6 +87,9 @@ def main():
 
 if __name__ == '__main__':
 	
+	with open('error.log', 'a') as f:
+		for name in os.environ.keys():
+			print(f"{name} = {os.environ[name]}", file=f)
 	main()
 
 
