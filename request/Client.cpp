@@ -96,7 +96,7 @@ void	Client::setEnv(const Config &Conf, const RequestHandle &Req) {
         setenv("HTTP_HOST", host.c_str(), 1);
     	setenv("HTTP_REFERER", Req.getHeader("Referer").c_str(), 1);
 	    setenv("HTTP_USER_AGENT", Req.getHeader("User-Agent").c_str(), 1);
-		setenv("HTTP_PRAGMA", "Cache-Control", 1);
+		setenv("HTTP_PRAGMA", Req.getHeader("Cache-Control").c_str(), 1);
         setenv("HTTP_ACCEPT_ENCODING", Req.getHeader("Accept-Encoding").c_str(), 1);
         setenv("HTTP_KEEP_ALIVE", Req.getHeader("Keep-Alive").c_str(), 1);
     }
