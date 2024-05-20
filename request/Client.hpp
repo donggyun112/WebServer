@@ -30,7 +30,7 @@ class Client {
 		Client(const Client &Copy);
 		~Client();
 		void clearAll();
-		void setBuffer(const std::string &buffer);
+		void setBuffer(unsigned char *buffer, int length);
 		int  getReadStatus() const;
 		bool getIsKeepAlive() const;
 		void generateResponse(Config Conf);

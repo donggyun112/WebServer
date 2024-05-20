@@ -92,6 +92,86 @@ void Server::updateControl() {
 	_changeList.clear();
 }
 
+
+void Server::disconnectClient(int fd) {
+    
+    // 클라이언트 맵에서 해당 fd의 클라이언트 객체 찾기
+    std::map<FD, Client *>::iterator it = _clientMap.find(fd);
+    if (it == _clientMap.end()) {
+        std::cout << "Client not found: " << fd << std::endl;
+        return;
+    }
+    
+    delete it->second;
+    _clientMap.erase(it);
+    
+    changeEvents(_changeList, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    changeEvents(_changeList, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+    std::cout << "Client disconnected: " << fd << std::endl;
+	// usleep(1000);
+
+	if (close(fd) == -1) {
+        std::cerr << "Error closing socket: " << fd << std::endl;
+    }
+	delayResponse(0.0002f);
+
+}
+
+
+
+void Server::delayResponse(double seconds) {
+    clock_t startTime = clock();
+    double elapsedSeconds = 0.0;
+
+    while (elapsedSeconds < seconds) {
+        clock_t currentTime = clock();
+        elapsedSeconds = static_cast<double>(currentTime - startTime) / CLOCKS_PER_SEC;
+    }
+}
+
+
+void Server::handleClientRead(FD clientFd, const Config &Conf) {
+    unsigned char *buffer = new unsigned char[1025];
+    ssize_t length;
+
+    length = recv(clientFd, buffer, 1024, 0);
+    buffer[length] = '\0';
+    
+    if (length < 0) {
+        // 오류 발생 시 클라이언트 연결 종료
+        std::cerr << "Error reading from client: " << clientFd << std::endl;
+        delayResponse(0.0002f);
+        delete[] buffer;
+        // disconnectClient(clientFd);
+        return ;
+    } else if (length == 0) {
+        // 클라이언트가 연결을 종료한 경우
+        std::cout << "Client disconnected: " << clientFd << std::endl;
+        disconnectClient(clientFd);
+        delete[] buffer;
+        return ;
+    }
+    
+    Client *ptr = _clientMap[clientFd];
+    ptr->setBuffer(buffer, length);
+    delete[] buffer;
+    
+    if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
+        // std::cout << "Read Done" << std::endl;
+
+        if (ptr->getResponseHandle().isCGI()) {
+            ptr->getProcInfo()->ClientFd = clientFd;
+            changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
+            changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+        } else {
+            ptr->generateResponse(Conf);
+            changeEvents(_changeList, clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+            changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+        }
+        return ;
+    }
+}
+
 //main에서 기본 세팅이 끝나면, 이걸 실행해야 한다.
 void Server::run(const Config &Conf) {
 	int eventNumber;

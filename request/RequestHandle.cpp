@@ -81,101 +81,89 @@ int RequestHandle::getResponseStatus() const {
     return _responseStatus;
 }
 
-void RequestHandle::setBuffer(const std::string& buffer) {
-    _buffer += buffer;
+void RequestHandle::setBuffer(unsigned char *buffer, int length) {
+    // _buffer.insert(_buffer.end(), buffer.begin(), buffer.end());
+    for (int i = 0; i < length; i++) {
+        _buffer += buffer[i];
+    }
     setRequest();
 }
 
-// void RequestHandle::setRequest() {
-//     std::istringstream iss(_buffer);
-// 	std::string line, header, body;
-
-//     if (iss.str().find("\r\n") == std::string::npos && _readStatus == READ_NOT_DONE)
-//         return ;
-    
-//     if (iss.str().find("\r\n") != std::string::npos && _readStatus == READ_NOT_DONE) {
-//         std::getline(iss, line);
-//         HttpRequest::parseRequestLine(_request, line);
-//         _readStatus = READ_LINE_DONE;
-//     }
-//     size_t pos = iss.str().find("\r\n\r\n");
-//     if (pos == std::string::npos && _readStatus == READ_LINE_DONE)
-//         return ;
-//     if (pos != std::string::npos && _readStatus == READ_LINE_DONE)
-//     {
-//         header = iss.str().substr(0, pos);
-//         HttpRequest::parseHeader(_request, header);
-//         if (_request._headers.find("Content-Length") != _request._headers.end())
-//             _request._contentLength = atoi(_request._headers["Content-Length"].c_str());
-//         else 
-//             _request._contentLength = 0;
-//         if (_request._headers.find("Cookie") != _request._headers.end())
-//             HttpRequest::setCookie(_request);
-//         if (_request._headers["Connection"] == "close")
-//             _isKeepAlive = false;
-//         _readStatus = READ_HEADER_DONE;
-
-//     }
-//     if (getMethod() == "POST" && getHeader("Transfer-Encoding") == "chunked" && _readStatus == READ_HEADER_DONE) {
-//         body = iss.str().substr(pos + 4);
-//         if (body.find("0\r\n") == std::string::npos) {
-//             return ;
-//         }
-//         _readStatus = READ_DONE;
-//         _request._body = HttpRequest::setChunkedBody(body);
-//     }
-//     else if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING) {
-//         if (_request._contentLength == 0) {
-//             _readStatus = READ_DONE;
-//             return ;
-//         }
-//         body = iss.str().substr(pos + 4);
-//         _request._currentLength = body.length();
-//         if (_request._currentLength < _request._contentLength) {
-//             _readStatus = READ_BODY_DOING;
-//             return ;
-//         } else if (_request._currentLength == _request._contentLength) {
-//             _readStatus = READ_DONE;
-//             _request._body = body;
-//         }
-//             else if (_request._currentLength > _request._contentLength)
-//             throw BadRequest_400;
-//     }
-//     HttpRequest::validateRequest(_request);
-//     _responseStatus = 200;
-// }
-
-void RequestHandle::setRequest()
-{
-    std::string buffer(_buffer);
-    std::string::size_type pos = buffer.find("\r\n");
-    if (pos == std::string::npos && _readStatus == READ_NOT_DONE)
-        return ;
+void RequestHandle::setRequest() {
     std::string line, header, body;
-    line = buffer.substr(0, pos);
-    parseRequestLine(line);
-    _readStatus = READ_LINE_DONE;
-    pos += 2;
 
-    // pos = buffer.find("\r\n\r\n");
-    std::string::size_type headerEnd = buffer.find("\r\n\r\n");
-    if (headerEnd == std::string::npos && _readStatus == READ_LINE_DONE)
+    if (_readStatus == READ_NOT_DONE) {
+        std::string::size_type pos = _buffer.find("\r\n");
+        if (pos == std::string::npos) return;
+        line = _buffer.substr(0, pos);
+        parseRequestLine(line);
+        _readStatus = READ_LINE_DONE;
+    }
+
+    if (_readStatus == READ_LINE_DONE) {
+        std::string::size_type headerEnd = _buffer.find("\r\n\r\n");
+        if (headerEnd == std::string::npos) return;
+        header = _buffer.substr(0, headerEnd);
+        parseHeader(header);
+        _readStatus = READ_HEADER_DONE;
+    }
+
+    if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING) {
+
+        std::string::size_type bodyStart = _buffer.find("\r\n\r\n");
+        if (bodyStart == std::string::npos) return ;
+        body = _buffer.substr(bodyStart + 4);
+
+        if (getMethod() == "POST" && getHeader("Transfer-Encoding") == "chunked")
+            parseChunkedBody(body);
+        else
+            parseRegularBody(body);
+    }
+
+    if (_readStatus == READ_DONE) {
+        validateRequest();
+        _responseStatus = 200;
+    }
+}
+
+void RequestHandle::parseRegularBody(std::string& body) {
+    if (getMethod() == "GET" || (_request._contentLength == 0 && body.empty())) {
+        _readStatus = READ_DONE;
+        return;
+    }
+    if (body.size() == _request._contentLength) {
+        _readStatus = READ_DONE;
+        _request._body = body.substr(0, _request._contentLength);
+
+    } else if (body.size() < _request._contentLength){
+        _readStatus = READ_BODY_DOING;
         return ;
+    } else if (body.size() > _request._contentLength) {
+        _readStatus = READ_ERROR;
+        return ;
+    }
+}
 
-    header = buffer.substr(pos, headerEnd - pos);
-    // std::cout << "----------------\n" << header << "\n----------------" << std::endl;
-    parseHeader(header);
+void RequestHandle::clearRequest()
+{
+    _request._method.clear();
+    _request._uri.clear();
+    _request._version.clear();
+    _request._headers.clear();
+    _request._cookie.clear();
+    _request._body.clear();
+	_request._query.clear();
+    _request._contentLength = 0;
+}
 
-    _readStatus = READ_HEADER_DONE;
-
-    // if () 조건 전체적으로 추가해야함 여러번 호출하면 옳게 파싱하지 못함. 
-    body = buffer.substr(pos + 4);
-    if (getMethod() == "POST" && getHeader("Transfer-Encoding") == "chunked")
-        parseChunkedBody(body);
-    else
-        ParseRegularBody(body);
-    validateRequest();
-    _responseStatus = 200;
+void RequestHandle::clearAll()
+{
+    clearRequest();
+    _buffer.clear();
+    _readStatus = READ_NOT_DONE;
+    _isKeepAlive = true;
+    _responseStatus = 0;
+    _tempResult = "";
 }
 
 std::string RequestHandle::parseMethod(const std::string& methodStr)
@@ -192,12 +180,10 @@ std::string RequestHandle::parseMethod(const std::string& methodStr)
 
 void RequestHandle::parseUri(const std::string& uri)
 {
-	std::string path;
     size_t pos = uri.find('?');
-
 	if (pos != std::string::npos) {
-        path = uri.substr(0, uri.find('?'));
-        _request._query = uri.substr(uri.find('?') + 1);
+        _request._uri = uri.substr(0, pos);
+        _request._query = uri.substr(pos + 1);
 	}
 	else 
 		_request._uri = uri;
@@ -223,25 +209,6 @@ void RequestHandle::parseRequestLine(const std::string& buf)
 		throw HttpVersionNotSupported_505;
 }
 
-/*
-
-void HttpRequest::parseHeader(Request &req, const std::string& header)
-{
-	std::istringstream iss(header);
-	std::string line;
-
-	while (std::getline(iss, line))
-	{
-		std::string::size_type pos = line.find(":");
-		if (pos != std::string::npos) {
-			std::string key = line.substr(0, pos);
-			std::string value = line.substr(pos + 2);
-			req._headers[key] = value;
-		}
-	}
-}
-*/
-
 void RequestHandle::parseHeader(const std::string& buffer)
 {
     std::istringstream iss(buffer);
@@ -257,54 +224,56 @@ void RequestHandle::parseHeader(const std::string& buffer)
 			_request._headers[key] = value;
 		}
 	}
-    if (_request._headers.find("Content-Length") != _request._headers.end())
+    if (_request._headers.find("Content-Length") != _request._headers.end()) {
+        if (getMethod() == "GET") {
+            _readStatus = READ_ERROR;
+            return ;
+        }
         _request._contentLength = atoi(_request._headers["Content-Length"].c_str());
+    }
     else 
         _request._contentLength = 0;
+
     if (_request._headers.find("Cookie") != _request._headers.end())
-        HttpRequest::setCookie(_request);
+        setCookie();
     _isKeepAlive = (_request._headers.find("Connection") == _request._headers.end() || _request._headers["Connection"] != "close");
-}
-
-void RequestHandle::ParseRegularBody(const std::string& body)
-{
-    if (_request._contentLength == 0) {
+    if (_request._contentLength == 0 && getHeader("Transfer-Encoding") != "chunked") {
         _readStatus = READ_DONE;
-        return ;
+        validateRequest();
+        _responseStatus = 200;
+        return;
     }
-
-    size_t length = body.length();
-    if (length < _request._contentLength) {
-        _readStatus = READ_BODY_DOING;
-        return ;
-    }
-    if (length > _request._contentLength)
-        throw BadRequest_400;
-    _request._body = body.substr(0, _request._contentLength);
-    _readStatus = READ_DONE;
+    // if (_request._headers.find("Content-Length") != _request._headers.end())
+    //     _request._contentLength = atoi(_request._headers["Content-Length"].c_str());
+    // else 
+    //     _request._contentLength = 0;
+    // if (_request._headers.find("Cookie") != _request._headers.end())
+    //     HttpRequest::setCookie(_request);
+    // _isKeepAlive = (_request._headers.find("Connection") == _request._headers.end() || _request._headers["Connection"] != "close");
 }
 
 void RequestHandle::parseChunkedBody(const std::string& body)
 {
     std::istringstream iss(body);
-    std::string chunk;
-    size_t chunkLength;
+    std::string line;
+    long chunkLength;
 
-    while (std::getline(iss, chunk)) {
-        if (chunk == "0") {
+    if (body.find("0\r\n") == std::string::npos) {
+        _readStatus = READ_BODY_DOING;
+        return;
+    }
+
+    while (std::getline(iss, line)) {
+        chunkLength = strtol(line.c_str(), NULL, 16);
+        if (chunkLength == 0) {
             _readStatus = READ_DONE;
             return ;
         }
-        std::istringstream chunk_iss(chunk);
-        chunk_iss >> std::hex >> chunkLength;
-        if (!chunk_iss) {
-            _readStatus = READ_ERROR;
-            return ;
-        }
-        getline(iss, chunk, '\r');
-        _request._body += chunk.substr(0, chunkLength);
-        getline(iss, chunk, '\n');
+        getline(iss, line, '\r');
+        _request._body += line.substr(0, chunkLength);
+        getline(iss, line, '\n');
     }
+
 }
 
 void RequestHandle::setCookie()

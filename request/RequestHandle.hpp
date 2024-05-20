@@ -39,6 +39,21 @@ class RequestHandle {
         int         _responseStatus;
         bool        _isKeepAlive;
         std::string _tempResult;
+		void        parseRequestLine(const std::string& line);
+		void        parseHeader(const std::string& line);
+        void        parseRegularBody(std::string& body);
+		void        validateRequest();
+		void        setCookie();
+		void        parseChunkedBody(const std::string& body);
+        void        parseUri(const std::string& uri);
+        std::string parseMethod(const std::string& methodStr);
+		std::string parsePart(const std::string& body, const std::string& boundary);
+		std::string parseFileContent(const std::string &body);
+		std::string parseBodyHeader(const std::string& part);
+		std::string parseType(const std::string& body_header);
+		std::string parseFileName(const std::string& body_header);
+		std::string parseBoundary(const std::string& body_header);
+		std::string parseContentType(std::string &body_header);
         RequestHandle();
     public:
         RequestHandle(Port port);
@@ -60,17 +75,7 @@ class RequestHandle {
         void                    setResponseStatus(int num) {_responseStatus = num;}
         void                    setChunkedBody(const std::string& body);
         void            		setRequest();
-        std::string             parseMethod(const std::string& methodStr);
-        void                    parseUri(const std::string& uri);
-        void                    parseRequestLine(const std::string& buf);
-        void                    parseHeader(const std::string& buffer);
-        void                    ParseRegularBody(const std::string& body);
-        void                    parseChunkedBody(const std::string& body);
-        void                    setCookie();
-        void                    validateRequest();
-
-
-        void            		setBuffer(const std::string& buffer);
+        void            		setBuffer(unsigned char *buffer, int length);
         void            		clearRequest();
         void            		clearAll();
         int             		getReadStatus() const {return this->_readStatus;}
