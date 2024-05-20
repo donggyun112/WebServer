@@ -3,9 +3,7 @@
 #include "../utils/Error.hpp"
 #include <signal.h>
 
-using namespace std;
-
-int main(int ac, char **av, char **env)
+int main(int ac, char **av)
 {
 	// signal(SIGPIPE, SIG_IGN);
 	Error::initializeError();
@@ -13,5 +11,5 @@ int main(int ac, char **av, char **env)
 	Server Server;
 	Server.makeServerSocket(Conf);
 	Server.queueInit(Conf);
-	Server.run(Conf, env);
+	Server.run(Conf);
 }
