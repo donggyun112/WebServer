@@ -178,6 +178,17 @@ std::string RequestHandle::parseMethod(const std::string& methodStr)
 		return "OTHER";
 }
 
+void RequestHandle::parseUri(const std::string& uri)
+{
+    std::string::size_type pos = uri.find("?");
+    if (pos != std::string::npos) {
+        _request._uri = uri.substr(0, pos);
+        _request._query = uri.substr(pos + 1);
+    }
+    else
+        _request._uri = uri;
+}
+
 void RequestHandle::parseRequestLine(const std::string& buf)
 {
     std::istringstream iss(buf);
@@ -202,11 +213,11 @@ void RequestHandle::parseHeader(const std::string& buffer)
 {
     std::istringstream iss(buffer);
     std::string line, key, value;
-    // std::string::size_type pos = 0;
+    std::string::size_type pos = 0;
 
 	while (std::getline(iss, line))
 	{
-		std::string::size_type pos = line.find(":");
+		pos = line.find(":");
 		if (pos != std::string::npos) {
 			std::string key = line.substr(0, pos);
 			std::string value = line.substr(pos + 2);
@@ -283,97 +294,14 @@ void RequestHandle::validateRequest()
 		throw HttpVersionNotSupported_505;
 	if (_request._headers.find("Host") == _request._headers.end())
 		throw BadRequest_400;
-}
-
-//----------------------------
-void RequestHandle::clearRequest()
-{
-    _request._method.clear();
-    _request._uri.clear();
-    _request._version.clear();
-    _request._headers.clear();
-    _request._cookie.clear();
-    _request._body.clear();
-	_request._query.clear();
-    _request._contentLength = 0;
-}
-
-void RequestHandle::clearAll()
-{
-    clearRequest();
-    _buffer.clear();
-    _readStatus = READ_NOT_DONE;
-    _isKeepAlive = true;
-    _responseStatus = 0;
-
-    //for test
-    _tempResult = "";
+    if (_readStatus == READ_ERROR)
+        throw BadRequest_400;
 }
 
 void RequestHandle::printAllHeaders() const{
     const Headers& headers = _request._headers;
     for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it) {
         std::cout << it->first << ": " << it->second << std::endl;
-    }
-}
-
-void RequestHandle::validateRequest()
-{
-	if (_request._method == "OTHER")
-		throw MethodNotAllowed_405;
-	if (_request._uri.empty())
-		throw BadRequest_400;
-	if (_request._version != "HTTP/1.1")
-		throw HttpVersionNotSupported_505;
-	if (_request._headers.find("Host") == _request._headers.end())
-		throw BadRequest_400;
-}
-
-void RequestHandle::parseHeader(const std::string& header)
-{
-	std::istringstream iss(header);
-	std::string line;
-
-	while (std::getline(iss, line))
-	{
-		std::string::size_type pos = line.find(":");
-		if (pos != std::string::npos) {
-			std::string key = line.substr(0, pos);
-			std::string value = line.substr(pos + 2);
-			_request._headers[key] = value;
-		}
-	}
-}
-
-void RequestHandle::setCookie()
-{
-	std::istringstream iss(_request._headers["Cookie"]);
-	std::string line;
-
-	while (std::getline(iss, line, ';')) {
-		std::string::size_type pos = line.find("=");
-		if (pos != std::string::npos) {
-			std::string key = line.substr(0, pos);
-			std::string value = line.substr(pos + 1);
-			_request._cookie[key] = value;
-		}
-	}
-}
-
-void RequestHandle::parseChunkedBody(const std::string& body)
-{
-    std::istringstream iss(body);
-    std::string line;
-    long chunkLength;
-
-    while (true) {
-        std::getline(iss, line);
-        chunkLength = strtol(line.c_str(), NULL, 16);
-        if (chunkLength == 0)
-            break;
-        getline(iss, line, '\r');
-        _request._body += line.substr(0, chunkLength);
-        getline(iss, line, '\n');
     }
 }
 

@@ -173,7 +173,6 @@ void Client::handleCGI(const Config &Conf) {
 	}
 }
 
-
 void Client::generateResponse(const Config &Conf) {
 	try {
 		if (_requestHandle.getReadStatus() == READ_ERROR) {
