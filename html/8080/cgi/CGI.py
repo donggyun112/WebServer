@@ -3,19 +3,20 @@ import cgi
 import cgitb
 from list import FileControl
 from calculator import Calculator
-
+import sys
+import os
 cgitb.enable(display=0, logdir="/logs")
 
 form = cgi.FieldStorage()
 
 
 def responseForm(status, content, contentType, contentLength, location=None):
-	print(f"Content-Type: {contentType}")
+	print(f"Content-Type: {contentType}\r")
 	if location:
-		print(f"Location: {location}")
-	print(f"Content-Length: {contentLength}")
-	print(f"Status: {status}")
-	print()
+		print(f"Location: {location}\r")
+	print(f"Content-Length: {contentLength}\r")
+	print(f"Status: {status}\r")
+	print("\r")
 	print(content)
 
 def HTMLForm(message):
@@ -70,14 +71,17 @@ def handleMethod():
 
 
 def main():
-	print(form)
+	name = os.environ["SERVER_NAME"]
+	print(name)
+	# print(form)
 	# if not checkProtocol():
 		# html = HTMLForm("Bad Request")
 		# responseForm(400, html, "text/html", len(html))
 		# return 
-	handleMethod()
+	# handleMethod()
 
 if __name__ == '__main__':
+	
 	main()
 
 

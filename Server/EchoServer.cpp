@@ -171,7 +171,7 @@ void Server::handleClientRead(FD clientFd, const Config &Conf, char **env) {
         std::cout << "Read Done" << std::endl;
         ptr->generateResponse(Conf, env);
         if (ptr->getResponseHandle().isCGI()) {
-
+            std::cout << "iscgi == true, start to make proc event" << std::endl;
             ptr->getProcInfo()->clientFd = clientFd;
             changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
@@ -206,10 +206,11 @@ void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
 		ptr->appendResponse(buffer);
 	}
 	close(tempFileFd);
-	std::remove(procPtr->tempFilePath.c_str());
+	// std::remove(procPtr->tempFilePath.c_str());
 	waitpid(procPtr->pid, NULL, 0);
 	if (length == -1) {
-		ptr->setResponse(Error::errorHandler(Conf[ptr->getPort()], InternalServerError_500));
+        std::cerr << "length == -1" << std::endl;
+		// ptr->setResponse(Error::errorHandler(Conf[ptr->getPort()], InternalServerError_500));
 		changeEvents(_changeList, procPtr->clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 		changeEvents(_changeList, procPtr->clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 	} else {

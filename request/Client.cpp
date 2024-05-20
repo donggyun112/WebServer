@@ -43,12 +43,27 @@ void Client::setBuffer(const std::string &buffer) {
 	}
 }
 
-int Client::getReadStatus() const {
+int		Client::getReadStatus() const {
 	return _requestHandle.getReadStatus();
 }
 
-bool Client::getIsKeepAlive() const {
+bool	Client::getIsKeepAlive() const {
 	return _requestHandle.getIsKeepAlive();
+}
+
+void	Client::makeExecuteCommand(std::string &extention) {
+	std::cout << __LINE__ << " | extention = " << extention << std::endl;
+    if (extention == "py") {
+        extention = "/usr/bin/python3";
+    } else if (extention == "php") {
+        extention = "/usr/bin/php";
+    } else if (extention == "js") {
+        extention = "/usr/bin/node";
+    } else if (extention == "rb") {
+        extention = "/usr/bin/ruby";
+    } else if (extention == "pl") {
+        extention = "perl";
+	}
 }
 
 void	Client::setEnv(const RequestHandle &Req) {
@@ -108,8 +123,7 @@ void	Client::setEnv(const RequestHandle &Req) {
 void Client::makeTempFileNameForCgi(std::string &filePath) {
 	std::srand(std::time(NULL));
 
-	filePath = "/tmp/";
-	filePath += "webserv-";
+	filePath = "/tmp/webserv-";
 	filePath += Manager::utils.toString(std::rand());
 }
 
@@ -117,39 +131,54 @@ void Client::handleCGI(char **env) {
 	FD pipeParentToChild[2];
 	int processPid;
 	std::vector<char *> commands;
-	std::string command = Manager::responseUtils.getFileExtension(_responseHandle.getFilePath());
+	std::string service = Manager::responseUtils.getFileExtension(_responseHandle.getFilePath());
+	std::string pathToExecute = _responseHandle.getFilePath();
+	
+	std::cout << __LINE__ << " | pathToExecute = " << pathToExecute << std::endl;
+	std::cout << __LINE__ << " | service before change= " << service << std::endl;
+
 	int tempFileFd;
-	std::string filePath;
-	makeTempFileNameForCgi(filePath);
-	commands.push_back(const_cast<char*>(command.c_str()));
-	commands.push_back(const_cast<char*>(_responseHandle.getFilePath().c_str()));
+	std::string tempFilePath;
+
+	makeExecuteCommand(service);
+	std::cout << __LINE__ << " | service after change= " << service << std::endl;
+	makeTempFileNameForCgi(tempFilePath);
+	commands.push_back(const_cast<char*>(service.c_str()));
+	commands.push_back(const_cast<char*>(pathToExecute.c_str()));
 	commands.push_back(NULL);
 	if (pipe(pipeParentToChild) == -1) {
+		std::cerr << "pipe error" << std::endl;
 		throw InternalServerError_500;
-	} 
+	}
+	tempFileFd = open(tempFilePath.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
 	processPid = fork();
 	if (processPid == 0) {
 		setEnv(_requestHandle);
 		dup2(pipeParentToChild[READ], STDIN_FILENO);
 		close(pipeParentToChild[WRITE]);
-		tempFileFd = open(filePath.c_str(), O_RDWR | O_CREAT | O_TRUNC);
-		if (tempFileFd == -1)
+		
+		if (tempFileFd == -1) {
+			std::cerr << "failed to open | " << __LINE__ << std::endl;
 			exit(InternalServerError_500);
+		}
 		dup2(tempFileFd, STDOUT_FILENO);
 		if (execve(commands[0], commands.data(), env) == -1) {
+			std::cerr << "failed to execve | " << __LINE__ << std::endl;
 			exit(InternalServerError_500);
 		}
 	} else if (processPid > 0) {
 		close(pipeParentToChild[READ]);
-		write(pipeParentToChild[WRITE], _requestHandle.getBody().c_str(), _requestHandle.getBody().length());
+		write(pipeParentToChild[WRITE], _requestHandle.getBody().data(), _requestHandle.getBody().length());
 		close(pipeParentToChild[WRITE]);
 		this->_procPtr = new procInfo();
 		_procPtr->pid = processPid;
-		_procPtr->tempFilePath = filePath;
+		_procPtr->tempFilePath = tempFilePath;
+		std::cout << "process parent action success" << std::endl;
 		return ;
 	} else {
 		close(pipeParentToChild[READ]);
 		close(pipeParentToChild[WRITE]);
+		std::cout << "failed to fork()" << std::endl;
 		throw InternalServerError_500;
 	}
 }
