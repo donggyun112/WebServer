@@ -23,7 +23,6 @@ class Calculator:
 
 	def display(self):
 		result = self.form.getvalue('result', '')
-		print(result)
 		if 'number' in self.form:
 			num = self.form.getvalue('number')
 			result += num

@@ -172,13 +172,13 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
     
     if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
         // std::cout << "Read Done" << std::endl;
+            ptr->generateResponse(Conf);
 
         if (ptr->getResponseHandle().isCGI()) {
             ptr->getProcInfo()->clientFd = clientFd;
             changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         } else {
-            ptr->generateResponse(Conf);
             changeEvents(_changeList, clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         }
