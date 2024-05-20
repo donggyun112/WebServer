@@ -186,23 +186,6 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
     }
 }
 
-//main에서 기본 세팅이 끝나면, 이걸 실행해야 한다.
-void Server::run(const Config &Conf) {
-	int eventNumber;
-	struct kevent eventList[100];
-	while (true) {
-		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 100, NULL);
-		// std::cerr << "---------Current event--------- num | " << eventNumber << std::endl;
-		updateControl();
-		if (eventNumber == -1)
-			throw std::runtime_error("asdf");
-		for (int i = 0; i < eventNumber; ++i) {
-			std::cout << "Event occurred: " << eventList[i].ident << ": " << eventList[i].filter << std::endl;
-			eventHandling(eventList[i], Conf);
-		}
-	}
-}
-
 void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
 	procInfo *procPtr = static_cast<procInfo *>(currEvent.udata);
 	Client *ptr = _clientMap[procPtr->clientFd];
