@@ -21,21 +21,23 @@ def responseForm(status, content, contentType, contentLength, location=None):
 
 def HTMLForm(message):
 	htmlstring = f"""
-	<html>
+<html>
 	<head>
 	<title>CGI</title>
 	</head>
 	<body>
-	<h1>{message}</h1>
+		<h1>{message}</h1>
 	</body>
-	</html>
+</html>
 	"""
 	return htmlstring
 
 
 def handleGet():
-	path_info = form.getvalue('PATH_INFO')
-	if path_info == "/calculate":
+	path_info = os.environ.get('PATH_INFO')
+	print(f"Path: {path_info}")
+	if path_info == "/calculator":
+		print("Calculator")
 		cal = Calculator(form)
 		cal.display()
 	elif path_info == "/listing":
@@ -49,7 +51,7 @@ def handleGet():
 
 
 def handlePost():
-	contetenType = form.getvalue('CONTENT_TYPE')
+	contetenType = os.environ.get('CONTENT_TYPE')
 	if contetenType == "multipart/form-data":
 		listing = FileControl(form)
 		listing.handleUpload()
@@ -60,7 +62,8 @@ def handlePost():
 
 
 def handleMethod():
-	method = form.getvalue('REQUEST_METHOD')
+	method = os.environ.get('REQUEST_METHOD')
+	print(f"Method: {method}")
 	if method == 'GET':
 		handleGet()
 	elif method == 'POST':
@@ -69,16 +72,22 @@ def handleMethod():
 		html = HTMLForm("Method Not Allowed")
 		responseForm(405, html, "text/html", len(html))
 
+def checkProtocol():
+	protocol = os.environ.get('SERVER_PROTOCOL')
+	if protocol == "HTTP/1.1":
+		return True
+	else:
+		return False
+
 
 def main():
-	name = os.environ["SERVER_NAME"]
-	print(name)
+	
 	# print(form)
-	# if not checkProtocol():
-		# html = HTMLForm("Bad Request")
-		# responseForm(400, html, "text/html", len(html))
-		# return 
-	# handleMethod()
+	if not checkProtocol():
+		html = HTMLForm("Bad Request")
+		responseForm(400, html, "text/html", len(html))
+		return 
+	handleMethod()
 
 if __name__ == '__main__':
 	

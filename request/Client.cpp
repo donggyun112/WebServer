@@ -82,12 +82,12 @@ void	Client::setEnv(const Config &Conf, const RequestHandle &Req) {
     	setenv("SERVER_NAME", serverName.c_str(), 1);
         setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
     	setenv("SERVER_PORT", serverPort.c_str(), 1);
-		setenv("SERVER_ADMIN", NULL, 1);
+		setenv("SERVER_ADMIN", "", 1);
 		setenv("DOCUMENT_ROOT", Conf[_port].getPath().c_str(), 1);
 	    setenv("REQUEST_METHOD", requestMethod.c_str(), 1);
         setenv("REMOTE_HOST", host.c_str(), 1);
-		setenv("REMOTE_ADDR", NULL, 1);
-		setenv("REMOTE_USER", NULL, 1);
+		setenv("REMOTE_ADDR", "", 1);
+		setenv("REMOTE_USER", "", 1);
         setenv("SCRIPT_NAME", scriptName.c_str(), 1);
         setenv("HTTP_ACCEPT_CHARSET", Req.getHeader("Accept-Charset").c_str(), 1);
         setenv("HTTP_ACCEPT_LANGUAGE", Req.getHeader("Accept-Language").c_str(), 1);
