@@ -37,9 +37,9 @@ class Client {
 		void 		setBuffer(const std::string &buffer);
 		int  		getReadStatus() const;
 		bool 		getIsKeepAlive() const;
-		void 		generateResponse(const Config &Conf, char **env);
-		void 		handleCGI(char **env);
-		void 		setEnv(const RequestHandle &Req);
+		void 		generateResponse(const Config &Conf);
+		void 		handleCGI(const Config &Conf);
+		void 		setEnv(const Config &Conf, const RequestHandle &Req);
 		void 		setBufferFromChild(int data);
 		procInfo 	*getProcInfo() const;
 		void		makeTempFileNameForCgi(std::string &filename);
