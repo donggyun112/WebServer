@@ -27,7 +27,9 @@ void Client::setResponse(const std::string &param) {
 }
 
 void Client::appendResponse(const char *param) {
-	_response += param;
+	if (param)
+		_response += param;
+	// _response += param;
 }
 
 Port Client::getPort() const {
@@ -109,7 +111,6 @@ void	Client::setEnv(const Config &Conf, const RequestHandle &Req) {
         setenv("CONTENT_TYPE", Req.getHeader("Content-Type").c_str(), 1);
     }
 }
-
 void Client::makeTempFileNameForCgi(std::string &filePath) {
 	std::srand(std::time(NULL));
 

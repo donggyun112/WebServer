@@ -220,6 +220,9 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 			_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
 		}
 	}
+	std::cout << "----------------\n"
+			  << _filePath << "\n----------------" << std::endl;
+			  
 	// std::cout << "File Path: " << _filePath << std::endl;
 	return true;
 }

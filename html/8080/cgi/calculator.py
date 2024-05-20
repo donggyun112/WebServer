@@ -1,5 +1,6 @@
 import cgi
 import datetime
+import sys
 
 
 class Calculator:
@@ -22,11 +23,10 @@ class Calculator:
 
 	def display(self):
 		result = self.form.getvalue('result', '')
+		print(result)
 		if 'number' in self.form:
 			num = self.form.getvalue('number')
-
 			result += num
-			print(result)
 		elif 'decimal' in self.form:
 			decimal = self.form.getvalue('decimal')
 			result += decimal
@@ -37,6 +37,7 @@ class Calculator:
 				num2 = float(self.form.getvalue('number', '0'))
 				result = str(self.calculate(num1, operator, num2))
 			else:
+				
 				result = "Error: Invalid operation"
 		elif 'equal' in self.form:
 			result = result
@@ -97,7 +98,7 @@ class Calculator:
 </style>
 </head>
 <body>
-<form action="/cgi-bin/calculator.py" method="get" class="calculator">
+<form action="/CGI.py/calculator" method="get" class="calculator">
 	<div class="display">
 	<input type="text" id="result" name="result" value="{result}" readonly>
 	</div>
@@ -125,10 +126,9 @@ class Calculator:
 	</div>
 </form>
 </body>
-</html>
-		"""
-
+</html>"""
 		print(f"Content-Length: {len(Response)}")
 		print("Connection: keep-alive\r")
 		print("\r")
 		print(Response)
+		sys.exit(0)

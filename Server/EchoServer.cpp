@@ -191,7 +191,7 @@ void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
 	Client *ptr = _clientMap[procPtr->clientFd];
 	int tempFileFd;
 	int length = -1;
-	char buffer[1024];
+	char buffer[1025];
 
 	if (currEvent.data == InternalServerError_500) {
 		std::remove(procPtr->tempFilePath.c_str());
@@ -203,7 +203,9 @@ void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
 	}
 	tempFileFd = open(procPtr->tempFilePath.c_str(), O_RDONLY);
 	while (length) {
+		memset(buffer, 0, 1025);
 		length = read(tempFileFd, buffer, 1024);
+		// std::cout << "buffer : " << buffer << std::endl;
 		if (length == -1)
 			break;
 		ptr->appendResponse(buffer);
@@ -288,6 +290,8 @@ void Server::handleClientWrite(FD clientFd, const Config &Conf) {
 	(void)Conf;
 
 	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
+	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
+	std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
     ssize_t length = send(clientFd, ptr->getResponse().c_str(), ptr->getResponse().length(), 0);
 	// usleep(1000);
 
