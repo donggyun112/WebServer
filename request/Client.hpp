@@ -7,14 +7,17 @@
 #include "../utils/Error.hpp"
 #include "../utils/utils.hpp"
 #include "../Manager/Manager.hpp"
+#include "../socket/socket.hpp"
+#include "../Manager/Manager.hpp"
+#include <cstdlib>
 
 #define READ 0
 #define WRITE 1
 
 typedef struct s_procInfo {
     pid_t pid;
-    int pipeFd;
-    int ClientFd;
+    int clientFd;
+	std::string tempFilePath;
 } procInfo;
 
 class Client {
@@ -30,21 +33,26 @@ class Client {
 		Client(Port port);
 		Client(const Client &Copy);
 		~Client();
-		void clearAll();
-		void setBuffer(const std::string &buffer);
-		int  getReadStatus() const;
-		bool getIsKeepAlive() const;
-		void generateResponse(Config Conf);
-		void handleCGI();
-		void setEnv(const RequestHandle &Req);
-		void setBufferFromChild(int data);
-		procInfo *getProcInfo() const;
-		ResponseHandle getResponseHandle() const;
+		void 		clearAll();
+		void 		setBuffer(const std::string &buffer);
+		int  		getReadStatus() const;
+		bool 		getIsKeepAlive() const;
+		void 		generateResponse(const Config &Conf, char **env);
+		void 		handleCGI(char **env);
+		void 		setEnv(const RequestHandle &Req);
+		void 		setBufferFromChild(int data);
+		procInfo 	*getProcInfo() const;
+		void		makeTempFileNameForCgi(std::string &filename);
+		void		makeExecuteCommand(std::string &extention);
 
+		const ResponseHandle& getResponseHandle() const;
 
+		Port		getPort() const;
 
 		// std::string setResponse();
 		std::string getResponse() const;
+		void		setResponse(const std::string &param);
+		void		appendResponse(const char *param);
 		void		cutResponse(int length);
 };
 #endif

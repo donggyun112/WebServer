@@ -35,7 +35,7 @@ class LocationConfig {
     
     public:
     ~LocationConfig() {}
-	LocationConfig() :_cgi(false) {}
+	LocationConfig() : _cgi(false) {}
     // setter
     LocationConfig(std::ifstream &file, std::string &_defaultIndex);
     

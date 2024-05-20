@@ -144,7 +144,7 @@ void Server::delayResponse(double seconds) {
 }
 
 
-void Server::handleClientRead(FD clientFd, const Config &Conf) {
+void Server::handleClientRead(FD clientFd, const Config &Conf, char **env) {
     std::vector<char> buffer(1024);
     ssize_t length;
     
@@ -169,12 +169,13 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
     
     if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
         std::cout << "Read Done" << std::endl;
+        ptr->generateResponse(Conf, env);
         if (ptr->getResponseHandle().isCGI()) {
-            ptr->getProcInfo()->ClientFd = clientFd;
-            changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
+            std::cout << "iscgi == true, start to make proc event" << std::endl;
+            ptr->getProcInfo()->clientFd = clientFd;
+            changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         } else {
-            ptr->generateResponse(Conf);
             changeEvents(_changeList, clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         }
@@ -182,8 +183,44 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
     }
 }
 
+void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
+	procInfo *procPtr = static_cast<procInfo *>(currEvent.udata);
+	Client *ptr = _clientMap[procPtr->clientFd];
+	int tempFileFd;
+	int length = -1;
+	char buffer[1024];
+
+	if (currEvent.data == InternalServerError_500) {
+		std::remove(procPtr->tempFilePath.c_str());
+		ptr->setResponse(Error::errorHandler(Conf[ptr->getPort()], InternalServerError_500));
+		waitpid(procPtr->pid, NULL, 0);
+		changeEvents(_changeList, procPtr->clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+		changeEvents(_changeList, procPtr->clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+		return ;
+	}
+	tempFileFd = open(procPtr->tempFilePath.c_str(), O_RDONLY);
+	while (length) {
+		length = read(tempFileFd, buffer, 1024);
+		if (length == -1)
+			break;
+		ptr->appendResponse(buffer);
+	}
+	close(tempFileFd);
+	// std::remove(procPtr->tempFilePath.c_str());
+	waitpid(procPtr->pid, NULL, 0);
+	if (length == -1) {
+        std::cerr << "length == -1" << std::endl;
+		// ptr->setResponse(Error::errorHandler(Conf[ptr->getPort()], InternalServerError_500));
+		changeEvents(_changeList, procPtr->clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+		changeEvents(_changeList, procPtr->clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+	} else {
+		changeEvents(_changeList, procPtr->clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+	}
+}
+
+
 //main에서 기본 세팅이 끝나면, 이걸 실행해야 한다.
-void Server::run(const Config &Conf) {
+void Server::run(const Config &Conf, char **env) {
     int eventNumber;
     struct kevent eventList[1024];
     
@@ -193,9 +230,9 @@ void Server::run(const Config &Conf) {
     
     while (true)
 	{
-		std::cout << "---------Server is running---------" << std::endl;
+		// std::cout << "---------Server is running---------" << std::endl;
 		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 10, NULL);
-		std::cout << "---------Server is running---------" << std::endl;
+		// std::cout << "---------Server is running---------" << std::endl;
         std::cout << "---------Current event--------- num | " << eventNumber << std::endl;
         
         updateControl();
@@ -215,10 +252,11 @@ void Server::run(const Config &Conf) {
             if (eventList[i].filter == EVFILT_TIMER) {
                 disconnectClient(eventList[i].ident);
             } else if (eventList[i].filter == EVFILT_READ) {
+				
                 if (FDIndexing(eventList[i].ident) >= 0) {
                     addNewClient(eventList[i].ident);
                 } else {
-                    handleClientRead(eventList[i].ident, Conf);
+                    handleClientRead(eventList[i].ident, Conf, env);
                 }
             } else if (eventList[i].filter == EVFILT_WRITE) {
 				const float fixedDelaySeconds = 0.0018f;
@@ -230,11 +268,13 @@ void Server::run(const Config &Conf) {
 
 				clock_t elapsedClocks = endTime - startTime;
 				if (elapsedClocks < fixedDelayClocks) {
-					std::cout << "-----------------delay response-----------------" << std::endl;
+					// std::cout << "-----------------delay response-----------------" << std::endl;
 					float remainingSeconds = std::round(static_cast<float>(fixedDelayClocks - elapsedClocks) / CLOCKS_PER_SEC * 100000.0f) / 100000.0f;
 					std::cout << "remainingSeconds : " << remainingSeconds << std::endl;
 					delayResponse(remainingSeconds);
 				}
+			} else if (eventList[i].filter == EVFILT_PROC) {
+				handleClientCgi(eventList[i], Conf);
 			}
         }
     }
@@ -243,12 +283,15 @@ void Server::run(const Config &Conf) {
 void Server::handleClientWrite(FD clientFd, const Config &Conf) {
     Client *ptr = _clientMap[clientFd];
 	(void)Conf;
+
+	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
     ssize_t length = send(clientFd, ptr->getResponse().c_str(), ptr->getResponse().length(), 0);
 	// usleep(1000);
 
     
     if (length <= 0) {
 		// throw std::runtime_error("Error: Failed to send response to client.");
+
         disconnectClient(clientFd);
         return;
     }
@@ -257,7 +300,7 @@ void Server::handleClientWrite(FD clientFd, const Config &Conf) {
     
     if (ptr->getResponse().length() == 0) {
         if (!ptr->getIsKeepAlive()) {
-            std::cout << "=============================================== close" << std::endl;
+            // std::cout << "=============================================== close" << std::endl;
             disconnectClient(clientFd);
         } else {
             ptr->clearAll();
