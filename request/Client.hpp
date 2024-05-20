@@ -33,17 +33,16 @@ class Client {
 		Client(Port port);
 		Client(const Client &Copy);
 		~Client();
-		void 		clearAll();
-		void 		setBuffer(const std::string &buffer);
-		int  		getReadStatus() const;
-		bool 		getIsKeepAlive() const;
-		void 		generateResponse(const Config &Conf);
-		void 		handleCGI(const Config &Conf);
-		void 		setEnv(const Config &Conf, const RequestHandle &Req);
-		void 		setBufferFromChild(int data);
-		procInfo 	*getProcInfo() const;
-		void		makeTempFileNameForCgi(std::string &filename);
-		void		makeExecuteCommand(std::string &extention);
+		void clearAll();
+		void setBuffer(unsigned char *buffer, int length);
+		int  getReadStatus() const;
+		bool getIsKeepAlive() const;
+		void generateResponse(Config Conf);
+		void handleCGI();
+		void setEnv(const RequestHandle &Req);
+		void setBufferFromChild(int data);
+		procInfo *getProcInfo() const;
+		// ResponseHandle getResponseHandle() const;
 
 		const ResponseHandle& getResponseHandle() const;
 

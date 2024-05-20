@@ -34,9 +34,9 @@ Port Client::getPort() const {
 	return _port;
 }
 
-void Client::setBuffer(const std::string &buffer) {
+void Client::setBuffer(unsigned char *buffer, int length) {
 	try {
-		_requestHandle.setBuffer(buffer);
+		_requestHandle.setBuffer(buffer, length);
 	} catch (StatusCode num) {
 		this->_requestHandle.setReadStatus(READ_ERROR);
 		_requestHandle.setResponseStatus(num);

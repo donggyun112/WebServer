@@ -38,11 +38,14 @@ class RequestHandle {
         int         _responseStatus;
         bool        _isKeepAlive;
         std::string _tempResult;
-		void parseRequestLine(const std::string& line);
-		void parseHeader(const std::string& line);
-		void validateRequest();
-		void setCookie();
-		std::string setChunkedBody(const std::string& body);
+		void        parseRequestLine(const std::string& line);
+		void        parseHeader(const std::string& line);
+        void        parseRegularBody(std::string& body);
+		void        validateRequest();
+		void        setCookie();
+		void        parseChunkedBody(const std::string& body);
+        void        parseUri(const std::string& uri);
+        std::string parseMethod(const std::string& methodStr);
 		std::string parsePart(const std::string& body, const std::string& boundary);
 		std::string parseFileContent(const std::string &body);
 		std::string parseBodyHeader(const std::string& part);
@@ -50,7 +53,6 @@ class RequestHandle {
 		std::string parseFileName(const std::string& body_header);
 		std::string parseBoundary(const std::string& body_header);
 		std::string parseContentType(std::string &body_header);
-		std::string parseUri(const std::string& uri);
         RequestHandle();
 
     public:
@@ -72,12 +74,13 @@ class RequestHandle {
         int             		getResponseStatus() const;
         void                    setResponseStatus(int num) {_responseStatus = num;}
         void            		setRequest();
-        void            		setBuffer(const std::string& buffer);
+        void            		setBuffer(unsigned char *buffer, int length);
         void            		clearRequest();
         void            		clearAll();
         int             		getReadStatus() const {return this->_readStatus;}
         void                    setReadStatus(int readStatus) {_readStatus = readStatus;}
 		const std::string		&getQuery() const;
+        
 
 
         void printAllHeaders() const;

@@ -145,42 +145,62 @@ void Server::delayResponse(double seconds) {
 
 
 void Server::handleClientRead(FD clientFd, const Config &Conf) {
-    std::vector<char> buffer(1024);
+    unsigned char *buffer = new unsigned char[1025];
     ssize_t length;
-    
-    length = recv(clientFd, buffer.data(), buffer.size(), 0);
+
+    length = recv(clientFd, buffer, 1024, 0);
+    buffer[length] = '\0';
     
     if (length < 0) {
         // 오류 발생 시 클라이언트 연결 종료
         std::cerr << "Error reading from client: " << clientFd << std::endl;
         delayResponse(0.0002f);
+        delete[] buffer;
         // disconnectClient(clientFd);
-        // 잠시 대기
-        return;
+        return ;
     } else if (length == 0) {
         // 클라이언트가 연결을 종료한 경우
         std::cout << "Client disconnected: " << clientFd << std::endl;
         disconnectClient(clientFd);
-        return;
+        delete[] buffer;
+        return ;
     }
     
     Client *ptr = _clientMap[clientFd];
-    ptr->setBuffer(buffer.data());
+    ptr->setBuffer(buffer, length);
+    delete[] buffer;
     
     if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
-        std::cout << "Read Done" << std::endl;
-        ptr->generateResponse(Conf);
+        // std::cout << "Read Done" << std::endl;
+
         if (ptr->getResponseHandle().isCGI()) {
-            std::cout << "iscgi == true, start to make proc event" << std::endl;
             ptr->getProcInfo()->clientFd = clientFd;
-            changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
+            changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         } else {
+            ptr->generateResponse(Conf);
             changeEvents(_changeList, clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
         }
         return ;
     }
+}
+
+//main에서 기본 세팅이 끝나면, 이걸 실행해야 한다.
+void Server::run(const Config &Conf) {
+	int eventNumber;
+	struct kevent eventList[100];
+	while (true) {
+		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 100, NULL);
+		// std::cerr << "---------Current event--------- num | " << eventNumber << std::endl;
+		updateControl();
+		if (eventNumber == -1)
+			throw std::runtime_error("asdf");
+		for (int i = 0; i < eventNumber; ++i) {
+			std::cout << "Event occurred: " << eventList[i].ident << ": " << eventList[i].filter << std::endl;
+			eventHandling(eventList[i], Conf);
+		}
+	}
 }
 
 void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
