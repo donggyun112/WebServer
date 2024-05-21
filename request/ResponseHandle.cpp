@@ -170,7 +170,7 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 
 		response.setHeader("Connection", "close");
 		response.setBody("42Webserv Redirected");
-		std::cout << response.getResponses() << std::endl;
+		// std::cout << response.getResponses() << std::endl;
 		return response;
 	}
 	response.setStatusCode(OK_200);

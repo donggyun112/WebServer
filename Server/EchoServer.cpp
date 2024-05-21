@@ -291,7 +291,7 @@ void Server::handleClientWrite(FD clientFd, const Config &Conf) {
 
 	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
 	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
-	std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
+	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
     ssize_t length = send(clientFd, ptr->getResponse().c_str(), ptr->getResponse().length(), 0);
 	// usleep(1000);
 
