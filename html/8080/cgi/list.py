@@ -279,9 +279,9 @@ class FileControl:
             response = {"status": "success", "filename": fileInfo}
         else:
             if filename == FILE_SIZE_ERROR:
-                response = {"status": "error", "message": "파일 크기가 너무 큽니다."}
+                response = {"status": "error", "message": "너무크고 엄청나 !!"}
             elif filename == FILE_EXTENSION_ERROR:
-                response = {"status": "error", "message": "허용되지 않는 파일 확장자입니다."}
+                response = {"status": "error", "message": "허용되지 않는 파일 확장자입니다. \n 다음 확장자만 허용됩니다: \n.jpg, .jpeg, .png, .gif, .pdf, .txt, .zip, .tar.gz, .tar.bz2, .tar.xz, .tar"}
             else:
                 response = {"status": "error", "message": "파일 업로드에 실패했습니다."}
 
