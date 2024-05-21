@@ -240,6 +240,16 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 
 		return response.getResponses();
 	}
+	if (_loc.isCgi() == true)
+	{
+		// CGI 처리
+		(void)Req;
+		// setEnv(Req);
+		// printAllEnv();
+
+		std::cout << "Start to handle CGI" << std::endl;
+		// response = handleCgi(_loc, _filePath);
+	}
 
 
 	// Req.getHeader("")
@@ -303,7 +313,6 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 	{
 		if (Manager::responseUtils.isDirectory(_filePath))
 		{
-			std::cout << "AutoIndex" << std::endl;
 			if (_loc.getAutoindex() == true)
 			{
 				handleAutoIndex(response, _filePath);
@@ -315,7 +324,14 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 		}
 		else
 		{
+			if (_loc.getAutoindex() == false)
+			{
 				throw NotFound_404;
+			}
+			else
+			{
+				handleAutoIndex(response, _filePath.substr(0, _filePath.find_last_of('/')));
+			}
 		}
 	}
 	response.setHeader("Server", "42Webserv");
