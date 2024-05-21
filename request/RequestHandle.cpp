@@ -122,7 +122,7 @@ void RequestHandle::setRequest() {
 
     if (_readStatus == READ_DONE) {
         validateRequest();
-        std::cout << _buffer << std::endl;
+        // std::cout << _buffer << std::endl;
         _responseStatus = 200;
     }
 }

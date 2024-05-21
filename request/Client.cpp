@@ -101,12 +101,15 @@ void	Client::setEnv(const Config &Conf, const RequestHandle &Req) {
 		setenv("HTTP_PRAGMA", Req.getHeader("Cache-Control").c_str(), 1);
         setenv("HTTP_ACCEPT_ENCODING", Req.getHeader("Accept-Encoding").c_str(), 1);
         setenv("HTTP_KEEP_ALIVE", Req.getHeader("Keep-Alive").c_str(), 1);
+		std::string UploadDir = "at";
+		setenv("UPLOAD_DIR", UploadDir.c_str(), 1);
     }
     if (Req.getMethod() == "GET") {
     	setenv("PATH_INFO", _responseHandle.getPathInfo().c_str(), 1);
 	    setenv("QUERY_STRING", query.c_str(), 1);    
     }
     if (Req.getMethod() == "POST") {
+		
 	    setenv("CONTENT_LENGTH", Req.getHeader("Content-Length").c_str(), 1);
         setenv("CONTENT_TYPE", Req.getHeader("Content-Type").c_str(), 1);
     }
