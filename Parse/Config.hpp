@@ -27,10 +27,11 @@ public:
     ServerConfig operator[](Port port) const;
     ServerConfig operator[](int i) const;
 	ServerConfig getServerConfig(Port port, const std::string &serverName) const;
-
+    
+    bool    preConfigCheck(const std::string filename);
     void    parseConfig(const std::string filename);
     int getNumberOfServer() const;
 };
-
+bool validateLocationConfig(const std::string &line);
 void replaceTabsWithSpaces(std::string& str);
 #endif
