@@ -37,6 +37,7 @@ def handleGet():
 	path_info = os.environ.get('PATH_INFO')
 	if path_info == "/calculator":
 		cal = Calculator(form)
+		cal.calculate()
 		cal.display()
 	elif path_info == "/listing":
 		listing = FileControl(form)
