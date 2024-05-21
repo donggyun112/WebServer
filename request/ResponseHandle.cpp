@@ -229,7 +229,8 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 {
 	Response response;
-	if (_loc.isEtag() == true && (Req.getHeader("If-Modified-Since") == Manager::responseUtils.lastModify(_filePath) || Req.getHeader("If-None-Match") == Manager::responseUtils.etag(_filePath)))
+	if (_loc.isEtag() == true && (!Req.getHeader("If-Modified-Since").empty() || !Req.getHeader("If-None-Match").empty()) &&  \
+		 (Req.getHeader("If-Modified-Since") == Manager::responseUtils.lastModify(_filePath) || Req.getHeader("If-None-Match") == Manager::responseUtils.etag(_filePath)))
 	{
 		std::cerr << "Not Modified" << std::endl;
 		response.setStatusCode(NotModified_304);
