@@ -115,7 +115,6 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 			_httpUri = _scriptName;
 		}
 	}
-	// else
 
 
 	if (httpUri.find(loc.getPath()) == std::string::npos || loc.getPath().find('.') != std::string::npos) {
@@ -130,13 +129,10 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 			filePath = serverRoot + loc.getRoot() + httpUri;
 		}
 	} else {
-		// std::cout << "2" << std::endl;
 		if (loc.isCgi() == true) {
 			filePath = serverRoot + loc.getFastcgiPass() + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
 		} else {
-			// std::cout << "HTTP URI : " << httpUri << std::endl;
 			std::cout << httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length()) << std::endl;
-			// std::cout << "ROOT : " << loc.getPath() << std::endl;
 			filePath = serverRoot + loc.getRoot() + "/" + httpUri.substr(loc.getPath().length(), httpUri.length() - loc.getPath().length());
 		}
 	}
@@ -144,7 +140,8 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 	if (Manager::responseUtils.isDirectory(filePath) && filePath[filePath.length() - 1] != '/') {
 		filePath += "/";
 	}
-	
+	std::cout << "----------------\n"
+			  << filePath << "\n----------------" << std::endl;
     return filePath;
 }
 
@@ -243,16 +240,6 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 
 		return response.getResponses();
 	}
-	if (_loc.isCgi() == true)
-	{
-		// CGI 처리
-		(void)Req;
-		// setEnv(Req);
-		// printAllEnv();
-
-		std::cout << "Start to handle CGI" << std::endl;
-		// response = handleCgi(_loc, _filePath);
-	}
 
 
 	// Req.getHeader("")
@@ -316,6 +303,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 	{
 		if (Manager::responseUtils.isDirectory(_filePath))
 		{
+			std::cout << "AutoIndex" << std::endl;
 			if (_loc.getAutoindex() == true)
 			{
 				handleAutoIndex(response, _filePath);
@@ -327,14 +315,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
 		}
 		else
 		{
-			if (_loc.getAutoindex() == false)
-			{
 				throw NotFound_404;
-			}
-			else
-			{
-				handleAutoIndex(response, _filePath.substr(0, _filePath.find_last_of('/')));
-			}
 		}
 	}
 	response.setHeader("Server", "42Webserv");
