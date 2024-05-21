@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Calculator</title>
+  <style>
+    .calculator {
+      width: 300px;
+      margin: 0 auto;
+      background-color: black;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .display {
+      background-color: white;
+      padding: 10px;
+      margin-bottom: 20px;
+      text-align: right;
+      font-size: 24px;
+      border-radius: 5px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 10px;
+    }
+
+    button {
+      background-color: #d8d8d8;
+      border: none;
+      border-radius: 5px;
+      padding: 15px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .function {
+      background-color: #a5a5a5;
+      color: black;
+    }
+
+    .operator {
+      background-color: #ff9500;
+      color: white;
+    }
+
+    .zero {
+      grid-column: 1 / span 2;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <input type="text" id="result" name="result" value="" readonly>
+    </div>
+    <div class="buttons">
+      <button type="button" class="function" onclick="clearDisplay()">AC</button>
+      <button type="button" class="function" onclick="toggleSign()">±</button>
+      <button type="button" class="function" onclick="calculatePercentage()">%</button>
+      <button type="button" class="operator" onclick="setOperator('/')">÷</button>
+      <button type="button" onclick="appendNumber('7')">7</button>
+      <button type="button" onclick="appendNumber('8')">8</button>
+      <button type="button" onclick="appendNumber('9')">9</button>
+      <button type="button" class="operator" onclick="setOperator('*')">×</button>
+      <button type="button" onclick="appendNumber('4')">4</button>
+      <button type="button" onclick="appendNumber('5')">5</button>
+      <button type="button" onclick="appendNumber('6')">6</button>
+      <button type="button" class="operator" onclick="setOperator('-')">-</button>
+      <button type="button" onclick="appendNumber('1')">1</button>
+      <button type="button" onclick="appendNumber('2')">2</button>
+      <button type="button" onclick="appendNumber('3')">3</button>
+      <button type="button" class="operator" onclick="setOperator('+')">+</button>
+      <button type="button" onclick="appendNumber('0')" class="zero">0</button>
+      <button type="button" onclick="appendDecimal()">.</button>
+      <button type="button" class="operator" onclick="calculate()">=</button>
+    </div>
+  </div>
+
+  <script>
+    let firstOperand = '';
+    let secondOperand = '';
+    let currentOperator = null;
+    let shouldResetDisplay = false;
+
+    const display = document.getElementById('result');
+
+    function appendNumber(number) {
+      if (display.value === '0' || shouldResetDisplay) {
+        display.value = number;
+        shouldResetDisplay = false;
+      } else {
+        display.value += number;
+      }
+    }
+
+    function appendDecimal() {
+      if (!display.value.includes('.')) {
+        display.value += '.';
+      }
+    }
+
+    function setOperator(operator) {
+      if (currentOperator !== null) {
+        calculate();
+      }
+      firstOperand = display.value;
+      currentOperator = operator;
+      shouldResetDisplay = true;
+    }
+
+    function calculate() {
+      if (currentOperator === null || shouldResetDisplay) {
+        return;
+      }
+      secondOperand = display.value;
+      display.value = performCalculation();
+      currentOperator = null;
+      shouldResetDisplay = true;
+    }
+
+    function performCalculation() {
+      const first = parseFloat(firstOperand);
+      const second = parseFloat(secondOperand);
+      if (isNaN(first) || isNaN(second)) {
+        return '';
+      }
+      switch (currentOperator) {
+        case '+':
+          return first + second;
+        case '-':
+          return first - second;
+        case '*':
+          return first * second;
+        case '/':
+          return second !== 0 ? first / second : 'Error';
+        default:
+          return '';
+      }
+    }
+
+    function clearDisplay() {
+      display.value = '';
+      firstOperand = '';
+      secondOperand = '';
+      currentOperator = null;
+    }
+
+    function toggleSign() {
+      const value = parseFloat(display.value);
+      if (!isNaN(value)) {
+        display.value = (-1 * value).toString();
+      }
+    }
+
+    function calculatePercentage() {
+      const value = parseFloat(display.value);
+      if (!isNaN(value)) {
+        display.value = (value / 100).toString();
+      }
+    }
+  </script>
+</body>
+</html>
