@@ -6,7 +6,7 @@ import datetime
 import uuid
 
 
-UPLOAD_DIR = "../at"
+UPLOAD_DIR = "/Users/parkjunseo/42/webserv/html/8080/uploads"
 MAX_FILE_SIZE = 1024 * 1024 * 10
 ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".txt", ".pdf"]
 FILE_SIZE_ERROR = 1
@@ -45,7 +45,7 @@ class FileControl:
 		self.fileList = self.listFiles()
 
 	def listFiles(self):
-		files = os.listdir('../at')
+		files = os.listdir(UPLOAD_DIR)
 		fileList = ""
 		for file in files:
 			fileList += f"<li><a href='/uploads/{file}' target='_blank'>{file}</a> <form action='/CGI.py' method='get' style='display: inline;'><input type='hidden' name='delete' value='{file}'><input type='submit' value='삭제'></form></li>"
@@ -56,7 +56,7 @@ class FileControl:
 		print("HTTP/1.1 200 OK")
 		print("Content-type: text/html; charset=utf-8")
 		print(f"Date: {datetime.datetime.now().strftime('%a, %d %b %Y %H:%M:%S %Z')}")
-		Response = """
+		Response = f"""
 		<!DOCTYPE html>
 		<html lang="ko">
 		<head>
@@ -64,7 +64,7 @@ class FileControl:
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<title>파일 업로드 및 삭제</title>
 			<style>
-				body {
+				body {{
 					font-family: Arial, sans-serif;
 					background-image: url("ground2.png");
 					background-color: #f2f2f2;
@@ -73,27 +73,27 @@ class FileControl:
 					align-items: center;
 					height: 100vh;
 					margin: 0;
-				}
-				.container {
+				}}
+				.container {{
 					background-color: white;
 					padding: 40px;
 					border-radius: 10px;
 					box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 					text-align: center;
 					max-width: 600px;
-				}
-				h1 {
+				}}
+				h1 {{
 					color: #333;
 					font-size: 36px;
 					margin-bottom: 20px;
-				}
-				form {
+				}}
+				form {{
 					margin-top: 20px;
-				}
-				input[type="file"] {
+				}}
+				input[type="file"] {{
 					margin-bottom: 10px;
-				}
-				input[type="submit"] {
+				}}
+				input[type="submit"] {{
 					padding: 12px 24px;
 					background-color: #333;
 					color: white;
@@ -101,26 +101,26 @@ class FileControl:
 					border-radius: 5px;
 					cursor: pointer;
 					transition: background-color 0.3s ease;
-				}
-				input[type="submit"]:hover {
+				}}
+				input[type="submit"]:hover {{
 					background-color: #666;
-				}
-				ul {
+				}}
+				ul {{
 					list-style-type: none;
 					padding: 0;
 					margin-top: 20px;
-				}
-				li {
+				}}
+				li {{
 					margin-bottom: 10px;
-				}
-				a {
+				}}
+				a {{
 					color: #333;
 					text-decoration: none;
-				}
-				a:hover {
+				}}
+				a:hover {{
 					text-decoration: underline;
-				}
-				.btn {
+				}}
+				.btn {{
 					display: inline-block;
 					padding: 12px 24px;
 					background-color: #333;
@@ -129,10 +129,10 @@ class FileControl:
 					border-radius: 5px;
 					transition: background-color 0.3s ease;
 					margin-top: 20px;
-				}
-				.btn:hover {
+				}}
+				.btn:hover {{
 					background-color: #666;
-				}
+				}}
 			</style>
 		</head>
 		<body>
@@ -149,14 +149,13 @@ class FileControl:
 				<a href="/features" class="btn">뒤로 가기</a>
 			</div>
 		</body>
-		</html>
-		""".format(self.fileList)
+		</html>"""
 		print(f"Content-Length: {len(Response)}\r")
 		print("Connection: keep-alive\r")
 		print("\r")
 		print(Response)
 
-	def save_uploaded_file(fileitem, upload_dir):
+	def save_uploaded_file(fileitem, UPLOAD_DIR):
 		filename = fileitem.filename
 
 		if not filename:
@@ -174,7 +173,7 @@ class FileControl:
 
 		unique_filename = str(uuid.uuid4()) + "_" + basename
 
-		filepath = os.path.join(upload_dir, unique_filename)
+		filepath = os.path.join(UPLOAD_DIR, unique_filename)
 
 		# 파일 저장
 		with open(filepath, "wb") as f:

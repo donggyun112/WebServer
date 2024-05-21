@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Image</title>
+</head>
+<body>
+    <h1>Upload Image</h1>
+    <!-- 이미지를 업로드하기 위한 HTML 폼 -->
+    <form action="/cgi/upload.py" method="post" enctype="multipart/form-data">
+        <!-- 업로드할 파일을 선택하는 입력 필드 -->
+        <label for="file">Choose an image to upload:</label>
+        <input type="file" id="file" name="file" accept="image/*">
+        <br><br>
+        <!-- 업로드 버튼 -->
+        <input type="submit" value="Upload">
+    </form>
+</body>
+</html>

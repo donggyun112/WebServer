@@ -11,11 +11,11 @@ cgitb.enable(display=0, logdir="/logs")
 form = cgi.FieldStorage()
 
 def responseForm(status, content, contentType, contentLength, location=None):
+	print("Status: 200\r")
 	print(f"Content-Type: {contentType}\r")
 	if location:
 		print(f"Location: {location}\r")
 	print(f"Content-Length: {contentLength}\r")
-	print(f"Status: {status}\r")
 	print("\r")
 	print(content)
 
