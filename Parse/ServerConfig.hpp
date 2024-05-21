@@ -107,7 +107,6 @@ public:
 		
         if (isExtention(httpPath))
 		{
-		
 			extention = httpPath.substr(httpPath.find_last_of('.'), httpPath.size() - httpPath.find_last_of('.'));
 			extention = extention.substr(0, extention.find_first_of('/'));
 			// 정규식으로 만들기

@@ -4,17 +4,18 @@ import os
 import cgi
 import datetime
 import uuid
+import json
+import time
 
-tmp = os.environ.get("DOCUMENT_ROOT", "/Users/seodong-gyun/42/WebServer/8080")
+tmp = os.environ.get("DOCUMENT_ROOT")
 UPLOAD_DIR = tmp + os.environ.get("UPLOAD_DIR")
 MAX_FILE_SIZE = 5 * 1024 * 1024
 ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".pdf", ".txt", ".zip", ".tar.gz", ".tar.bz2", ".tar.xz", ".tar"]
 FILE_SIZE_ERROR = 1
 FILE_EXTENSION_ERROR = 2
 FILE_UPLOAD_ERROR = 3
-FILE_NMAE_ERROR = 4
+FILE_NAME_ERROR = 4
 FILE_UPLOAD_SUCCESS = 5
-
 
 def responseForm(status, content, contentType, contentLength, location=None):
     print(f"HTTP/1.1 {status} {status}")
@@ -40,9 +41,7 @@ def HTMLForm(message):
     return htmlstring
 
 class FileControl:
-    
     def __init__(self, form: cgi.FieldStorage):
-
         self.form = form
         self.fileList = self.listFiles()
 
@@ -169,20 +168,69 @@ class FileControl:
                 .delete-btn:hover {{
                     background-color: #d32f2f;
                 }}
+                #progressBar {{
+                    width: 100%;
+                    background-color: #ddd;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                }}
+                #progressBar div {{
+                    width: 0%;
+                    height: 30px;
+                    background-color: #4CAF50;
+                    border-radius: 5px;
+                    text-align: center;
+                    line-height: 30px;
+                    color: white;
+                    transition: width 0.5s ease-in-out;
+                }}
             </style>
             <script>
                 function enableUpload() {{
                     document.getElementById("uploadBtn").style.display = "inline-block";
+                }}
+                
+                function uploadFile() {{
+                    var form = document.getElementById("uploadForm");
+                    var formData = new FormData(form);
+                    var progressBar = document.getElementById("progressBar");
+                    var progressBarDiv = progressBar.getElementsByTagName("div")[0];
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", form.action, true);
+                    xhr.upload.onprogress = function(event) {{
+                        var percent = (event.loaded / event.total) * 100;
+                        progressBarDiv.style.width = percent + "%";
+                        progressBarDiv.innerHTML = Math.round(percent) + "%";
+                    }};
+                    xhr.onload = function() {{
+                        if (xhr.status === 200) {{
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.status === "success") {{
+                                window.location.href = "/CGI.py/listing";
+                            }} else {{
+                                alert("파일 업로드에 실패했습니다: " + response.message);
+                                window.location.href = "/CGI.py/listing";
+                            }}
+                        }} else {{
+                            alert("파일 업로드에 실패했습니다.");
+                            window.location.href = "/CGI.py/listing";
+                        }}
+                    }};
+                    xhr.send(formData);
                 }}
             </script>
         </head>
         <body>
             <div class="container">
                 <h1>파일 업로드 및 삭제</h1>
-                <form action="/CGI.py" method="post" enctype="multipart/form-data">
+                <form id="uploadForm" action="/CGI.py" method="post" enctype="multipart/form-data">
                     <input type="file" name="file" onchange="enableUpload()">
-                    <input type="submit" value="업로드" id="uploadBtn">
+                    <input type="button" value="업로드" id="uploadBtn" onclick="uploadFile()">
                 </form>
+                <div id="progressBar">
+                    <div></div>
+                </div>
                 <h2>업로드된 파일 목록</h2>
                 <ul>
                     {self.fileList}
@@ -194,11 +242,12 @@ class FileControl:
         print("Connection: keep-alive\r")
         print("\r")
         print(Response)
+
     def save_uploaded_file(self, fileitem, UPLOAD_DIR):
         filename = fileitem.filename
 
         if filename == "" or filename is None:
-            return FILE_NMAE_ERROR, None
+            return FILE_NAME_ERROR, None
 
         _, ext = os.path.splitext(filename)
         if ext.lower() not in ALLOWED_EXTENSIONS:
@@ -221,211 +270,39 @@ class FileControl:
         return FILE_UPLOAD_SUCCESS, unique_filename
 
     def handleUpload(self):
-
         fileitem = self.form["file"]
 
         filename, fileInfo = self.save_uploaded_file(fileitem, UPLOAD_DIR)
-        if filename == FILE_NMAE_ERROR:
-            self.fileList = self.listFiles()
-            self.display()
+        if filename == FILE_NAME_ERROR:
+            response = {"status": "error", "message": "유효한 파일 이름이 없습니다."}
         elif filename == FILE_UPLOAD_SUCCESS:
-            self.displaySuccess()
+            response = {"status": "success", "filename": fileInfo}
         else:
             if filename == FILE_SIZE_ERROR:
-                html = """
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>파일 크기 초과</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 50px;
-    }
-    h1 {
-        font-size: 36px;
-        color: #ff6b6b;
-        margin-bottom: 20px;
-    }
-    p {
-        font-size: 18px;
-        color: #4ecdc4;
-    }
-    a.button {
-        background-color: #4ecdc4;
-        border: none;
-        color: white;
-        padding: 15px 32px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        margin: 4px 2px;
-        cursor: pointer;
-    }
-</style>
-</head>
-<body>
-<h1>와우! 너무 크고 엄청나...!!!</h1>
-<p> 파일이 너무 커서 업로드 할 수 없어요...</p>
-<form action="/CGI.py/listing" method="get">
-    <button type="submit"> 뒤로 가기 </button>
-</form>
-</body>
-</html>"""
-                responseForm(400, html, "text/html", len(html.encode("utf-8")))
+                response = {"status": "error", "message": "파일 크기가 너무 큽니다."}
             elif filename == FILE_EXTENSION_ERROR:
-                html = """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>허용되지 않는 확장자</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            text-align: center;
-                            padding: 50px;
-                        }
-                        h1 {
-                            font-size: 36px;
-                            color: #ff6b6b;
-                            margin-bottom: 20px;
-                        }
-                        h2 {
-                            font-size: 24px;
-                            color: #ff6b6b;
-                            margin-bottom: 20px;
-                        }
-                        p {
-                            font-size: 18px;
-                            color: #4ecdc4;
-                        }
-                        form {
-                            margin-top: 30px;
-                        }
-                        button {
-                            font-size: 18px;
-                            padding: 10px 20px;
-                            background-color: #ff6b6b;
-                            color: white;
-                            border: none;
-                            border-radius: 5px;
-                            cursor: pointer;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>앗! 이런 확장자는 허용되지 않아요!</h1>
-                    <p>
-                        허용되는 확장자는 다음과 같습니다: .jpg, .jpeg, .png, .gif, .pdf, .txt, .zip, .tar.gz, .tar.bz2, .tar.xz, .tar</p>
-                    </p>
-                        <form action="/CGI.py/listing" method="get">
-                            <button type="submit"> 뒤로 가기 </button>
-                        </form>
-                </body>
-                </html>
-                """
-                responseForm(400, html, "text/html", len(html.encode("utf-8")))
+                response = {"status": "error", "message": "허용되지 않는 파일 확장자입니다."}
             else:
-                html = """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>파일 업로드 실패</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            text-align: center;
-                            padding: 50px;
-                        }
-                        h1 {
-                            font-size: 36px;
-                            color: #ff6b6b;
-                            margin-bottom: 20px;
-                        }
-                        p {
-                            font-size: 18px;
-                            color: #4ecdc4;
-                        }
-                        button {
-                            background-color: #4ecdc4;
-                            border: none;
-                            color: white;
-                            padding: 15px 32px;
-                            text-align: center;
-                            text-decoration: none;
-                            display: inline-block;
-                            font-size: 16px;
-                            margin: 4px 2px;
-                            cursor: pointer;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>파일 업로드 실패</h1>
-                    <p>파일 업로드에 실패했습니다. 다시 시도해주세요.</p>
-                <form action="/CGI.py/listing" method="get">
-                    <button type="submit"> 뒤로 가기 </button>
-                </form>
-                </body> 
-                </html>
-                """
-                responseForm(200, html, "text/html", len(html.encode("utf-8")))
+                response = {"status": "error", "message": "파일 업로드에 실패했습니다."}
 
+        print("HTTP/1.1 200 OK")
+        print("Content-Type: application/json")
+        print(f"Date: {datetime.datetime.now().strftime('%a, %d %b %Y %H:%M:%S %Z')}")
+        print("Content-Length: ", len(json.dumps(response).encode("utf-8")))
+        print("Connection: keep-alive\r")
+        print()
+        print(json.dumps(response))
 
     def delete(self):
         file = self.form["delete"].value
         try:
             os.remove(os.path.join(UPLOAD_DIR, file))
             self.fileList = self.listFiles()
+            print("HTTP/1.1 302 Found")
+            print(f"Date: {datetime.datetime.now().strftime('%a, %d %b %Y %H:%M:%S %Z')}")
+            print("Location: /CGI.py/listing")
+            print("Connection: close\r")
+            print()
+            print("Redirecting...")
         except FileNotFoundError:
             self.display()
-
-    def displaySuccess(self):
-        html = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>파일 업로드 성공</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                    padding: 50px;
-                }
-                h1 {
-                    font-size: 36px;
-                    color: #4CAF50;
-                    margin-bottom: 20px;
-                }
-                p {
-                    font-size: 18px;
-                    color: #4ecdc4;
-                }
-                button {
-                    background-color: #4ecdc4;
-                    border: none;
-                    color: white;
-                    padding: 15px 32px;
-                    text-align: center;
-                    text-decoration: none;
-                    display: inline-block;
-                    font-size: 16px;
-                    margin: 4px 2px;
-                    cursor: pointer;
-                }
-            </style>
-        </head>
-        <body>
-            <h1>파일 업로드 성공</h1>
-            <p>파일이 성공적으로 업로드 되었습니다.</p>
-            <form action="/CGI.py/listing" method="get">
-                    <button type="submit">파일 목록 보기</button>
-            </form>
-        </body>
-        </html>
-        """
-        responseForm(200, html, "text/html", len(html.encode("utf-8")))
