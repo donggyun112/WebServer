@@ -1,82 +1,207 @@
-		<!DOCTYPE html>
-		<html>
-		<head>
-		<title>Calculator</title>
-		<style>
-			.calculator {
-			width: 300px;
-			margin: 0 auto;
-			background-color: black;
-			border-radius: 10px;
-			padding: 20px;
-			}
-			
-			.display {
-			background-color: white;
-			padding: 10px;
-			margin-bottom: 20px;
-			text-align: right;
-			font-size: 24px;
-			border-radius: 5px;
-			}
-			
-			.buttons {
-			display: grid;
-			grid-template-columns: repeat(4, 1fr);
-			grid-gap: 10px;
-			}
-			
-			button {
-			background-color: #d8d8d8;
-			border: none;
-			border-radius: 5px;
-			padding: 15px;
-			font-size: 18px;
-			cursor: pointer;
-			}
-			
-			.function {
-			background-color: #a5a5a5;
-			color: black;
-			}
-			
-			.operator {
-			background-color: #ff9500;
-			color: white;
-			}
-			
-			.zero {
-			grid-column: 1 / span 2;
-			}
-		</style>
-		</head>
-		<body>
-		<form action="/CGI.py/calculator" method="get" class="calculator">
-			<div class="display">
-				<input type="text" id="result" name="result" value="12" readonly>
-			</div>
-			<div class="buttons">
-			<div class="buttons">
-			<button type="button" class="function" onclick="clearDisplay()">AC</button>
-			<button type="button" class="function" onclick="toggleSign()">±</button>
-			<button type="button" class="function" onclick="calculatePercentage()">%</button>
-			<button type="submit" name="operator" value="/" class="operator">÷</button>
-			<button type="submit" name="number" value="7">7</button>
-			<button type="submit" name="number" value="8">8</button>
-			<button type="submit" name="number" value="9">9</button>
-			<button type="submit" name="operator" value="*" class="operator">×</button>
-			<button type="submit" name="number" value="4">4</button>
-			<button type="submit" name="number" value="5">5</button>
-			<button type="submit" name="number" value="6">6</button>
-			<button type="submit" name="operator" value="-" class="operator">-</button>
-			<button type="submit" name="number" value="1">1</button>
-			<button type="submit" name="number" value="2">2</button>
-			<button type="submit" name="number" value="3">3</button>
-			<button type="submit" name="operator" value="+" class="operator">+</button>
-			<button type="submit" name="number" value="0" class="zero">0</button>
-			<button type="submit" name="decimal" value=".">.</button>
-			<button type="submit" name="equal" value="=" class="operator">=</button>
-			</div>
-		</form>
-		</body>
-		</html>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Calculator</title>
+  <style>
+    .calculator {
+      width: 300px;
+      margin: 0 auto;
+      background-color: #f2f2f2;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .display {
+      background-color: white;
+      padding: 10px;
+      margin-bottom: 20px;
+      text-align: right;
+      font-size: 24px;
+      border-radius: 5px;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 10px;
+    }
+
+    button {
+      background-color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 15px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+      background-color: #e6e6e6;
+    }
+
+    button:active {
+      background-color: #d9d9d9;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .operator {
+      background-color: #ff9500;
+      color: white;
+    }
+
+    .operator:hover {
+      background-color: #e68a00;
+    }
+
+    .operator:active,
+    .operator.active {
+      background-color: #cc7a00;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .zero {
+      grid-column: 1 / span 2;
+    }
+
+    .equal {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    .equal:hover {
+      background-color: #45a049;
+    }
+
+    .equal:active {
+      background-color: #3e8e41;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+	<div class="calculator">
+	  <div class="display">
+		<input type="text" id="result" readonly>
+	  </div>
+	  <div class="buttons">
+		<button type="button" onclick="clearDisplay()">AC</button>
+		<button type="button" onclick="toggleSign()">±</button>
+		<button type="button" onclick="calculatePercentage()">%</button>
+		<button type="button" class="operator" data-operator="/">÷</button>
+		<button type="button" onclick="appendNumber('7')">7</button>
+		<button type="button" onclick="appendNumber('8')">8</button>
+		<button type="button" onclick="appendNumber('9')">9</button>
+		<button type="button" class="operator" data-operator="*">×</button>
+		<button type="button" onclick="appendNumber('4')">4</button>
+		<button type="button" onclick="appendNumber('5')">5</button>
+		<button type="button" onclick="appendNumber('6')">6</button>
+		<button type="button" class="operator" data-operator="-">-</button>
+		<button type="button" onclick="appendNumber('1')">1</button>
+		<button type="button" onclick="appendNumber('2')">2</button>
+		<button type="button" onclick="appendNumber('3')">3</button>
+		<button type="button" class="operator" data-operator="+">+</button>
+		<button type="button" class="zero" onclick="appendNumber('0')">0</button>
+		<button type="button" onclick="appendDecimal()">.</button>
+		<button type="button" class="equal" onclick="calculateResult()">=</button>
+	  </div>
+	</div>
+  
+	<script>
+	  let firstOperand = '';
+	  let secondOperand = '';
+	  let currentOperator = null;
+	  let shouldResetDisplay = false;
+  
+	  const display = document.getElementById('result');
+	  const operatorButtons = document.getElementsByClassName('operator');
+  
+	  function appendNumber(number) {
+		if (display.value === '0' || shouldResetDisplay) {
+		  display.value = number;
+		  shouldResetDisplay = false;
+		} else {
+		  display.value += number;
+		}
+	  }
+  
+	  function appendDecimal() {
+		if (shouldResetDisplay) {
+		  display.value = '0.';
+		  shouldResetDisplay = false;
+		} else if (!display.value.includes('.')) {
+		  display.value += '.';
+		}
+	  }
+  
+	  function setOperator(operator) {
+		if (currentOperator !== null) {
+		  calculateResult();
+		}
+		firstOperand = display.value;
+		currentOperator = operator;
+		shouldResetDisplay = true;
+		updateActiveOperator();
+	  }
+  
+	  function calculateResult() {
+		if (currentOperator === null) {
+		  return;
+		}
+		secondOperand = display.value;
+  
+		const url = `CGI.py/calculator?firstOperand=${encodeURIComponent(firstOperand)}&secondOperand=${encodeURIComponent(secondOperand)}&operator=${encodeURIComponent(currentOperator)}`;
+  
+		fetch(url)
+		  .then(response => response.text())
+		  .then(result => {
+			display.value = result;
+			firstOperand = result;
+			secondOperand = '';
+			currentOperator = null;
+			shouldResetDisplay = true;
+			updateActiveOperator();
+		  })
+		  .catch(error => {
+			console.error('Error:', error);
+			display.value = 'Error';
+		  });
+	  }
+  
+	  function clearDisplay() {
+		display.value = '0';
+		firstOperand = '';
+		secondOperand = '';
+		currentOperator = null;
+		shouldResetDisplay = false;
+		updateActiveOperator();
+	  }
+  
+	  function toggleSign() {
+		display.value = (parseFloat(display.value) * -1).toString();
+	  }
+  
+	  function calculatePercentage() {
+		display.value = (parseFloat(display.value) / 100).toString();
+	  }
+  
+	  function updateActiveOperator() {
+		for (let i = 0; i < operatorButtons.length; i++) {
+		  operatorButtons[i].classList.remove('active');
+		  if (operatorButtons[i].dataset.operator === currentOperator) {
+			operatorButtons[i].classList.add('active');
+		  }
+		}
+	  }
+  
+	  for (let i = 0; i < operatorButtons.length; i++) {
+		operatorButtons[i].addEventListener('click', function() {
+		  setOperator(this.dataset.operator);
+		});
+	  }
+	</script>
+  </body>
+  </html>

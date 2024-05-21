@@ -238,7 +238,7 @@ void Server::run(const Config &Conf) {
 		// std::cout << "---------Server is running---------" << std::endl;
 		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 10, NULL);
 		// std::cout << "---------Server is running---------" << std::endl;
-        std::cout << "---------Current event--------- num | " << eventNumber << std::endl;
+        // std::cout << "---------Current event--------- num | " << eventNumber << std::endl;
         
         updateControl();
         
@@ -291,7 +291,7 @@ void Server::handleClientWrite(FD clientFd, const Config &Conf) {
 
 	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
 	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
-	std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
+	// std::cout << "HandleClientWrite | str = " << ptr->getResponse() << std::endl;
     ssize_t length = send(clientFd, ptr->getResponse().c_str(), ptr->getResponse().length(), 0);
 	// usleep(1000);
 
