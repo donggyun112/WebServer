@@ -80,6 +80,7 @@ class RequestHandle {
         int             		getReadStatus() const {return this->_readStatus;}
         void                    setReadStatus(int readStatus) {_readStatus = readStatus;}
 		const std::string		&getQuery() const;
+        void                    cutBody(size_t length);
         
 
 

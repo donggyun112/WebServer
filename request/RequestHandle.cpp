@@ -81,6 +81,7 @@ int RequestHandle::getResponseStatus() const {
     return _responseStatus;
 }
 
+
 void RequestHandle::setBuffer(unsigned char *buffer, int length) {
     // _buffer.insert(_buffer.end(), buffer.begin(), buffer.end());
     for (int i = 0; i < length; i++) {

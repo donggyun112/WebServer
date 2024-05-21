@@ -16,8 +16,9 @@
 
 typedef struct s_procInfo {
     pid_t pid;
-    int clientFd;
-	std::string tempFilePath;
+    int CgiOutputFd;
+	int CgiInputFd;
+	int clientFd;
 } procInfo;
 
 class Client {
@@ -26,6 +27,7 @@ class Client {
 		RequestHandle	_requestHandle;
 		ResponseHandle	_responseHandle;
 		std::string		_response;
+		std::string		_requestBody;
 		procInfo 		*_procPtr;
 		
 		Client();
@@ -38,9 +40,7 @@ class Client {
 		int 		getReadStatus() const;
 		bool		getIsKeepAlive() const;
 		void		generateResponse(const Config &Conf);
-		void		handleCGI();
 		void		setEnv(const RequestHandle &Req);
-		void		setBufferFromChild(int data);
 		procInfo*	getProcInfo() const;
 		void		makeExecuteCommand(std::string &extention);
 		void		setEnv(const Config &Conf, const RequestHandle &Req);
@@ -50,6 +50,7 @@ class Client {
 		// ResponseHandle getResponseHandle() const;
 
 		const ResponseHandle& getResponseHandle() const;
+		const RequestHandle& getRequestHandle() const;
 
 		Port		getPort() const;
 
@@ -58,5 +59,7 @@ class Client {
 		void		setResponse(const std::string &param);
 		void		appendResponse(const char *param);
 		void		cutResponse(int length);
+		void		cutRequestBody(size_t length);
+		std::string		getRequestBody();
 };
 #endif
