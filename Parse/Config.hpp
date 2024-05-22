@@ -22,7 +22,6 @@ public:
     Config(int argc, char **argv);
 
     ~Config();
-    // void setServers(const std::map<std::string, ServerConfig> servers);
 	void 		setServerName(std::string serverName);
     ServerConfig operator[](Port port) const;
     ServerConfig operator[](int i) const;

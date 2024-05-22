@@ -5,7 +5,6 @@
 
 int main(int ac, char **av)
 {
-	// signal(SIGPIPE, SIG_IGN);
 	Error::initializeError();
 	Config Conf(ac, av);
 	Server Server;
