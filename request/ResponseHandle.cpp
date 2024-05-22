@@ -71,7 +71,7 @@ std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
 
 std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, const Config &Conf)
 {
-	initPathFromLocation(Req, Conf);
+		initPathFromLocation(Req, Conf);
 	int method = Manager::responseUtils.getMethodNumber(Req.getMethod());
 	if (Manager::responseUtils.isMethodPossible(method, _loc) == false) {
 		throw MethodNotAllowed_405;
@@ -208,16 +208,11 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 	{
 		throw InternalServerError_500;
 	}
-
-		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
-	if (Manager::responseUtils.isMethodPossible(Manager::responseUtils.getMethodNumber(Req.getMethod()), _loc) == false) {
-		throw MethodNotAllowed_405;
-	}
+	_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
 	if (!Manager::responseUtils.isValidPath(_filePath)) {
 		throw BadRequest_400;
 	}
-
 	if (_filePath.length() > 1 && _filePath[_filePath.length() - 1] == '/') {
 		if (Manager::responseUtils.isDirectory(_filePath) == true) {
 			std::string tmpPath = _filePath + _loc.getIndex();
@@ -232,7 +227,6 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 			_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
 		}
 	}
-			  
 	return true;
 }
 
@@ -333,6 +327,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 
 std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
 {
+
 	std::string responseData;
 
 	std::string contentType = Req.getHeader("Content-Type");
@@ -462,7 +457,7 @@ Port	ResponseHandle::getPort() const {
 	return _port;
 }
 
-LocationConfig	ResponseHandle::getLocation() const {
+const LocationConfig&	ResponseHandle::getLocation() const {
 	return _loc;
 }
 
