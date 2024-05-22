@@ -12,6 +12,8 @@ void Client::clearAll() {
 
 Client::~Client() {
 	clearAll();
+	delete _procPtr;
+	_procPtr = NULL;
 }
 
 const ResponseHandle& Client::getResponseHandle() const{
@@ -144,7 +146,6 @@ void Client::handleCGI(const Config &Conf) {
 		tempFileFdIn = open(tempFileNameIn.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
 		tempFileFdOut = open(tempFileNameOut.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
 		if (tempFileFdIn == -1 || tempFileFdOut == -1) {
-			std::cerr << "failed to open | " << __LINE__ << std::endl;
 			exit(InternalServerError_500);
 		}
 		write(tempFileFdIn, _requestHandle.getBody().data(), _requestHandle.getBody().length());
