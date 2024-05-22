@@ -134,9 +134,9 @@ void	Config::setServerName(std::string serverName)
 Config::Config(int argc, char **argv) : _servers() {
     if (argc != 2) {
         std::cerr << "Error: Invalid number of arguments" << std::endl;
-        parseConfig("nginx.conf");
-    }
-    parseConfig(argv[1]);
+        parseConfig("default.conf");
+    } else 
+        parseConfig(argv[1]);
 }
 
 Config::~Config() {}
