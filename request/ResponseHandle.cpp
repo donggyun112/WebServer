@@ -25,11 +25,53 @@ void	ResponseHandle::clearAll() {
 	_httpUri.clear();
 }
 
+std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
+    Response tmpResponse;
+    std::string response;
+
+	// Response redirectResponse = handleRedirect(_loc);
+	// if (redirectResponse.getStatusCode() != 300) {
+	// 	return redirectResponse;
+	// } //이 부분은 redirect 구현 잘 끝나면 거기에서 에러코드 등 핸들링 추가로 합시다.
+
+    // 파일 읽기
+    std::ifstream file(_filePath.c_str(), std::ios::binary);
+    if (file.is_open() && file.good()) {
+        // 파일 크기 확인
+        std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
+
+        // 파일 크기 제한 설정
+        const std::streamsize maxFileSize = Conf[_port].getClientMaxBodySize();
+        if (fileSize > maxFileSize) {
+			throw PayloadTooLarge_413;
+        }
+        std::remove(_filePath.c_str());
+        file.close();
+
+        tmpResponse.setStatusCode(204);
+    } else {
+        if (Manager::responseUtils.isDirectory(_filePath)) {
+			if (_loc.getAutoindex() == true) {
+            	handleAutoIndex(tmpResponse, _filePath);
+			} else {
+				throw Forbidden_403;
+			}
+        } else {
+			if (_loc.getAutoindex() == false) {
+                throw NotFound_404;
+			} else {
+				handleAutoIndex(tmpResponse, _filePath.substr(0, _filePath.find_last_of('/')));
+			}
+		}
+    }
+    tmpResponse.setHeader("Server", "42Webserv");
+    response = tmpResponse.getResponses();
+    return response;
+}
+
 std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, const Config &Conf)
 {
-	if (_isInitFromLocation == false) {
-		initPathFromLocation(Req, Conf);
-	}
+	initPathFromLocation(Req, Conf);
 	int method = Manager::responseUtils.getMethodNumber(Req.getMethod());
 	if (Manager::responseUtils.isMethodPossible(method, _loc) == false) {
 		throw MethodNotAllowed_405;
@@ -168,7 +210,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 	}
 
 		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
-	if (Manager::responseUtils.isMethodPossible(GET, _loc) == false) {
+	if (Manager::responseUtils.isMethodPossible(Manager::responseUtils.getMethodNumber(Req.getMethod()), _loc) == false) {
 		throw MethodNotAllowed_405;
 	}
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
@@ -235,12 +277,17 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 		std::string body = Manager::responseUtils.readFileContent(file, fileSize);
 		file.close();
 		
-		response.setStatusCode(OK_200);
-		response.setHeader("Date", Manager::responseUtils.getCurTime());
-		response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
-		response.setHeader("Content-Length", Manager::utils.toString(body.length()));
-		if (body.length() != 0)
+		if (body.length() != 0) {
+			response.setStatusCode(OK_200);
+			response.setHeader("Date", Manager::responseUtils.getCurTime());
+			response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
 			response.setBody(body);
+			response.setHeader("Content-Length", Manager::utils.toString(body.length()));
+		}else {
+			response.setStatusCode(NoContent_204);
+			response.setHeader("Date", Manager::responseUtils.getCurTime());
+			response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
+		}
 		if (_loc.isEtag() == true)
 		{
 			std::cerr << "ETAG" << std::endl;
@@ -253,6 +300,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 			response.setHeader("Pragma", "no-cache");
 			response.setHeader("Expires", "0");
 		}
+
 	}
 	else
 	{
@@ -304,44 +352,6 @@ std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
 		throw InternalServerError_500;
 	return responseData;
 }
-
-
-std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
-    Response tmpResponse;
-    std::string response;
-
-    std::ifstream file(_filePath.c_str(), std::ios::binary);
-    if (file.is_open() && file.good()) {
-        std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
-
-        const std::streamsize maxFileSize = Conf[_port].getClientMaxBodySize();
-        if (fileSize > maxFileSize) {
-			throw PayloadTooLarge_413;
-        }
-        std::remove(_filePath.c_str());
-        file.close();
-
-        tmpResponse.setStatusCode(204);
-    } else {
-        if (Manager::responseUtils.isDirectory(_filePath)) {
-			if (_loc.getAutoindex() == true) {
-            	handleAutoIndex(tmpResponse, _filePath);
-			} else {
-				throw Forbidden_403;
-			}
-        } else {
-			if (_loc.getAutoindex() == false) {
-                throw NotFound_404;
-			} else {
-				handleAutoIndex(tmpResponse, _filePath.substr(0, _filePath.find_last_of('/')));
-			}
-		}
-    }
-    tmpResponse.setHeader("Server", "42Webserv");
-    response = tmpResponse.getResponses();
-    return response;
-}
-
 
 void ResponseHandle::handleAutoIndex(Response &response, const std::string &servRoot)
 {
