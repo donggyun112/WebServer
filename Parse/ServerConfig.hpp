@@ -18,7 +18,7 @@ class ServerConfig
 private:
     Port _port;
     std::string _server_name;
-    int _client_max_body_size;
+    size_t _client_max_body_size;
     std::vector<LocationConfig> _locations;
     ServerConfig();
     std::string _path;
@@ -35,7 +35,7 @@ public:
 	 
     Port getPortName() const;
     size_t getNumberOfLocation();
-
+	size_t getClientMaxBodySize() const ;
     
     LocationConfig getLocation(int i) {
         return _locations[i];
