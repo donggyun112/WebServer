@@ -116,7 +116,7 @@ public:
 						return _locations[i];
 					}
 				}
-			} else throw std::runtime_error("error at LocationFonfig::getLocation");
+			}
 		}
 		std::vector<std::string> tokens = getHttpUriToken(httpPath);
         for (size_t i = 0; i < _locations.size(); i++) {
