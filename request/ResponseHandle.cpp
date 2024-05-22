@@ -29,11 +29,6 @@ std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
     Response tmpResponse;
     std::string response;
 
-	// Response redirectResponse = handleRedirect(_loc);
-	// if (redirectResponse.getStatusCode() != 300) {
-	// 	return redirectResponse;
-	// } //이 부분은 redirect 구현 잘 끝나면 거기에서 에러코드 등 핸들링 추가로 합시다.
-
     // 파일 읽기
     std::ifstream file(_filePath.c_str(), std::ios::binary);
     if (file.is_open() && file.good()) {
@@ -48,7 +43,10 @@ std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
         std::remove(_filePath.c_str());
         file.close();
 
-        tmpResponse.setStatusCode(204);
+		tmpResponse.setStatusCode(Accepted_202);
+		tmpResponse.setHeader("Date", Manager::responseUtils.getCurTime());
+		tmpResponse.setHeader("Content-Type", "text/html");
+		tmpResponse.setHeader("Connection", "close");
     } else {
         if (Manager::responseUtils.isDirectory(_filePath)) {
 			if (_loc.getAutoindex() == true) {
