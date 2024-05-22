@@ -29,7 +29,9 @@ public:
 
     void    parseConfig(const std::string filename);
     int getNumberOfServer() const;
+    bool preConfigCheck(const std::string filename);
 };
 
 void replaceTabsWithSpaces(std::string& str);
+bool validateLocationConfig(const std::string &line);
 #endif
