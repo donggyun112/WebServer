@@ -194,14 +194,15 @@ void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
 	char buffer[1025];
 
 	if (currEvent.data == InternalServerError_500) {
-		std::remove(procPtr->tempFilePath.c_str());
+		std::remove(procPtr->tempFileNameIn.c_str());
+		std::remove(procPtr->tempFileNameOut.c_str());
 		ptr->setResponse(Error::errorHandler(Conf[ptr->getPort()], InternalServerError_500));
 		waitpid(procPtr->pid, NULL, 0);
 		changeEvents(_changeList, procPtr->clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 		changeEvents(_changeList, procPtr->clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 		return ;
 	}
-	tempFileFd = open(procPtr->tempFilePath.c_str(), O_RDONLY);
+	tempFileFd = open(procPtr->tempFileNameOut.c_str(), O_RDONLY);
 	while (length) {
 		memset(buffer, 0, 1025);
 		length = read(tempFileFd, buffer, 1024);
@@ -211,7 +212,8 @@ void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
 		ptr->appendResponse(buffer);
 	}
 	close(tempFileFd);
-	// std::remove(procPtr->tempFilePath.c_str());
+	std::remove(procPtr->tempFileNameIn.c_str());
+	std::remove(procPtr->tempFileNameOut.c_str());
 	waitpid(procPtr->pid, NULL, 0);
 	if (length == -1) {
         std::cerr << "length == -1" << std::endl;
