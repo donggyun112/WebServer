@@ -82,7 +82,7 @@ std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, con
 		_response = handleGetRequest(Req, Conf);
 		return _response;
 	case POST:
-		_response = handlePostRequest(Req);
+		_response = handlePostRequest(Req, Conf);
 		break;
 	case DELETE:
 		_response = handleDeleteRequest(Conf);
@@ -325,10 +325,13 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 	return response.getResponses();
 }
 
-std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
+std::string ResponseHandle::handlePostRequest(const RequestHandle &Req, const Config &Conf)
 {
-
 	std::string responseData;
+
+	const size_t maxFileSize = Conf[_port].getClientMaxBodySize();
+	if (Req.getBody().size() > maxFileSize)
+		throw PayloadTooLarge_413;
 
 	std::string contentType = Req.getHeader("Content-Type");
 	if ((contentType.find("multipart/form-data") != std::string::npos && contentType.find("boundary") != std::string::npos) \
