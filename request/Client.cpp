@@ -123,7 +123,8 @@ void Client::makeTempFileNameForCgi(std::string &filePath, int mode) {
 
 void Client::handleCGI(const Config &Conf) {
 	int processPid;
-	std::string tempFileNameIn, tempFileNameOut;
+	std::string tempFileNameIn;
+	std::string tempFileNameOut;
 	std::vector<char *> commands;
 	std::string service = Manager::responseUtils.getFileExtension(_responseHandle.getFilePath());
 	std::string pathToExecute = _responseHandle.getFilePath();
