@@ -101,6 +101,7 @@ void Server::updateControl() {
 
 void Server::disconnectClient(int fd) {
     
+    delete _clientMap[fd]->getProcInfo();
     std::map<FD, Client *>::iterator it = _clientMap.find(fd);
     if (it == _clientMap.end()) {
         std::cout << "Client not found: " << fd << std::endl;
@@ -139,7 +140,6 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
     ssize_t length;
 
     length = recv(clientFd, buffer, 1024, 0);
-    buffer[length] = '\0';
     
     if (length < 0) {
         std::cerr << "Error reading from client: " << clientFd << std::endl;
@@ -151,8 +151,8 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
         disconnectClient(clientFd);
         delete[] buffer;
         return ;
-    }
-    
+    }    
+    buffer[length] = '\0';
     Client *ptr = _clientMap[clientFd];
     ptr->setBuffer(buffer, length);
     delete[] buffer;
