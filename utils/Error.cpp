@@ -156,10 +156,6 @@ std::string Error::errorHandler(const ServerConfig &Serv, int num) {
 	if (file.is_open() && file.good()) {
 		std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
 
-		const std::streamsize maxFileSize = 10 * 1024 * 1024;
-		if (fileSize > maxFileSize) {
-			return createErrorResponse(PayloadTooLarge_413);
-		}
 		std::string body = Manager::responseUtils.readFileContent(file, fileSize);
 		file.close();
 
