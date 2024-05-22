@@ -29,7 +29,6 @@ void Client::setResponse(const std::string &param) {
 void Client::appendResponse(const char *param) {
 	if (param)
 		_response += param;
-	// _response += param;
 }
 
 Port Client::getPort() const {
@@ -54,7 +53,6 @@ bool	Client::getIsKeepAlive() const {
 }
 
 void	Client::makeExecuteCommand(std::string &extention) {
-	std::cout << __LINE__ << " | extention = " << extention << std::endl;
     if (extention == "py") {
         extention = "/usr/bin/python3";
     } else if (extention == "php") {
@@ -186,7 +184,6 @@ void Client::generateResponse(const Config &Conf) {
 		_response = Error::errorHandler(Conf[_port], num);
 	} catch (StatusCode num) {
 		_requestHandle.setReadStatus(READ_ERROR);
-		// _responseHandle.getLocation().setCgi(false);
 		_response = Error::errorHandler(Conf[_port], num);
 	}
 	catch (std::exception &e) {

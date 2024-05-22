@@ -1,6 +1,5 @@
 #pragma once
 
-// #include "Response.hpp"
 #include "RequestHandle.hpp"
 #include "../Parse/Config.hpp"
 #include "../utils/utils.hpp"
@@ -20,7 +19,6 @@ class Response;
 
 class ResponseHandle {
 	private:
-		// Response 		_response;
 		bool			_isInitFromLocation;
 		std::string 	_response;
 		std::string 	_filePath;

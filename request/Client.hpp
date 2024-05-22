@@ -48,13 +48,10 @@ class Client {
 		void		makeTempFileNameForCgi(std::string &filePath, int mode);
 		void		handleCGI(const Config &Conf);
 
-		// ResponseHandle getResponseHandle() const;
-
 		const ResponseHandle& getResponseHandle() const;
 
 		Port		getPort() const;
 
-		// std::string setResponse();
 		std::string getResponse() const;
 		void		setResponse(const std::string &param);
 		void		appendResponse(const char *param);

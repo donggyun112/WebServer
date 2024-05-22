@@ -1,7 +1,7 @@
 #include "Config.hpp"
 
 void replaceTabsWithSpaces(std::string& str) {
-    std::replace(str.begin(), str.end(), '\t', ' ');  // replace all tabs with spaces
+    std::replace(str.begin(), str.end(), '\t', ' ');
 }
 
 void    Config::parseConfig(const std::string filename)
@@ -56,7 +56,6 @@ ServerConfig Config::operator[](Port port) const {
 			return _servers[i];
 	}
     throw std::runtime_error("This port doesn't match with any server");
-	// return _servers[0];
 }
 
 ServerConfig Config::getServerConfig(Port port, const std::string &serverName) const {
