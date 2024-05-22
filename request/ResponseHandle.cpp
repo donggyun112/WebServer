@@ -31,16 +31,19 @@ std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, con
 		initPathFromLocation(Req, Conf);
 	}
 	int method = Manager::responseUtils.getMethodNumber(Req.getMethod());
+	if (Manager::responseUtils.isMethodPossible(method, _loc) == false) {
+		throw MethodNotAllowed_405;
+	}
 	switch (method)
 	{
 	case GET:
-		_response = handleGetRequest(Req);
+		_response = handleGetRequest(Req, Conf);
 		return _response;
 	case POST:
 		_response = handlePostRequest(Req);
 		break;
 	case DELETE:
-		// _response = handleDeleteRequest();
+		_response = handleDeleteRequest();
 		break;
 	default:
 		return handleMethodNotAllowed().getResponses();
@@ -193,7 +196,7 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 
 
 
-std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
+std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Config &Conf)
 {
 	Response response;
 	if (_loc.isEtag() == true && (!Req.getHeader("If-Modified-Since").empty() || !Req.getHeader("If-None-Match").empty()) &&  \
@@ -224,18 +227,25 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req)
         std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
 
 		const std::streamsize maxFileSize = 10 * 1024 * 1024;
+		(void)Conf;
 		if (fileSize > maxFileSize)
 		{
 			throw PayloadTooLarge_413;
 		}
 		std::string body = Manager::responseUtils.readFileContent(file, fileSize);
 		file.close();
-
-		response.setStatusCode(OK_200);
-		response.setHeader("Date", Manager::responseUtils.getCurTime());
-		response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
-		response.setBody(body);
-		response.setHeader("Content-Length", Manager::utils.toString(body.length()));
+		
+		if (body.length() != 0) {
+			response.setStatusCode(OK_200);
+			response.setHeader("Date", Manager::responseUtils.getCurTime());
+			response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
+			response.setBody(body);
+			response.setHeader("Content-Length", Manager::utils.toString(body.length()));
+		}else {
+			response.setStatusCode(NoContent_204);
+			response.setHeader("Date", Manager::responseUtils.getCurTime());
+			response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
+		}
 		if (_loc.isEtag() == true)
 		{
 			std::cerr << "ETAG" << std::endl;
