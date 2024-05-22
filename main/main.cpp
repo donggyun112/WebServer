@@ -1,4 +1,4 @@
-#include "../Server/EchoServer.hpp"
+#include "../Server/WebServer.hpp"
 #include "../Parse/Config.hpp"
 #include "../utils/Error.hpp"
 #include <signal.h>
