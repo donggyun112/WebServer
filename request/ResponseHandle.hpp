@@ -42,7 +42,7 @@ class ResponseHandle {
 		Response	createErrorResponse(int code, const std::string &message);
 		Response 	handleRedirect(const LocationConfig &location);
 		void		handleAutoIndex(Response &response, const std::string &servRoot);
-		std::string	handleDeleteRequest();
+		std::string	handleDeleteRequest(const Config &Conf);
 		void		setResponse(const std::string &response);
 		void		clearAll();
 		const std::string getResponse();

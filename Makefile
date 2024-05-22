@@ -17,7 +17,6 @@ SRCS =	Server/EchoServer.cpp \
 		tmp/mainTest.cpp \
 		utils/utils.cpp \
 		utils/Error.cpp \
-		handleDeleteRequest/handleDeleteRequest.cpp 
 
 OBJS = $(SRCS:.cpp=.o)
 

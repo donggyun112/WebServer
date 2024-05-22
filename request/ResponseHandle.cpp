@@ -43,7 +43,7 @@ std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, con
 		_response = handlePostRequest(Req);
 		break;
 	case DELETE:
-		_response = handleDeleteRequest();
+		_response = handleDeleteRequest(Conf);
 		break;
 	default:
 		return handleMethodNotAllowed().getResponses();
@@ -226,7 +226,7 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
     if (file.is_open() && file.good() && Manager::responseUtils.isDirectory(_filePath) == false) {
         std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
 
-		const std::streamsize maxFileSize = 10 * 1024 * 1024;
+		const std::streamsize maxFileSize = Conf[_port].getClientMaxBodySize();
 		(void)Conf;
 		if (fileSize > maxFileSize)
 		{
@@ -235,17 +235,12 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 		std::string body = Manager::responseUtils.readFileContent(file, fileSize);
 		file.close();
 		
-		if (body.length() != 0) {
-			response.setStatusCode(OK_200);
-			response.setHeader("Date", Manager::responseUtils.getCurTime());
-			response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
+		response.setStatusCode(OK_200);
+		response.setHeader("Date", Manager::responseUtils.getCurTime());
+		response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
+		response.setHeader("Content-Length", Manager::utils.toString(body.length()));
+		if (body.length() != 0)
 			response.setBody(body);
-			response.setHeader("Content-Length", Manager::utils.toString(body.length()));
-		}else {
-			response.setStatusCode(NoContent_204);
-			response.setHeader("Date", Manager::responseUtils.getCurTime());
-			response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
-		}
 		if (_loc.isEtag() == true)
 		{
 			std::cerr << "ETAG" << std::endl;
@@ -258,7 +253,6 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 			response.setHeader("Pragma", "no-cache");
 			response.setHeader("Expires", "0");
 		}
-
 	}
 	else
 	{
@@ -310,6 +304,44 @@ std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
 		throw InternalServerError_500;
 	return responseData;
 }
+
+
+std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
+    Response tmpResponse;
+    std::string response;
+
+    std::ifstream file(_filePath.c_str(), std::ios::binary);
+    if (file.is_open() && file.good()) {
+        std::streamsize fileSize = Manager::responseUtils.getFileSize(file);
+
+        const std::streamsize maxFileSize = Conf[_port].getClientMaxBodySize();
+        if (fileSize > maxFileSize) {
+			throw PayloadTooLarge_413;
+        }
+        std::remove(_filePath.c_str());
+        file.close();
+
+        tmpResponse.setStatusCode(204);
+    } else {
+        if (Manager::responseUtils.isDirectory(_filePath)) {
+			if (_loc.getAutoindex() == true) {
+            	handleAutoIndex(tmpResponse, _filePath);
+			} else {
+				throw Forbidden_403;
+			}
+        } else {
+			if (_loc.getAutoindex() == false) {
+                throw NotFound_404;
+			} else {
+				handleAutoIndex(tmpResponse, _filePath.substr(0, _filePath.find_last_of('/')));
+			}
+		}
+    }
+    tmpResponse.setHeader("Server", "42Webserv");
+    response = tmpResponse.getResponses();
+    return response;
+}
+
 
 void ResponseHandle::handleAutoIndex(Response &response, const std::string &servRoot)
 {
