@@ -2,7 +2,7 @@ CC = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++98
 NAME = webserv
 
-SRCS =	Server/EchoServer.cpp \
+SRCS =	Server/WebServer.cpp \
 		Manager/Manager.cpp \
 		request/Client.cpp \
 		request/RequestHandle.cpp \
@@ -14,7 +14,7 @@ SRCS =	Server/EchoServer.cpp \
 		Parse/Config.cpp \
 		Parse/ServerConfig.cpp \
 		Parse/LocationConfig.cpp \
-		tmp/mainTest.cpp \
+		main/main.cpp \
 		utils/utils.cpp \
 		utils/Error.cpp \
 
