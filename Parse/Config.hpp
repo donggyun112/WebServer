@@ -19,6 +19,7 @@ private:
 	std::string _serverNmae;
 
 public:
+	Config();
     Config(int argc, char **argv);
 
     ~Config();
@@ -30,6 +31,13 @@ public:
     void    parseConfig(const std::string filename);
     int getNumberOfServer() const;
     bool preConfigCheck(const std::string filename);
+	Config &operator=(const Config &config) {
+		if (this != &config) {
+			_servers = config._servers;
+			_serverNmae = config._serverNmae;
+		}
+		return *this;
+	}
 };
 
 void replaceTabsWithSpaces(std::string& str);

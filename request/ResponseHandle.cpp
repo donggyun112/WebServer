@@ -29,6 +29,11 @@ std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
     Response tmpResponse;
     std::string response;
 
+	// Response redirectResponse = handleRedirect(_loc);
+	// if (redirectResponse.getStatusCode() != 300) {
+	// 	return redirectResponse;
+	// } //이 부분은 redirect 구현 잘 끝나면 거기에서 에러코드 등 핸들링 추가로 합시다.
+
     // 파일 읽기
     std::ifstream file(_filePath.c_str(), std::ios::binary);
     if (file.is_open() && file.good()) {
@@ -43,10 +48,7 @@ std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
         std::remove(_filePath.c_str());
         file.close();
 
-		tmpResponse.setStatusCode(Accepted_202);
-		tmpResponse.setHeader("Date", Manager::responseUtils.getCurTime());
-		tmpResponse.setHeader("Content-Type", "text/html");
-		tmpResponse.setHeader("Connection", "close");
+        tmpResponse.setStatusCode(204);
     } else {
         if (Manager::responseUtils.isDirectory(_filePath)) {
 			if (_loc.getAutoindex() == true) {
@@ -67,9 +69,83 @@ std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
     return response;
 }
 
+bool ResponseHandle::vaildCheckRequest(const RequestHandle &Req) {
+	if (_loc.getAllowMethods().empty() == false) {
+		int method = Manager::responseUtils.getMethodNumber(Req.getMethod());
+		if (Manager::responseUtils.isMethodPossible(method, _loc) == false) {
+			throw MethodNotAllowed_405;
+		}
+	}
+	else if (Req.getRequest()._method != "GET" && Req.getRequest()._method != "POST" &&\
+		Req.getRequest()._method != "DELETE" && Req.getRequest()._method != "PUT" && Req.getRequest()._method != "HEAD") {
+		throw MethodNotAllowed_405;
+	}
+	else if (Req.getRequest()._version != "HTTP/1.1")
+		throw HttpVersionNotSupported_505;
+	else if (Req.getRequest()._uri.find("..") != std::string::npos)
+		throw Forbidden_403;
+	else if (Req.getRequest()._uri.find("~") != std::string::npos)
+		throw Forbidden_403;
+	else if (Req.getRequest()._uri.find("//") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find(" ") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find(" ") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("?") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("#") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("%") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("<") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find(">") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("{") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("}") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("|") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("\\") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("^") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("[") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("]") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("`") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find(";") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("/") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find("?") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._uri.find(":") != std::string::npos)
+		throw BadRequest_400;
+	else if (Req.getRequest()._headers.find("Host") == Req.getRequest()._headers.end())
+		throw BadRequest_400;
+	else if (Req.getRequest()._contentLength != Req.getBody().length())
+		throw BadRequest_400;
+	else if (_loc.getMaxBodySize() < Req.getRequest()._contentLength)
+		throw PayloadTooLarge_413;
+	// std::cout << "Req.getRequest()._contentLength : " << Req.getRequest()._contentLength << std::endl;
+	// std::cout << "Req.getBody().length() : " << Req.getBody().length() << std::endl;
+	// std::cout << _loc.getMaxBodySize() << std::endl;
+	return true;
+}
+
 std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, const Config &Conf)
 {
-		initPathFromLocation(Req, Conf);
+	Config &Conf1 = Manager::config;
+	initLocationFromUri(Req, Conf1);
+	if (vaildCheckRequest(Req) == true) {
+		initPathFromLocation();
+	}
+	
 	int method = Manager::responseUtils.getMethodNumber(Req.getMethod());
 	if (Manager::responseUtils.isMethodPossible(method, _loc) == false) {
 		throw MethodNotAllowed_405;
@@ -80,7 +156,7 @@ std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, con
 		_response = handleGetRequest(Req, Conf);
 		return _response;
 	case POST:
-		_response = handlePostRequest(Req, Conf);
+		_response = handlePostRequest(Req);
 		break;
 	case DELETE:
 		_response = handleDeleteRequest(Conf);
@@ -195,7 +271,7 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 	return response;
 }
 
-bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config &Conf) {
+bool	ResponseHandle::initLocationFromUri(const RequestHandle &Req, const Config &Conf) {
 	_isInitFromLocation = true;
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
@@ -207,7 +283,15 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 		throw InternalServerError_500;
 	}
 	_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
+	
+	return true;
+}
+
+bool 			ResponseHandle::initPathFromLocation()
+{
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
+	std::cout << "-------------------" << std::endl;
+	std::cout << _filePath << std::endl;
 	if (!Manager::responseUtils.isValidPath(_filePath)) {
 		throw BadRequest_400;
 	}
@@ -222,13 +306,14 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 		}
 	} else {
 		if (Manager::responseUtils.isExist(_filePath) == false) {
-			_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
+			if (_loc.getAutoindex() == true) {
+				_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
+			}
+			
 		}
 	}
 	return true;
 }
-
-
 
 std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Config &Conf)
 {
@@ -323,13 +408,10 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 	return response.getResponses();
 }
 
-std::string ResponseHandle::handlePostRequest(const RequestHandle &Req, const Config &Conf)
+std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
 {
-	std::string responseData;
 
-	const size_t maxFileSize = Conf[_port].getClientMaxBodySize();
-	if (Req.getBody().size() > maxFileSize)
-		throw PayloadTooLarge_413;
+	std::string responseData;
 
 	std::string contentType = Req.getHeader("Content-Type");
 	if ((contentType.find("multipart/form-data") != std::string::npos && contentType.find("boundary") != std::string::npos) \

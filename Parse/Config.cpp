@@ -1,5 +1,7 @@
 #include "Config.hpp"
 
+Config::Config() : _servers() {}
+
 void replaceTabsWithSpaces(std::string& str) {
     std::replace(str.begin(), str.end(), '\t', ' ');
 }

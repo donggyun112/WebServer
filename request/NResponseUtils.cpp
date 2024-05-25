@@ -63,7 +63,7 @@ int ResponseUtils::getMethodNumber(const std::string &method) {
 	else if (method == "PUT")
 		return PUT;
 	else
-		return 0;
+		return -1;
 }
 
 std::string ResponseUtils::nomralizeUrl(const std::string &HTTP_uri) {

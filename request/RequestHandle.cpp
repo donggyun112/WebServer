@@ -3,6 +3,7 @@
 
 RequestHandle::RequestHandle(Port port) : _port(port) {
     clearAll();
+	std::cout << "test2\n";
 }
 
 RequestHandle::RequestHandle(const RequestHandle &Copy) : 
@@ -85,49 +86,91 @@ void RequestHandle::setBuffer(unsigned char *buffer, int length) {
     for (int i = 0; i < length; i++) {
         _buffer += buffer[i];
     }
+	// std:
     setRequest();
+}
+
+bool mystrcmp(std::string str12, std::string str13) {
+	char *str1 = (char *)str12.c_str();
+	char *str2 = (char *)str13.c_str();
+	while (*str1 || *str2) {
+		if (*str1 != *str2) {
+			std::cout << "str1: " << int(*str1) << std::endl;
+			std::cout << "str2: " << int(*str2) << std::endl;
+			std::cout << "Diff : " << *str1 - *str2 << std::endl;
+			return 0;
+		}
+		str1++;
+		str2++;
+	}
+	return 1;
 }
 
 void RequestHandle::setRequest() {
     std::string line, header, body;
 
-    if (_readStatus == READ_NOT_DONE) {
+	// if (_readStatus == READ_CHUNKED_BODY)
+	// 	_readStatus = READ_BODY_DOING;
+
+    if (_readStatus == READ_NOT_DONE && _request._method.empty()) {
         std::string::size_type pos = _buffer.find("\r\n");
         if (pos == std::string::npos) return;
+		std::cout << "-------------------------1.5\n";
+		// std::cout << "pos: " << pos << std::endl;
         line = _buffer.substr(0, pos);
+		// std::cout << "line: " << line << std::endl;
         parseRequestLine(line);
+		std::cout << "-------------------------1.6\n";
         _readStatus = READ_LINE_DONE;
+		// _buffer.erase(0, pos + 2);
     }
+std::cout << "-------------------------2\n";
 
     if (_readStatus == READ_LINE_DONE) {
         std::string::size_type headerEnd = _buffer.find("\r\n\r\n");
         if (headerEnd == std::string::npos) return;
         header = _buffer.substr(0, headerEnd);
+		std::cout << "-------------------------2.5\n";
+		// std::cout << _buffer << std::endl;
         parseHeader(header);
         _readStatus = READ_HEADER_DONE;
+		// _buffer.erase(0, headerEnd + 4);
     }
+std::cout << "-------------------------3\n";
+// std::cout << "_readStatus: " << _readStatus << std::endl;
 
-    if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING) {
+    if (_readStatus == READ_HEADER_DONE || _readStatus == READ_BODY_DOING || _readStatus == READ_CHUNKED_BODY) {
 
         std::string::size_type bodyStart = _buffer.find("\r\n\r\n");
         if (bodyStart == std::string::npos) return ;
         body = _buffer.substr(bodyStart + 4);
 
-        if (getMethod() == "POST" && getHeader("Transfer-Encoding") == "chunked")
+		// std::cout << "method: " << getMethod() << std::endl;
+		// std::cout << "ch: " << getHeader("Transfer-Encoding") << std::endl;
+		// std::cout << _buffer << std::endl;
+		if (getHeader("Transfer-Encoding") == "chunked" || _readStatus == READ_CHUNKED_BODY){
+			if (_readStatus == READ_BODY_DOING)
+				std::cout << "chunked doing\n";
+			// std::cout << "chunked\n";
             parseChunkedBody(body);
-        else
+		}
+        else {
+			// std::cout << name << std::endl;
             parseRegularBody(body);
+		}
     }
+std::cout << "-------------------------4\n";
 
-    if (_readStatus == READ_ERROR)
-        throw BadRequest_400;
-    if (_readStatus == READ_DONE) {
-        validateRequest();
-        _responseStatus = 200;
-    }
+	if (_readStatus == READ_ERROR)
+		throw BadRequest_400;
+    // if (_readStatus == READ_DONE) {
+        // if (_readStatus == READ_ERROR)
+        // _responseStatus = 200;
+    // }
 }
 
 void RequestHandle::parseRegularBody(std::string& body) {
+	std::cout << "=parseRegularBody=\n";
     if (getMethod() == "GET" || (_request._contentLength == 0 && body.empty())) {
         _readStatus = READ_DONE;
         return;
@@ -135,13 +178,20 @@ void RequestHandle::parseRegularBody(std::string& body) {
     if (body.size() == _request._contentLength) {
         _readStatus = READ_DONE;
         _request._body = body.substr(0, _request._contentLength);
+		_buffer.clear();
 
     } else if (body.size() < _request._contentLength){
         _readStatus = READ_BODY_DOING;
+		std::cout << "do do do " << std::endl;
         return ;
     } else if (body.size() > _request._contentLength) {
-        _readStatus = READ_ERROR;
-        return ;
+        // _readStatus = READ_ERROR;
+		// std::cout << _buffer << std::endl;
+		std::cout << "size over\n";
+		std::cout << "body.size(): " << body.size() << std::endl;
+		std::cout << "_request._contentLength: " << _request._contentLength << std::endl;
+		throw PayloadTooLarge_413;
+        // return ;
     }
 }
 
@@ -159,6 +209,8 @@ void RequestHandle::clearRequest()
 
 void RequestHandle::clearAll()
 {
+	if (_readStatus == READ_CHUNKED_BODY)
+		return ;
     clearRequest();
     _buffer.clear();
     _readStatus = READ_NOT_DONE;
@@ -194,20 +246,32 @@ void RequestHandle::parseRequestLine(const std::string& buf)
 {
     std::istringstream iss(buf);
 	std::string token, tmpUri;
+	Config &Conf = Manager::config;
 
 	iss >> token;
 	if (iss.fail())
 		throw MethodNotAllowed_405;
 	_request._method = parseMethod(token);
+	std::cout << "_readStatus: " << _readStatus << std::endl;
+	std::cout << "method: " << _request._method << std::endl;
+	// std::cout << "line: " << buf << std::endl;
 
 	iss >> tmpUri;
-	if (iss.fail())
+	if (iss.fail()) {
+		std::cout << "uri fail\n";
+		std::cout << buf << std::endl;
 		throw BadRequest_400;
+	}
 	parseUri(tmpUri);
+	std::cout << "uri: " << _request._uri << std::endl;
+	
 
 	iss >> _request._version;
 	if (iss.fail())
 		throw HttpVersionNotSupported_505;
+	std::cout << "version: " << _request._version << std::endl;
+	_loc = Conf.getServerConfig(_port, this->getHost()).getLocation(_request._uri);	
+	max_body_size = _loc.getMaxBodySize();
 }
 
 void RequestHandle::parseHeader(const std::string& buffer)
@@ -222,6 +286,8 @@ void RequestHandle::parseHeader(const std::string& buffer)
 		if (pos != std::string::npos) {
 			std::string key = line.substr(0, pos);
 			std::string value = line.substr(pos + 2);
+			if (value.find("\r") != std::string::npos)
+				value = value.substr(0, value.size() - 1);
 			_request._headers[key] = value;
 		}
 	}
@@ -230,7 +296,13 @@ void RequestHandle::parseHeader(const std::string& buffer)
             _readStatus = READ_ERROR;
             return ;
         }
+		// std::cout << "###################################################\n";
+		// std::cout << "Content-Length: " << _request._headers["Content-Length"] << std::endl;
         _request._contentLength = atoi(_request._headers["Content-Length"].c_str());
+		// std::cout << "Content-Length: " << _request._contentLength << std::endl;
+		// std::cout << "max_body_size: " << max_body_size << std::endl;
+		if (_request._contentLength > max_body_size)
+			throw PayloadTooLarge_413;
     }
     else 
         _request._contentLength = 0;
@@ -245,30 +317,85 @@ void RequestHandle::parseHeader(const std::string& buffer)
         return;
     }
 }
-
 void RequestHandle::parseChunkedBody(const std::string& body)
 {
+    std::cout << "cccccccccccccc\n";
     std::istringstream iss(body);
-    std::string line;
-    long chunkLength;
+    std::string line, chunked;
+    size_t chunkLength;
 
-    if (body.find("0\r\n") == std::string::npos) {
-        _readStatus = READ_BODY_DOING;
-        return;
-    }
+	// if (body.find("0\r\n") == std::string::npos) {
+	// 	_readStatus = READ_BODY_DOING;
+	// 	return;
+	// }
 
     while (std::getline(iss, line)) {
         chunkLength = strtol(line.c_str(), NULL, 16);
         if (chunkLength == 0) {
-            _readStatus = READ_DONE;
-            return ;
+            // 0\r\n 이후에는 \r\n이 한 번 더 나와야 합니다.
+            if (std::getline(iss, line) && line == "\r") {
+                _request._body = chunked;
+                _readStatus = READ_DONE;
+                return;
+            } else {
+                // 잘못된 형식의 chunked 데이터입니다.
+                // 에러 처리 코드를 추가할 수 있습니다.
+                throw BadRequest_400;
+            }
         }
-        getline(iss, line, '\r');
-        _request._body += line.substr(0, chunkLength);
-        getline(iss, line, '\n');
+		std::cout << "max_body_size: " << max_body_size << std::endl;
+        if (chunkLength > max_body_size)
+            throw PayloadTooLarge_413;
+
+        // if (iss.eof()) {
+		// 	std::cout << "sibal\n";
+        //     _readStatus = READ_CHUNKED_BODY;
+        //     return;
+        // }
+		// std::cout << "test\n";
+        std::string chunk;
+        chunk.resize(chunkLength);
+        iss.read(&chunk[0], chunkLength);
+        chunked += chunk;
+		if (chunkLength > chunked.size()) {
+			_readStatus = READ_CHUNKED_BODY;
+			return ;
+		}
+		_request._body += chunk;
+
+        // \r\n 읽기
+        std::getline(iss, line);
+        if (line != "\r") {
+            throw BadRequest_400;
+        }
     }
 
+    // 0\r\n을 찾지 못한 경우, 아직 데이터가 완전히 도착하지 않았습니다.
+    _readStatus = READ_BODY_DOING;
 }
+// void RequestHandle::parseChunkedBody(const std::string& body)
+// {
+// 	// std::cout << "cccccccccccccc\n";
+//     std::istringstream iss(body);
+//     std::string line;
+//     long chunkLength;
+
+//     // if (body.find("0\r\n") == std::string::npos) {
+//     //     _readStatus = READ_BODY_DOING;
+//     //     return;
+//     // }
+
+//     while (std::getline(iss, line)) {
+//         chunkLength = strtol(line.c_str(), NULL, 16);
+//         if (chunkLength == 0) {
+//             _readStatus = READ_DONE;
+//             return ;
+//         }
+//         getline(iss, line, '\r');
+//         _request._body += line.substr(0, chunkLength);
+//         getline(iss, line, '\n');
+//     }
+// }
 
 void RequestHandle::setCookie()
 {
@@ -295,6 +422,8 @@ void RequestHandle::validateRequest()
 		throw HttpVersionNotSupported_505;
 	if (_request._headers.find("Host") == _request._headers.end())
 		throw BadRequest_400;
+    if (_readStatus == READ_ERROR)
+        throw BadRequest_400;
 }
 
 void RequestHandle::printAllHeaders() const{

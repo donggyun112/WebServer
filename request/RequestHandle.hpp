@@ -26,11 +26,14 @@ enum {
     READ_HEADER_DONE = 2,
     READ_BODY_DOING = 3,
     READ_DONE = 4,
-    READ_ERROR = 5
+    READ_ERROR = 5,
+	READ_CHUNKED_BODY = 6
 };
 
 class RequestHandle {
     private:
+		size_t	  max_body_size;
+		LocationConfig _loc;
         std::string _buffer;
         Request     _request;
         Port         _port;

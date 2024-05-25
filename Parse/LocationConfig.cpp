@@ -164,7 +164,18 @@ LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) :
                 this->_etag = true;
             else if (etag == "off")
                 this->_etag = false;
-        }
+        } else if (key == "max_body_size") {
+			size_t max_body_size;
+			std::string tmp;
+			iss >> tmp;
+			if (tmp.empty())
+				continue;
+			max_body_size = std::stoi(tmp);
+			if (max_body_size == 0)
+				continue;
+			else
+				this->_max_body_size = max_body_size;
+		}
     }
 }
 
@@ -253,4 +264,35 @@ std::vector<std::string>    LocationConfig::getTryFiles() const {
 
 bool                        LocationConfig::isEtag() const {
     return _etag;
+}
+
+LocationConfig &LocationConfig::operator=(const LocationConfig &locationConfig) {
+	if (this != &locationConfig) {
+		_path = locationConfig._path;
+		_alias = locationConfig._alias;
+		_root = locationConfig._root;
+		_index = locationConfig._index;
+		_autoindex = locationConfig._autoindex;
+		_defaultIndex = locationConfig._defaultIndex;
+		_allow_methods = locationConfig._allow_methods;
+		_return_code = locationConfig._return_code;
+		_return_url = locationConfig._return_url;
+		_fastcgi_pass = locationConfig._fastcgi_pass;
+		_fastcgi_param = locationConfig._fastcgi_param;
+		_upload_pass = locationConfig._upload_pass;
+		_upload_store = locationConfig._upload_store;
+		_upload_state_store = locationConfig._upload_state_store;
+		_upload_resume = locationConfig._upload_resume;
+		_upload_max_file_size = locationConfig._upload_max_file_size;
+		_upload_limit_rate = locationConfig._upload_limit_rate;
+		_upload_cleanup = locationConfig._upload_cleanup;
+		_try_files = locationConfig._try_files;
+		_cgi = locationConfig._cgi;
+		_etag = locationConfig._etag;
+	}
+	return *this;
+}
+
+size_t LocationConfig::getMaxBodySize() const {
+	return _max_body_size;
 }

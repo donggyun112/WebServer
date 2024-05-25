@@ -29,6 +29,7 @@ class LocationConfig {
     std::string                 _upload_limit_rate;
     std::vector<int>            _upload_cleanup;
 	std::vector<std::string>    _try_files;
+	size_t						_max_body_size;
 	bool 					  	_cgi;
     bool                        _etag;
     
@@ -60,6 +61,7 @@ class LocationConfig {
     bool                        isEtag() const;
 
     std::string                 getAllowedMethod(size_t i) const;
-    
+	LocationConfig				&operator=(const LocationConfig &locationConfig);
+	size_t						getMaxBodySize() const;
 };
 #endif
