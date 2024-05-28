@@ -1,8 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculator</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      color: black;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: white;
+    }
+
     .calculator {
       width: 300px;
       margin: 0 auto;
@@ -10,6 +24,12 @@
       border-radius: 10px;
       padding: 20px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    .dark-mode .calculator {
+      background-color: #1e1e1e;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
     }
 
     .display {
@@ -20,6 +40,12 @@
       font-size: 24px;
       border-radius: 5px;
       box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .dark-mode .display {
+      background-color: #333;
+      color: white;
     }
 
     .buttons {
@@ -39,13 +65,26 @@
       box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     }
 
+    .dark-mode button {
+      background-color: #444;
+      color: white;
+    }
+
     button:hover {
       background-color: #e6e6e6;
+    }
+
+    .dark-mode button:hover {
+      background-color: #555;
     }
 
     button:active {
       background-color: #d9d9d9;
       box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark-mode button:active {
+      background-color: #666;
     }
 
     .operator {
@@ -80,128 +119,203 @@
       background-color: #3e8e41;
       box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
     }
+
+    .toggle-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .toggle-button.dark-mode {
+      background-color: #555555;
+    }
   </style>
 </head>
 <body>
-	<div class="calculator">
-	  <div class="display">
-		<input type="text" id="result" readonly>
-	  </div>
-	  <div class="buttons">
-		<button type="button" onclick="clearDisplay()">AC</button>
-		<button type="button" onclick="toggleSign()">±</button>
-		<button type="button" onclick="calculatePercentage()">%</button>
-		<button type="button" class="operator" data-operator="/">÷</button>
-		<button type="button" onclick="appendNumber('7')">7</button>
-		<button type="button" onclick="appendNumber('8')">8</button>
-		<button type="button" onclick="appendNumber('9')">9</button>
-		<button type="button" class="operator" data-operator="*">×</button>
-		<button type="button" onclick="appendNumber('4')">4</button>
-		<button type="button" onclick="appendNumber('5')">5</button>
-		<button type="button" onclick="appendNumber('6')">6</button>
-		<button type="button" class="operator" data-operator="-">-</button>
-		<button type="button" onclick="appendNumber('1')">1</button>
-		<button type="button" onclick="appendNumber('2')">2</button>
-		<button type="button" onclick="appendNumber('3')">3</button>
-		<button type="button" class="operator" data-operator="+">+</button>
-		<button type="button" class="zero" onclick="appendNumber('0')">0</button>
-		<button type="button" onclick="appendDecimal()">.</button>
-		<button type="button" class="equal" onclick="calculateResult()">=</button>
-	  </div>
-	</div>
-  
-	<script>
-	  let firstOperand = '';
-	  let secondOperand = '';
-	  let currentOperator = null;
-	  let shouldResetDisplay = false;
-  
-	  const display = document.getElementById('result');
-	  const operatorButtons = document.getElementsByClassName('operator');
-  
-	  function appendNumber(number) {
-		if (display.value === '0' || shouldResetDisplay) {
-		  display.value = number;
-		  shouldResetDisplay = false;
-		} else {
-		  display.value += number;
-		}
-	  }
-  
-	  function appendDecimal() {
-		if (shouldResetDisplay) {
-		  display.value = '0.';
-		  shouldResetDisplay = false;
-		} else if (!display.value.includes('.')) {
-		  display.value += '.';
-		}
-	  }
-  
-	  function setOperator(operator) {
-		if (currentOperator !== null) {
-		  calculateResult();
-		}
-		firstOperand = display.value;
-		currentOperator = operator;
-		shouldResetDisplay = true;
-		updateActiveOperator();
-	  }
-  
-	  function calculateResult() {
-		if (currentOperator === null) {
-		  return;
-		}
-		secondOperand = display.value;
-  
-		const url = `CGI.py/calculator?firstOperand=${encodeURIComponent(firstOperand)}&secondOperand=${encodeURIComponent(secondOperand)}&operator=${encodeURIComponent(currentOperator)}`;
-  
-		fetch(url)
-		  .then(response => response.text())
-		  .then(result => {
-			display.value = result;
-			firstOperand = result;
-			secondOperand = '';
-			currentOperator = null;
-			shouldResetDisplay = true;
-			updateActiveOperator();
-		  })
-		  .catch(error => {
-			console.error('Error:', error);
-			display.value = 'Error';
-		  });
-	  }
-  
-	  function clearDisplay() {
-		display.value = '0';
-		firstOperand = '';
-		secondOperand = '';
-		currentOperator = null;
-		shouldResetDisplay = false;
-		updateActiveOperator();
-	  }
-  
-	  function toggleSign() {
-		display.value = (parseFloat(display.value) * -1).toString();
-	  }
-  
-	  function calculatePercentage() {
-		display.value = (parseFloat(display.value) / 100).toString();
-	  }
-  
-	  function updateActiveOperator() {
-		for (let i = 0; i < operatorButtons.length; i++) {
-		  operatorButtons[i].classList.remove('active');
-		  if (operatorButtons[i].dataset.operator === currentOperator) {
-			operatorButtons[i].classList.add('active');
-		  }
-		}
-	  }
-  
-	  for (let i = 0; i < operatorButtons.length; i++) {
-		operatorButtons[i].addEventListener('click', function() {
-		  setOperator(this.dataset.operator);
-		});
-	  }
-	</script>
-  </body>
-  </html>
+  <button class="toggle-button" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+  <div class="calculator">
+    <div class="display">
+      <input type="text" id="result" readonly>
+    </div>
+    <div class="buttons">
+      <button type="button" onclick="clearDisplay()">AC</button>
+      <button type="button" onclick="toggleSign()">±</button>
+      <button type="button" onclick="calculatePercentage()">%</button>
+      <button type="button" class="operator" data-operator="/">÷</button>
+      <button type="button" onclick="appendNumber('7')">7</button>
+      <button type="button" onclick="appendNumber('8')">8</button>
+      <button type="button" onclick="appendNumber('9')">9</button>
+      <button type="button" class="operator" data-operator="*">×</button>
+      <button type="button" onclick="appendNumber('4')">4</button>
+      <button type="button" onclick="appendNumber('5')">5</button>
+      <button type="button" onclick="appendNumber('6')">6</button>
+      <button type="button" class="operator" data-operator="-">-</button>
+      <button type="button" onclick="appendNumber('1')">1</button>
+      <button type="button" onclick="appendNumber('2')">2</button>
+      <button type="button" onclick="appendNumber('3')">3</button>
+      <button type="button" class="operator" data-operator="+">+</button>
+      <button type="button" class="zero" onclick="appendNumber('0')">0</button>
+      <button type="button" onclick="appendDecimal()">.</button>
+      <button type="button" class="equal" onclick="calculateResult()">=</button>
+    </div>
+  </div>
+
+  <script>
+    let firstOperand = '';
+    let secondOperand = '';
+    let currentOperator = null;
+    let shouldResetDisplay = false;
+
+    const display = document.getElementById('result');
+    const operatorButtons = document.getElementsByClassName('operator');
+
+    function appendNumber(number) {
+      if (display.value === '0' || shouldResetDisplay) {
+        display.value = number;
+        shouldResetDisplay = false;
+      } else {
+        display.value += number;
+      }
+    }
+
+    function appendDecimal() {
+      if (shouldResetDisplay) {
+        display.value = '0.';
+        shouldResetDisplay = false;
+      } else if (!display.value.includes('.')) {
+        display.value += '.';
+      }
+    }
+
+    function setOperator(operator) {
+      if (currentOperator !== null) {
+        calculateResult();
+      }
+      firstOperand = display.value;
+      currentOperator = operator;
+      shouldResetDisplay = true;
+      updateActiveOperator();
+    }
+
+    function calculateResult() {
+      if (currentOperator === null) {
+        return;
+      }
+      secondOperand = display.value;
+
+      const url = `CGI.py/calculator?firstOperand=${encodeURIComponent(firstOperand)}&secondOperand=${encodeURIComponent(secondOperand)}&operator=${encodeURIComponent(currentOperator)}`;
+
+      fetch(url)
+        .then(response => response.text())
+        .then(result => {
+          display.value = result;
+          firstOperand = result;
+          secondOperand = '';
+          currentOperator = null;
+          shouldResetDisplay = true;
+          updateActiveOperator();
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          display.value = 'Error';
+        });
+    }
+
+    function clearDisplay() {
+      display.value = '0';
+      firstOperand = '';
+      secondOperand = '';
+      currentOperator = null;
+      shouldResetDisplay = false;
+      updateActiveOperator();
+    }
+
+    function toggleSign() {
+      display.value = (parseFloat(display.value) * -1).toString();
+    }
+
+    function calculatePercentage() {
+      display.value = (parseFloat(display.value) / 100).toString();
+    }
+
+    function updateActiveOperator() {
+      for (let i = 0; i < operatorButtons.length; i++) {
+        operatorButtons[i].classList.remove('active');
+        if (operatorButtons[i].dataset.operator === currentOperator) {
+          operatorButtons[i].classList.add('active');
+        }
+      }
+    }
+
+    for (let i = 0; i < operatorButtons.length; i++) {
+      operatorButtons[i].addEventListener('click', function() {
+        setOperator(this.dataset.operator);
+      });
+    }
+
+    // 쿠키 설정 함수
+    function setCookie(name, value, days) {
+      let expires = "";
+      if (days) {
+        let date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+
+    // 쿠키 읽기 함수
+    function getCookie(name) {
+      let nameEQ = name + "=";
+      let ca = document.cookie.split(';');
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+      }
+      return null;
+    }
+
+    // 다크 모드 토글 함수
+    function toggleDarkMode() {
+      const body = document.body;
+      const button = document.querySelector('.toggle-button');
+      body.classList.toggle('dark-mode');
+      button.classList.toggle('dark-mode');
+      // Save the current mode to cookie
+      if (body.classList.contains('dark-mode')) {
+        setCookie('theme', 'dark', 7); // 7일 동안 유효
+      } else {
+        setCookie('theme', 'light', 7);
+      }
+    }
+
+    // 페이지 로드 시 쿠키 확인 및 테마 설정
+    function applyThemeFromCookie() {
+      const savedTheme = getCookie('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        const button = document.querySelector('.toggle-button');
+        if (button) {
+          button.classList.add('dark-mode');
+        }
+      }
+    }
+
+    // 테마 초기화 및 버튼 이벤트 등록
+    window.onload = function() {
+      applyThemeFromCookie();
+      const button = document.querySelector('.toggle-button');
+      if (button) {
+        button.onclick = toggleDarkMode;
+      }
+    }
+  </script>
+</body>
+</html>
