@@ -317,62 +317,109 @@ void RequestHandle::parseHeader(const std::string& buffer)
         return;
     }
 }
+
 void RequestHandle::parseChunkedBody(const std::string& body)
 {
-    std::cout << "cccccccccccccc\n";
     std::istringstream iss(body);
-    std::string line, chunked;
+    std::string chunk;
     size_t chunkLength;
+    std::string res;
 
-	// if (body.find("0\r\n") == std::string::npos) {
-	// 	_readStatus = READ_BODY_DOING;
-	// 	return;
-	// }
+	if (body.find("0\r\n") == std::string::npos) {
+		_readStatus = READ_CHUNKED_BODY;
+		return;
+	}
+    while (std::getline(iss, chunk)) {
+        if (!chunk.empty() && chunk.back() == '\r') {
+            chunk.pop_back();
+        }
 
-    while (std::getline(iss, line)) {
-        chunkLength = strtol(line.c_str(), NULL, 16);
+        std::istringstream chunkStream(chunk);
+        chunkStream >> std::hex >> chunkLength;
+
+        if (!chunkStream) {
+            _readStatus = READ_ERROR;
+            return;
+        }
+
         if (chunkLength == 0) {
-            // 0\r\n 이후에는 \r\n이 한 번 더 나와야 합니다.
-            if (std::getline(iss, line) && line == "\r") {
-                _request._body = chunked;
-                _readStatus = READ_DONE;
-                return;
-            } else {
-                // 잘못된 형식의 chunked 데이터입니다.
-                // 에러 처리 코드를 추가할 수 있습니다.
-                throw BadRequest_400;
-            }
+            _readStatus = READ_DONE;
+            _request._body = res;
+            return;
         }
-		std::cout << "max_body_size: " << max_body_size << std::endl;
-        if (chunkLength > max_body_size)
+
+        std::string chunkData(chunkLength, '\0');
+        if (chunkLength > chunkData.size()) {
+            _readStatus = READ_CHUNKED_BODY;
+            return ;
+        }
+        iss.read(&chunkData[0], chunkLength);
+        res += chunkData;
+        if (res.size() > max_body_size)
             throw PayloadTooLarge_413;
-
-        // if (iss.eof()) {
-		// 	std::cout << "sibal\n";
-        //     _readStatus = READ_CHUNKED_BODY;
-        //     return;
-        // }
-		// std::cout << "test\n";
-        std::string chunk;
-        chunk.resize(chunkLength);
-        iss.read(&chunk[0], chunkLength);
-        chunked += chunk;
-		if (chunkLength > chunked.size()) {
-			_readStatus = READ_CHUNKED_BODY;
-			return ;
-		}
-		_request._body += chunk;
-
-        // \r\n 읽기
-        std::getline(iss, line);
-        if (line != "\r") {
-            throw BadRequest_400;
-        }
+        iss.ignore(2);
     }
 
-    // 0\r\n을 찾지 못한 경우, 아직 데이터가 완전히 도착하지 않았습니다.
-    _readStatus = READ_BODY_DOING;
+    if (!iss.eof()) {
+        _readStatus = READ_CHUNKED_BODY;
+        return;
+    }
 }
+
+// void RequestHandle::parseChunkedBody(const std::string& body) v1
+// {
+//     std::cout << "cccccccccccccc\n";
+//     std::istringstream iss(body);
+//     std::string line, chunked;
+//     size_t chunkLength;
+
+
+//     while (std::getline(iss, line)) {
+//         chunkLength = strtol(line.c_str(), NULL, 16);
+//         if (chunkLength == 0) {
+//             // 0\r\n 이후에는 \r\n이 한 번 더 나와야 합니다.
+//             if (std::getline(iss, line) && line == "\r") {
+//                 _request._body = chunked;
+//                 _readStatus = READ_DONE;
+//                 return;
+//             } else {
+//                 // 잘못된 형식의 chunked 데이터입니다.
+//                 // 에러 처리 코드를 추가할 수 있습니다.
+//                 throw BadRequest_400;
+//             }
+//         }
+// 		std::cout << "max_body_size: " << max_body_size << std::endl;
+//         if (chunkLength > max_body_size)
+//             throw PayloadTooLarge_413;
+
+//         // if (iss.eof()) {
+// 		// 	std::cout << "sibal\n";
+//         //     _readStatus = READ_CHUNKED_BODY;
+//         //     return;
+//         // }
+// 		// std::cout << "test\n";
+//         std::string chunk;
+//         chunk.resize(chunkLength);
+//         iss.read(&chunk[0], chunkLength);
+//         chunked += chunk;
+// 		if (chunkLength > chunked.size()) {
+// 			_readStatus = READ_CHUNKED_BODY;
+// 			return ;
+// 		}
+// 		_request._body += chunk;
+
+//         // \r\n 읽기
+//         std::getline(iss, line);
+//         if (line != "\r") {
+//             throw BadRequest_400;
+//         }
+//     }
+
+//     // 0\r\n을 찾지 못한 경우, 아직 데이터가 완전히 도착하지 않았습니다.
+//     _readStatus = READ_BODY_DOING;
+// }
+
+
 // void RequestHandle::parseChunkedBody(const std::string& body)
 // {
 // 	// std::cout << "cccccccccccccc\n";
