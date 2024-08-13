@@ -49,10 +49,9 @@ void ignoreAllSignals() {
     }
 }
 
-
 int main(int ac, char **av)
 {
-	ignoreAllSignals();
+	// ignoreAllSignals();
 	Error::initializeError();
 	Config Conf(ac, av);
 	Server Server;

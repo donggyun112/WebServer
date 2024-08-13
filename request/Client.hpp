@@ -28,7 +28,7 @@ class Client {
 		ResponseHandle	_responseHandle;
 		std::string		_response;
 		procInfo 		*_procPtr;
-		
+		std::string		_sessionValue;
 		Client();
 	public:
 		Client(Port port);
@@ -39,24 +39,21 @@ class Client {
 		int 		getReadStatus() const;
 		bool		getIsKeepAlive() const;
 		void		generateResponse(const Config &Conf);
-		void		handleCGI();
-		void		setEnv(const RequestHandle &Req);
-		void		setBufferFromChild(int data);
 		procInfo*	getProcInfo() const;
 		void		makeExecuteCommand(std::string &extention);
 		void		setEnv(const Config &Conf, const RequestHandle &Req);
 		void		makeTempFileNameForCgi(std::string &filePath, int mode);
 		void		handleCGI(const Config &Conf);
-
-		const ResponseHandle& getResponseHandle() const;
-
 		Port		getPort() const;
 		std::string getResponse() const;
 		void		setResponse(const std::string &param);
 		void		appendResponse(const char *param);
 		void		cutResponse(int length);
+		std::string	getSessionValue() const;
+		void		setSessionValue();
 		bool		iscgi() const {
 			return _responseHandle.isCGI();
 		}
+		const ResponseHandle& getResponseHandle() const;
 };
 #endif

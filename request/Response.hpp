@@ -15,6 +15,7 @@ private:
 	std::string _reason;
 	std::string _body;
 	std::string _location;
+	std::string _sid;
 public:
     typedef std::multimap<std::string, std::string> Headers;
     Headers headers;
@@ -49,5 +50,7 @@ public:
 	const std::string getResponses();
 
 	Response &operator=(const Response &Copy);
+
+	void	setSid(std::string &sid);
 	void	clearAll();
 };

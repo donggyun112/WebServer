@@ -267,7 +267,6 @@ void RequestHandle::parseChunkedBody(const std::string& body)
         _request._body += line.substr(0, chunkLength);
         getline(iss, line, '\n');
     }
-
 }
 
 void RequestHandle::setCookie()

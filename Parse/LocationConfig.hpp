@@ -31,6 +31,7 @@ class LocationConfig {
 	std::vector<std::string>    _try_files;
 	bool 					  	_cgi;
     bool                        _etag;
+    bool                        _session;
     
     public:
     ~LocationConfig() {}
@@ -58,6 +59,7 @@ class LocationConfig {
 	bool						isCgi() const;
 	void						setCgi(bool cgi);
     bool                        isEtag() const;
+    bool                        isSessionOn() const;
 
     std::string                 getAllowedMethod(size_t i) const;
     

@@ -17,7 +17,7 @@ class Utils {
 public:
 	Utils();
 	~Utils();
-    std::string toString(int num);
+    static std::string toString(int num);
 };
 
 enum StatusCode {

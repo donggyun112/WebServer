@@ -81,8 +81,6 @@ void Server::addNewClient(FD fd) {
 		std::cerr << "Error accepting new client" << std::endl;
 		return;
 	}
-
-
 	std::cout << "hi new client. | fd : " << newFD << std::endl;
 	setsockopt(newFD, SOL_SOCKET, SO_NOSIGPIPE, &opt, sizeof(opt));
 	setsockopt(newFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -105,6 +103,9 @@ void Server::disconnectClient(int fd) {
         std::cout << "Client not found: " << fd << std::endl;
         return;
     }
+    if (it->second->getSessionValue() != "") {
+        Manager::removeSession(it->second->getSessionValue());
+    }
     delete it->second;
     _clientMap.erase(it);
     changeEvents(_changeList, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
@@ -114,10 +115,7 @@ void Server::disconnectClient(int fd) {
         std::cerr << "Error closing socket: " << fd << std::endl;
     }
 	delayResponse(0.0002f);
-
 }
-
-
 
 void Server::delayResponse(double seconds) {
     clock_t startTime = clock();

@@ -171,7 +171,7 @@ std::string ResponseUtils::getExpirationTime(int seconds) {
 std::string ResponseUtils::etag(const std::string& filePath) {
 	struct stat fileStat;
 	if (stat(filePath.c_str(), &fileStat) == 0) {
-		std::string etag = std::to_string(fileStat.st_ino) + std::to_string(fileStat.st_size) + std::to_string(fileStat.st_mtime);
+		std::string etag = Utils::toString(fileStat.st_ino) + Utils::toString(fileStat.st_size) + Utils::toString(fileStat.st_mtime);
 		return generateETag(etag);
 	}
 	return "";

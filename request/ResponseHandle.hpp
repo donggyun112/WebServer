@@ -28,6 +28,7 @@ class ResponseHandle {
 		std::string 	_serverRoot;
 		Port			_port;
 		LocationConfig	_loc;
+		std::string		_sessionValue;
 	public:
 		bool 			initPathFromLocation(const RequestHandle &Req, const Config &Conf);
 		ResponseHandle();
@@ -42,9 +43,12 @@ class ResponseHandle {
 		void		handleAutoIndex(Response &response, const std::string &servRoot);
 		std::string	handleDeleteRequest(const Config &Conf);
 		void		setResponse(const std::string &response);
+		std::string setSid();
+		void		putSessionId();
 		void		clearAll();
 		const std::string getResponse();
 		bool		isCGI() const;
+		bool		issession() const;
 		std::string	getFilePath() const;
 		std::string	getPathInfo() const;
 		std::string	getScriptName() const;
@@ -53,5 +57,5 @@ class ResponseHandle {
 		Port		getPort() const;
 		const LocationConfig&	getLocation() const;
 		ResponseHandle& operator=(const ResponseHandle &Copy);
+		void		setSessionValue(std::string & value);
 };
-

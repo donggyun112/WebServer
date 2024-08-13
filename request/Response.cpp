@@ -23,6 +23,10 @@ void Response::setHeader(const std::string& name, const std::string& value) {
 	headers.insert(std::make_pair(name, value));
 }
 
+void Response::setSid(std::string &sid) {
+	this->_sid = sid;
+}
+
 void Response::setRedirect(const std::string& url, int status) {
 	setHeader("Location", url);
 	setStatusCode(status);

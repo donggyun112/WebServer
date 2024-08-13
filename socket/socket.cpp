@@ -6,7 +6,7 @@ void Socket::__init__(std::string host, Port port) {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    std::string port_str = std::to_string(port);
+    std::string port_str = Utils::toString(port);
 
     int status = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &_addrInfo);
     if (status != 0) {
@@ -33,7 +33,7 @@ void Socket::__init__(Port port) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    std::string port_str = std::to_string(port);
+    std::string port_str = Utils::toString(port);
 
     int status = getaddrinfo(NULL, port_str.c_str(), &hints, &_addrInfo);
     if (status != 0) {

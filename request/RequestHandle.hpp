@@ -80,7 +80,7 @@ class RequestHandle {
         int             		getReadStatus() const {return this->_readStatus;}
         void                    setReadStatus(int readStatus) {_readStatus = readStatus;}
 		const std::string		&getQuery() const;
-        
+        std::string             getCookieValue(std::string &key) const;
 
 
         void printAllHeaders() const;

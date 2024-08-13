@@ -1,9 +1,9 @@
 #include "Client.hpp"
+#include "../utils/utils.hpp"
 
-Client::Client(Port port) : _port(port), _requestHandle (port), _procPtr(NULL)
-{};
+Client::Client(Port port) : _port(port), _requestHandle (port), _procPtr(NULL), _sessionValue("") {};
 
-Client::Client(const Client &Copy) : _port(Copy._port), _requestHandle(Copy._requestHandle) {};
+Client::Client(const Client &Copy) : _port(Copy._port), _requestHandle(Copy._requestHandle), _sessionValue(Copy._sessionValue) {};
 
 void Client::clearAll() {
 	_requestHandle.clearAll();
@@ -183,6 +183,11 @@ void Client::generateResponse(const Config &Conf) {
 			handleCGI(Conf);
 			return ;
 		} else {
+			//test
+			std::cout << "issession: " << _responseHandle.issession() << std::endl;
+			//test end 
+			if (_responseHandle.issession())
+				setSessionValue();
 			_response = _responseHandle.generateHTTPFullString(_requestHandle, Conf);
 		}
 	} catch (int num) {
@@ -202,4 +207,22 @@ std::string Client::getResponse() const {
 
 void	Client::cutResponse(int length) {
 	_response.erase(_response.begin(), _response.begin() + length);
+}
+
+std::string	Client::getSessionValue() const {
+	return this->_sessionValue;
+}
+
+void	Client::setSessionValue() {
+	//test code
+	std::cout << "sessionLog: " << __FILE__ << ":" << __LINE__ << ":" << __func__ << ":" << std::endl;
+	
+	//end test
+	std::string sid = "SID";
+	std::string _sessionValue = _requestHandle.getCookie(sid);
+	_responseHandle.setSessionValue(_sessionValue);
+	for (std::size_t i = 0; i < Manager::sessionStorage.size(); i++) {
+		std::cout << "hihi" << std::endl;
+		std::cout << "element: " << Manager::sessionStorage[i] << std::endl;
+	}
 }

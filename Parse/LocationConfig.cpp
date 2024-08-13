@@ -9,7 +9,11 @@ void	LocationConfig::setCgi(bool cgi) {
 	_cgi = cgi;
 }
 
-LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) : _autoindex(false), _defaultIndex(defaultIndex), _cgi(false) {
+bool    LocationConfig::isSessionOn() const {
+    return _session;
+}
+
+LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) : _autoindex(false), _defaultIndex(defaultIndex), _cgi(false), _session(false) {
     std::string     line;
     std::string     key, value;
 
@@ -75,8 +79,14 @@ LocationConfig::LocationConfig(std::ifstream &file, std::string &defaultIndex) :
             while (iss >> allow_methods) {
                 this->_allow_methods.push_back(allow_methods);
             }
-        }
-        else if (key == "return") {
+        } else if (key == "session") {
+            std::string autoindex;
+            iss >> autoindex;
+            if (autoindex == "on")
+                this->_session = true;
+            else
+                this->_session = false;
+        } else if (key == "return") {
             std::string return_url;
 			std::string return_code;
 			iss >> return_code;

@@ -4,17 +4,23 @@
 #include <unistd.h>
 #include "NResponseUtils.hpp"
 #include "../Manager/Manager.hpp"
+#include <cstdlib>
+#include "../utils/utils.hpp"
 
-ResponseHandle::ResponseHandle() : _isInitFromLocation(false) {
+ResponseHandle::ResponseHandle() : _isInitFromLocation(false) , _sessionValue(""){
 }
 
-ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._response) {}
+ResponseHandle::ResponseHandle(const ResponseHandle &Copy) : _response(Copy._response) ,_sessionValue(Copy._sessionValue) {}
 
 ResponseHandle::~ResponseHandle() {}
 
 
 bool ResponseHandle::isCGI() const {
 	return _loc.isCgi();
+}
+
+bool ResponseHandle::issession() const {
+	return _loc.isSessionOn();
 }
 
 void	ResponseHandle::clearAll() {
@@ -121,19 +127,33 @@ Response ResponseHandle::handleMethodNotAllowed()
 	return response;
 }
 
+std::string ResponseHandle::setSid() {
+	srand(std::time(0));
+	int rand = random();
 
+	return Utils::toString(rand);
+}
 
-
+void	ResponseHandle::putSessionId() {
+	std::string generatedSid = setSid();
+	std::string value = "SID=" + generatedSid + ";";
+	std::string serverData = Manager::findSession(_sessionValue);
+	if (_sessionValue != "") {
+		if (serverData == "") throw Unauthorized_401;
+		return ;
+	} else {
+		this->_sessionValue = generatedSid;
+		Manager::sessionStorage.push_back(_sessionValue);
+	}
+}
 
 std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc) {
     std::string filePath;
     std::string alias = loc.getAlias();
 
-
     if (!alias.empty() && httpUri.find(alias) == 0) {
         filePath = alias + httpUri.substr(alias.length());
     }
-
 	if (loc.isCgi()) {
 		if (httpUri.substr(0, httpUri.find_last_of('/')).find('.') != std::string::npos) {
 			_scriptName = httpUri.substr(0, httpUri.find_last_of('/'));
@@ -145,7 +165,6 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
 			_httpUri = _scriptName;
 		}
 	}
-
 
 	if (httpUri.find(loc.getPath()) == std::string::npos || loc.getPath().find('.') != std::string::npos) {
 		if (loc.isCgi() == true) {
@@ -170,8 +189,6 @@ std::string ResponseHandle::getFilePath(const std::string &serverRoot, const std
     return filePath;
 }
 
-
-
 Response ResponseHandle::handleRedirect(const LocationConfig &location)
 {
 	Response response;
@@ -182,11 +199,9 @@ Response ResponseHandle::handleRedirect(const LocationConfig &location)
 	{
 		int statusCode = std::stoi(returnCode);
 		response.setRedirect(returnUrl, statusCode);
-		
 		response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 		response.setHeader("Pragma", "no-cache");
 		response.setHeader("Expires", "0");
-
 		response.setHeader("Connection", "close");
 		response.setBody("42Webserv Redirected");
 		return response;
@@ -199,7 +214,6 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 	_isInitFromLocation = true;
 	_httpUri = Req.getUri();
 	_port = Req.getPort();
-
 	_httpUri = Manager::responseUtils.nomralizeUrl(_httpUri);
 	_serverRoot = Manager::responseUtils.normalizePath(Conf.getServerConfig(_port, Req.getHost()).getPath());
 	if (_serverRoot.empty())
@@ -228,8 +242,6 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 	return true;
 }
 
-
-
 std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Config &Conf)
 {
 	Response response;
@@ -242,14 +254,13 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 		response.setHeader("Date", Manager::responseUtils.getCurTime());
 		response.setHeader("Server", "42Webserv");
 		response.setHeader("Connection", "close");
-
+	
 		return response.getResponses();
 	}
 	if (_loc.isCgi() == true)
 	{
 		(void)Req;
 	}
-
 	Response redirectResponse = handleRedirect(_loc);
 	if (redirectResponse.getStatusCode() != OK_200) {
 		return redirectResponse.getResponses();
@@ -275,24 +286,21 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 			response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
 			response.setBody(body);
 			response.setHeader("Content-Length", Manager::utils.toString(body.length()));
-		}else {
+		} else {
 			response.setStatusCode(NoContent_204);
 			response.setHeader("Date", Manager::responseUtils.getCurTime());
 			response.setHeader("Content-Type", Manager::responseUtils.getContentType(extension));
 		}
-		if (_loc.isEtag() == true)
-		{
-			std::cerr << "ETAG" << std::endl;
+		if (_loc.isEtag() == true) {
 			response.setHeader("Last-Modified", Manager::responseUtils.lastModify(_filePath));
 			response.setHeader("ETag", Manager::responseUtils.etag(_filePath));
 			response.setHeader("Cache-Control", "max-age=3600, public, must-revalidate, no-cache");
 			response.setHeader("Expires", Manager::responseUtils.getExpirationTime(3600));
-		} else {
-			response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-			response.setHeader("Pragma", "no-cache");
-			response.setHeader("Expires", "0");
 		}
-
+		if (_loc.isSessionOn() == true)  {
+			putSessionId();
+			response.setHeader("Set-Cookie", "SID=" + _sessionValue);
+		}
 	}
 	else
 	{
@@ -477,3 +485,6 @@ ResponseHandle&	ResponseHandle::operator=(const ResponseHandle &Copy) {
 	return *this;
 }
 
+void	ResponseHandle::setSessionValue(std::string & value) {
+	this->_sessionValue = value;
+}
