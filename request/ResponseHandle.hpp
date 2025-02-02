@@ -35,11 +35,9 @@ class ResponseHandle {
 		~ResponseHandle();
 		std::string	generateHTTPFullString(const RequestHandle &Req, const Config &Conf);
 		std::string	handleGetRequest(const RequestHandle &Req, const Config &Conf);
-		std::string handlePostRequest(const RequestHandle &Req);
+		std::string handlePostRequest(const RequestHandle &Req, const Config &Conf);
 		Response	handleMethodNotAllowed();
-		std::string handleFormData(const std::string &cgiPath, const RequestHandle &Req);
 		std::string getFilePath(const std::string &serverRoot, const std::string &httpUri, LocationConfig &loc);
-		Response	createErrorResponse(int code, const std::string &message);
 		Response 	handleRedirect(const LocationConfig &location);
 		void		handleAutoIndex(Response &response, const std::string &servRoot);
 		std::string	handleDeleteRequest(const Config &Conf);
@@ -53,7 +51,7 @@ class ResponseHandle {
 		std::string	getHttpUri() const;
 		std::string	getServerRoot() const;
 		Port		getPort() const;
-		LocationConfig	getLocation() const;
+		const LocationConfig&	getLocation() const;
 		ResponseHandle& operator=(const ResponseHandle &Copy);
 };
 

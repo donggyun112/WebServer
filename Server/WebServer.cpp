@@ -100,21 +100,16 @@ void Server::updateControl() {
 
 
 void Server::disconnectClient(int fd) {
-    
-    delete _clientMap[fd]->getProcInfo();
     std::map<FD, Client *>::iterator it = _clientMap.find(fd);
     if (it == _clientMap.end()) {
         std::cout << "Client not found: " << fd << std::endl;
         return;
     }
-    
     delete it->second;
     _clientMap.erase(it);
-    
     changeEvents(_changeList, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
     changeEvents(_changeList, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     std::cout << "Client disconnected: " << fd << std::endl;
-
 	if (close(fd) == -1) {
         std::cerr << "Error closing socket: " << fd << std::endl;
     }
@@ -137,6 +132,7 @@ void Server::delayResponse(double seconds) {
 
 void Server::handleClientRead(FD clientFd, const Config &Conf) {
     unsigned char *buffer = new unsigned char[1025];
+    std::memset(buffer, 0, 1025);
     ssize_t length;
 
     length = recv(clientFd, buffer, 1024, 0);
@@ -151,7 +147,7 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
         disconnectClient(clientFd);
         delete[] buffer;
         return ;
-    }    
+    }
     buffer[length] = '\0';
     Client *ptr = _clientMap[clientFd];
     ptr->setBuffer(buffer, length);
@@ -159,8 +155,7 @@ void Server::handleClientRead(FD clientFd, const Config &Conf) {
     
     if (ptr->getReadStatus() == READ_DONE || ptr->getReadStatus() == READ_ERROR) {
             ptr->generateResponse(Conf);
-
-        if (ptr->getResponseHandle().isCGI()) {
+        if (ptr->iscgi()) {
             ptr->getProcInfo()->clientFd = clientFd;
             changeEvents(_changeList, ptr->getProcInfo()->pid, EVFILT_PROC, EV_ADD | EV_ENABLE, NOTE_EXIT | NOTE_EXITSTATUS, 0, ptr->getProcInfo());
             changeEvents(_changeList, clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
@@ -189,6 +184,16 @@ void Server::handleClientCgi(struct kevent &currEvent, const Config & Conf) {
 		return ;
 	}
 	tempFileFd = open(procPtr->tempFileNameOut.c_str(), O_RDONLY);
+    if (tempFileFd == -1) {
+        std::remove(procPtr->tempFileNameIn.c_str());
+		std::remove(procPtr->tempFileNameOut.c_str());
+		ptr->setResponse(Error::errorHandler(Conf[ptr->getPort()], InternalServerError_500));
+        waitpid(procPtr->pid, NULL, 0);
+        changeEvents(_changeList, procPtr->clientFd, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+		changeEvents(_changeList, procPtr->clientFd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+
+    }
+
 	while (length) {
 		memset(buffer, 0, 1025);
 		length = read(tempFileFd, buffer, 1024);
@@ -220,7 +225,6 @@ void Server::run(const Config &Conf) {
     while (true)
 	{
 		eventNumber = kevent(_kq, &_changeList[0], _changeList.size(), eventList, 10, NULL);
-        
         updateControl();
         
         if (eventNumber < 0)

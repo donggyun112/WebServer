@@ -12,6 +12,8 @@ void Client::clearAll() {
 
 Client::~Client() {
 	clearAll();
+	delete _procPtr;
+	_procPtr = NULL;
 }
 
 const ResponseHandle& Client::getResponseHandle() const{
@@ -77,7 +79,10 @@ void	Client::setEnv(const Config &Conf, const RequestHandle &Req) {
 	std::string serverName = host;
 	std::string cgiPath = _responseHandle.getFilePath();
 	std::string serverPort = Manager::utils.toString(_port);
+	std::string maxLength = Manager::utils.toString(Conf[_port].getClientMaxBodySize());
+	std::cout << "setEnv | maxLength = " << maxLength << std::endl;
     if (Req.getMethod() == "GET" || Req.getMethod() == "POST") {
+		setenv("MAX_LENGTH", maxLength.c_str(), 1);
         setenv("SERVER_SOFTWARE", "webserv", 1);
     	setenv("SERVER_NAME", serverName.c_str(), 1);
         setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
@@ -144,7 +149,6 @@ void Client::handleCGI(const Config &Conf) {
 		tempFileFdIn = open(tempFileNameIn.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
 		tempFileFdOut = open(tempFileNameOut.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
 		if (tempFileFdIn == -1 || tempFileFdOut == -1) {
-			std::cerr << "failed to open | " << __LINE__ << std::endl;
 			exit(InternalServerError_500);
 		}
 		write(tempFileFdIn, _requestHandle.getBody().data(), _requestHandle.getBody().length());

@@ -29,11 +29,6 @@ std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
     Response tmpResponse;
     std::string response;
 
-	// Response redirectResponse = handleRedirect(_loc);
-	// if (redirectResponse.getStatusCode() != 300) {
-	// 	return redirectResponse;
-	// } //이 부분은 redirect 구현 잘 끝나면 거기에서 에러코드 등 핸들링 추가로 합시다.
-
     // 파일 읽기
     std::ifstream file(_filePath.c_str(), std::ios::binary);
     if (file.is_open() && file.good()) {
@@ -48,7 +43,10 @@ std::string ResponseHandle::handleDeleteRequest(const Config &Conf) {
         std::remove(_filePath.c_str());
         file.close();
 
-        tmpResponse.setStatusCode(204);
+		tmpResponse.setStatusCode(Accepted_202);
+		tmpResponse.setHeader("Date", Manager::responseUtils.getCurTime());
+		tmpResponse.setHeader("Content-Type", "text/html");
+		tmpResponse.setHeader("Connection", "close");
     } else {
         if (Manager::responseUtils.isDirectory(_filePath)) {
 			if (_loc.getAutoindex() == true) {
@@ -82,7 +80,7 @@ std::string ResponseHandle::generateHTTPFullString(const RequestHandle &Req, con
 		_response = handleGetRequest(Req, Conf);
 		return _response;
 	case POST:
-		_response = handlePostRequest(Req);
+		_response = handlePostRequest(Req, Conf);
 		break;
 	case DELETE:
 		_response = handleDeleteRequest(Conf);
@@ -208,16 +206,11 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 	{
 		throw InternalServerError_500;
 	}
-
-		_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
-	if (Manager::responseUtils.isMethodPossible(Manager::responseUtils.getMethodNumber(Req.getMethod()), _loc) == false) {
-		throw MethodNotAllowed_405;
-	}
+	_loc = Conf.getServerConfig(_port, Req.getHost()).getLocation(_httpUri);
 	_filePath = getFilePath(_serverRoot, _httpUri, _loc);
 	if (!Manager::responseUtils.isValidPath(_filePath)) {
 		throw BadRequest_400;
 	}
-
 	if (_filePath.length() > 1 && _filePath[_filePath.length() - 1] == '/') {
 		if (Manager::responseUtils.isDirectory(_filePath) == true) {
 			std::string tmpPath = _filePath + _loc.getIndex();
@@ -232,7 +225,6 @@ bool	ResponseHandle::initPathFromLocation(const RequestHandle &Req, const Config
 			_filePath = _filePath.substr(0, _filePath.find_last_of('/') + 1);
 		}
 	}
-			  
 	return true;
 }
 
@@ -331,9 +323,13 @@ std::string ResponseHandle::handleGetRequest(const RequestHandle &Req, const Con
 	return response.getResponses();
 }
 
-std::string ResponseHandle::handlePostRequest(const RequestHandle &Req)
+std::string ResponseHandle::handlePostRequest(const RequestHandle &Req, const Config &Conf)
 {
 	std::string responseData;
+
+	const size_t maxFileSize = Conf[_port].getClientMaxBodySize();
+	if (Req.getBody().size() > maxFileSize)
+		throw PayloadTooLarge_413;
 
 	std::string contentType = Req.getHeader("Content-Type");
 	if ((contentType.find("multipart/form-data") != std::string::npos && contentType.find("boundary") != std::string::npos) \
@@ -462,7 +458,7 @@ Port	ResponseHandle::getPort() const {
 	return _port;
 }
 
-LocationConfig	ResponseHandle::getLocation() const {
+const LocationConfig&	ResponseHandle::getLocation() const {
 	return _loc;
 }
 
