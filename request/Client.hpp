@@ -51,12 +51,10 @@ class Client {
 		const ResponseHandle& getResponseHandle() const;
 
 		Port		getPort() const;
+
 		std::string getResponse() const;
 		void		setResponse(const std::string &param);
 		void		appendResponse(const char *param);
 		void		cutResponse(int length);
-		bool		iscgi() const {
-			return _responseHandle.isCGI();
-		}
 };
 #endif
