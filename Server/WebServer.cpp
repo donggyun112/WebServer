@@ -113,7 +113,7 @@ void Server::disconnectClient(int fd) {
 	if (close(fd) == -1) {
         std::cerr << "Error closing socket: " << fd << std::endl;
     }
-	delayResponse(0.0002f);
+	// delayResponse(0.0002f);
 
 }
 
@@ -246,7 +246,7 @@ void Server::run(const Config &Conf) {
                     handleClientRead(eventList[i].ident, Conf);
                 }
             } else if (eventList[i].filter == EVFILT_WRITE) {
-				const float fixedDelaySeconds = 0.0018f;
+				const float fixedDelaySeconds = 0.0008f;
 				const clock_t fixedDelayClocks = static_cast<clock_t>(fixedDelaySeconds * CLOCKS_PER_SEC);
 
 				clock_t startTime = clock();
